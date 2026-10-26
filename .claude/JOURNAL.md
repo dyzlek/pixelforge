@@ -1,5 +1,20 @@
 # Journal — PixelForge
 
+## 2026-10-26 (45) — [Phase E] E2 : filtres Phaser 4 dans les scripts et les Blueprints (Issue #67)
+- **Fait** :
+  - `src/runtime/engine.js` :
+    - Implementation de l'API de filtres par instance `self.addFilter(name, options)` (`glow`, `blur`, `pixelate`, `crt`/`barrel`, `vignette`, `shadow`) et `self.clearFilters()`.
+    - Implementation du mode de fusion de teinte `self.setTintMode(mode)` (`multiply`, `fill`, `add`, `screen`, `overlay`, `hard_light`).
+    - Implementation des filtres de camera plein ecran `game.camera.addFilter(name, options)` (`crt`, `vignette`, `blur`, `pixelate`, `glow`) et `game.camera.clearFilters()`.
+  - Blueprints (`src/graph/nodes.js`, `src/graph/compile.js`, `legacy-blocks.js`) :
+    - 5 nouveaux noeuds 2D : `pf_filter_add`, `pf_filter_clear`, `pf_tint_mode`, `pf_cam_filter`, `pf_cam_clear_filters`.
+    - Documentation des noeuds regeneree (`docs/NODES.md`).
+  - Jeux de demonstration :
+    - Mise a niveau de `games/exemple-plateforme-qiqv.pixelforge.json` avec filtre camera CRT et filtre lueur doree sur les pieces (Coin) via le graphe Blueprint.
+  - Documentation mise a jour dans `docs/SCRIPT_API.md` et `AGENTS.md`.
+- **Verifie** : `npm test` (2563 verifs), `npm run check:doc`, `npm run build`, `npm run test:e2e` (5 tests Playwright verts), validation MCP des jeux.
+- **Etat** : Branche `feat/phaser-4-filters`, Closes #67.
+
 ## 2026-10-26 (44) — [Phase E] E1 : passer le moteur 2D et l'export a Phaser 4.2.1 (Issue #66)
 - **Fait** :
   - `package.json` & `package-lock.json` : mise a niveau de `"phaser"` vers `"4.2.1"`.

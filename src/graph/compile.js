@@ -318,6 +318,9 @@ GEN.pf_visible = (c) => `self.visible = ${c.on()};\n`;
 GEN.pf_alpha = (c) => `self.alpha = ${c.v('VALUE', O.ASSIGNMENT, '1')};\n`;
 GEN.pf_tint_set = (c) => `self.tint = ${c.v('COLOR', O.ASSIGNMENT, "'#ffffff'")};\n`;
 GEN.pf_tint_none = () => 'self.tint = null;\n';
+GEN.pf_filter_add = (c) => `self.addFilter(${q(c.f('FILTER'))}, { color: ${c.v('COLOR', O.NONE, "'#ffffff'")}, outerStrength: ${c.v('INTENSITY', O.NONE, '2')}, amount: ${c.v('INTENSITY', O.NONE, '2')} });\n`;
+GEN.pf_filter_clear = () => 'self.clearFilters();\n';
+GEN.pf_tint_mode = (c) => `self.setTintMode(${q(c.f('MODE'))});\n`;
 PURE.pf_colour = (c) => [q(c.f('COL')), O.ATOMIC];
 
 // -- Objet
@@ -431,6 +434,8 @@ GEN.pf_cam_flash = (c) => `game.camera.flash(${c.v('MS', O.NONE, '200')});\n`;
 GEN.pf_cam_zoom = (c) => `game.camera.setZoom(${c.v('Z', O.NONE, '1')});\n`;
 GEN.pf_cam_deadzone = (c) => `game.camera.setDeadzone(${c.v('W')}, ${c.v('H')});\n`;
 GEN.pf_cam_offset = (c) => `game.camera.setOffset(${c.v('X')}, ${c.v('Y')});\n`;
+GEN.pf_cam_filter = (c) => `game.camera.addFilter(${q(c.f('FILTER'))}, { amount: ${c.v('INTENSITY', O.NONE, '1.5')}, radius: ${c.v('INTENSITY', O.NONE, '1.5')} });\n`;
+GEN.pf_cam_clear_filters = () => 'game.camera.clearFilters();\n';
 PURE.pf_cam_pos = (c) => [`game.camera.${c.id('PROP')}`, O.MEMBER];
 
 // -- Logique

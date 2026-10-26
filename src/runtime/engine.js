@@ -815,6 +815,51 @@ export function createGame(project, parent, Phaser, opts = {}) {
         const tw = scene.tweens.add({ targets: sp, ...cfg, duration: Math.max(1, num(ms) !== null ? ms : 300) });
         inst.offs.push(() => tw.stop());
       };
+      // Filtres et effets visuels (Phaser 4)
+      self.addFilter = (name, options = {}) => {
+        if (!live()) return null;
+        if (typeof sp.enableFilters === 'function') sp.enableFilters();
+        const fl = sp.filters ? (sp.filters.external || sp.filters.internal) : null;
+        if (!fl) return null;
+        const n = String(name || '').toLowerCase();
+        const opts = options || {};
+        if (n === 'glow' && typeof fl.addGlow === 'function') {
+          return fl.addGlow(parseColor(opts.color, 0xffffff), opts.outerStrength ?? 4, opts.innerStrength ?? 0);
+        }
+        if (n === 'blur' && typeof fl.addBlur === 'function') {
+          return fl.addBlur(opts.quality ?? 0, opts.x ?? 2, opts.y ?? 2, opts.strength ?? 1, parseColor(opts.color, 0xffffff), opts.steps ?? 4);
+        }
+        if (n === 'pixelate' && typeof fl.addPixelate === 'function') {
+          return fl.addPixelate(opts.amount ?? 2);
+        }
+        if ((n === 'crt' || n === 'barrel') && typeof fl.addBarrel === 'function') {
+          return fl.addBarrel(opts.amount ?? 1.5);
+        }
+        if (n === 'vignette' && typeof fl.addVignette === 'function') {
+          return fl.addVignette(opts.radius ?? 0.5, opts.strength ?? 0.5);
+        }
+        if (n === 'shadow' && typeof fl.addShadow === 'function') {
+          return fl.addShadow(opts.x ?? 0, opts.y ?? 0, opts.decay ?? 0.1, opts.power ?? 1, parseColor(opts.color, 0x000000), opts.samples ?? 6, opts.intensity ?? 1);
+        }
+        return null;
+      };
+      self.clearFilters = () => {
+        if (!live()) return;
+        if (sp.filters?.external?.clear) sp.filters.external.clear();
+        if (sp.filters?.internal?.clear) sp.filters.internal.clear();
+      };
+      self.setTintMode = (mode) => {
+        if (!live() || typeof sp.setTintMode !== 'function') return;
+        const m = String(mode || '').toLowerCase();
+        const modes = Phaser.TintModes || {};
+        let tintVal = modes.MULTIPLY ?? 0;
+        if (m === 'fill' || mode === 1) tintVal = modes.FILL ?? 1;
+        else if (m === 'add' || mode === 2) tintVal = modes.ADD ?? 2;
+        else if (m === 'screen' || mode === 4) tintVal = modes.SCREEN ?? 4;
+        else if (m === 'overlay' || mode === 5) tintVal = modes.OVERLAY ?? 5;
+        else if (m === 'hard_light' || mode === 6) tintVal = modes.HARD_LIGHT ?? 6;
+        sp.setTintMode(tintVal);
+      };
       return self;
     }
 
@@ -1248,6 +1293,32 @@ export function createGame(project, parent, Phaser, opts = {}) {
           shake(ms = 200, intensity = 0.01) { cam.shake(ms, intensity); },
           flash(ms = 200) { cam.flash(ms); },
           setZoom(z) { if (num(z) !== null && z > 0) cam.setZoom(z); },
+          addFilter(name, options = {}) {
+            const fl = cam.filters ? (cam.filters.external || cam.filters.internal) : null;
+            if (!fl) return null;
+            const n = String(name || '').toLowerCase();
+            const opts = options || {};
+            if ((n === 'crt' || n === 'barrel') && typeof fl.addBarrel === 'function') {
+              return fl.addBarrel(opts.amount ?? 1.5);
+            }
+            if (n === 'vignette' && typeof fl.addVignette === 'function') {
+              return fl.addVignette(opts.radius ?? 0.5, opts.strength ?? 0.5);
+            }
+            if (n === 'blur' && typeof fl.addBlur === 'function') {
+              return fl.addBlur(opts.quality ?? 0, opts.x ?? 2, opts.y ?? 2, opts.strength ?? 1, parseColor(opts.color, 0xffffff), opts.steps ?? 4);
+            }
+            if (n === 'pixelate' && typeof fl.addPixelate === 'function') {
+              return fl.addPixelate(opts.amount ?? 2);
+            }
+            if (n === 'glow' && typeof fl.addGlow === 'function') {
+              return fl.addGlow(parseColor(opts.color, 0xffffff), opts.outerStrength ?? 4, opts.innerStrength ?? 0);
+            }
+            return null;
+          },
+          clearFilters() {
+            if (cam.filters?.external?.clear) cam.filters.external.clear();
+            if (cam.filters?.internal?.clear) cam.filters.internal.clear();
+          },
         },
         random(min, max) {
           if (max === undefined) { max = min; min = 0; }

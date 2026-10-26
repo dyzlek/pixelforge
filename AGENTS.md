@@ -60,7 +60,7 @@ The start map (`settings.startMapId`) must contain the player object and the lev
 Full API: `docs/SCRIPT_API.md`. A script is the body of `new Function('self','game','input','on', code)`, run once per instance; all behaviour goes in handlers:
 `on('create'|'update'|'destroy', fn)`, `on('collide'|'overlap', 'ObjectName', fn(other))`, `on('keydown','SPACE', fn)`, `on('timer', ms, fn)`, plus `hitTile`, `click`, `mousedown`, `message` (see the API file).
 `self` (x, y, vx, vy, flipX, play(), destroy(), jump(), onGround, width, height, vars, props), `input.isDown/justPressed('LEFT')`, `game.spawn/find/findAll/goToMap/restart/setText/camera/score/vars/random/playSound`.
-v1.2 (see the API file): `on('overlapStart'|'overlapEnd', 'Name', fn(other))`, `other.setPosition/setVelocity/…` act on any instance, `self.setCollideMap/setCollideObjects/setHitbox/flipY`, `game.raycast(x,y,angle,dist,{objects:true,ignore:self})` -> `{instance, objectName, layer}`.
+v1.2 & Phaser 4 (see the API file): `on('overlapStart'|'overlapEnd', 'Name', fn(other))`, `other.setPosition/setVelocity/…` act on any instance, `self.setCollideMap/setCollideObjects/setHitbox/flipY`, `game.raycast(x,y,angle,dist,{objects:true,ignore:self})` -> `{instance, objectName, layer}`, `self.addFilter('glow'|'blur'|'pixelate'|'crt'|'vignette'|'shadow', opts)`, `self.clearFilters()`, `self.setTintMode(mode)`, `game.camera.addFilter('crt'|'vignette'|'blur'|'pixelate'|'glow', opts)`, `game.camera.clearFilters()`.
 
 ### Golden rules
 1. `x`/`y` are the **top-left** corner of the sprite frame, in pixels - not the centre. Tile (col,row) = pixel (col*tileSize, row*tileSize).

@@ -362,6 +362,19 @@ value('pf_blocked', HUE.move, 'Vrai si l\'objet est bloqué de ce côté par un 
   ]), 'SIDE').appendField('?'), 'Boolean');
 stmt('pf_tint_set', HUE.look, 'Teinte l\'objet avec une couleur.', (b) => num(b, 'COLOR', 'teinte', null));
 stmt('pf_tint_none', HUE.look, 'Enlève la teinte.', (b) => b.appendDummyInput().appendField('teinte : aucune'));
+stmt('pf_filter_add', HUE.look, 'Applique un filtre visuel (Phaser 4).', (b) => {
+  b.appendDummyInput().appendField('ajouter le filtre').appendField(new Blockly.FieldDropdown([
+    ['lueur', 'glow'], ['flou', 'blur'], ['pixellisation', 'pixelate'], ['vignette', 'vignette'], ['ombre', 'shadow'],
+  ]), 'FILTER');
+  num(b, 'COLOR', 'couleur', null);
+  num(b, 'INTENSITY', 'intensité', null);
+  b.setInputsInline(true);
+});
+stmt('pf_filter_clear', HUE.look, 'Enlève les filtres visuels de l\'objet.', (b) => b.appendDummyInput().appendField('filtres : aucun'));
+stmt('pf_tint_mode', HUE.look, 'Définit le mode de fusion de teinte.', (b) =>
+  b.appendDummyInput().appendField('mode de teinte :').appendField(new Blockly.FieldDropdown([
+    ['multiplier', 'multiply'], ['remplir', 'fill'], ['addition', 'add'], ['écran', 'screen'], ['incrustation', 'overlay'],
+  ]), 'MODE'));
 value('pf_colour', HUE.look, 'Une couleur (clique pour choisir). Texte « #rrggbb ».', (b) =>
   b.appendDummyInput().appendField('couleur').appendField(new FieldHexColour('#ff8040'), 'COL'), 'String');
 {
@@ -637,6 +650,14 @@ stmt('pf_cam_offset', HUE.game, 'Décalage de la caméra par rapport à la cible
   b.setInputsInline(true);
 });
 stmt('pf_cam_zoom', HUE.game, 'Zoom de la caméra (1 = normal).', (b) => num(b, 'Z', 'caméra : zoom'));
+stmt('pf_cam_filter', HUE.game, 'Applique un filtre plein écran sur la caméra (Phaser 4).', (b) => {
+  b.appendDummyInput().appendField('caméra : filtre').appendField(new Blockly.FieldDropdown([
+    ['CRT / écran rétro', 'crt'], ['vignette', 'vignette'], ['flou', 'blur'], ['pixellisation', 'pixelate'],
+  ]), 'FILTER');
+  num(b, 'INTENSITY', 'intensité', null);
+  b.setInputsInline(true);
+});
+stmt('pf_cam_clear_filters', HUE.game, 'Enlève les filtres de la caméra.', (b) => b.appendDummyInput().appendField('caméra : aucun filtre'));
 value('pf_cam_pos', HUE.game, 'Coin haut-gauche de la vue dans le monde.', (b) =>
   b.appendDummyInput().appendField('caméra').appendField(new Blockly.FieldDropdown([['x', 'x'], ['y', 'y']]), 'PROP'), 'Number');
 stmt('pf_set_text_opts', HUE.game, 'Texte à l\'écran avec couleur, taille (1 = normale) et alignement (avec centré / droite, x est le centre / le bord droit).', (b) => {
@@ -802,6 +823,20 @@ G.forBlock.pf_atan2 = (b) => [`(Math.atan2(${val(b, 'DY')}, ${val(b, 'DX')}) * 1
 G.forBlock.pf_blocked = (b) => [`self.blocked.${b.getFieldValue('SIDE')}`, Order.MEMBER];
 G.forBlock.pf_tint_set = (b) => `self.tint = ${val(b, 'COLOR', Order.ASSIGNMENT, "'#ffffff'")};\n`;
 G.forBlock.pf_tint_none = () => 'self.tint = null;\n';
+G.forBlock.pf_filter_add = (b) => {
+  const f = q(b.getFieldValue('FILTER'));
+  const col = val(b, 'COLOR', Order.NONE, "'#ffffff'");
+  const intensity = val(b, 'INTENSITY', Order.NONE, '2');
+  return `self.addFilter(${f}, { color: ${col}, outerStrength: ${intensity}, amount: ${intensity} });\n`;
+};
+G.forBlock.pf_filter_clear = () => 'self.clearFilters();\n';
+G.forBlock.pf_tint_mode = (b) => `self.setTintMode(${q(b.getFieldValue('MODE'))});\n`;
+G.forBlock.pf_cam_filter = (b) => {
+  const f = q(b.getFieldValue('FILTER'));
+  const intensity = val(b, 'INTENSITY', Order.NONE, '1.5');
+  return `game.camera.addFilter(${f}, { amount: ${intensity}, radius: ${intensity} });\n`;
+};
+G.forBlock.pf_cam_clear_filters = () => 'game.camera.clearFilters();\n';
 G.forBlock.pf_colour = (b) => [q(b.getFieldValue('COL')), Order.ATOMIC];
 G.forBlock.pf_tween_to = (b) => {
   const parts = [];
@@ -920,6 +955,8 @@ export const SELF_BLOCKS = new Set([
   'pf_tint_set', 'pf_tint_none', 'pf_tween_to', 'pf_ray_cast_mouse',
   // v1.2
   'pf_on_overlap_start', 'pf_on_overlap_end', 'pf_self_ref',
+  // Phaser 4
+  'pf_filter_add', 'pf_filter_clear', 'pf_tint_mode',
   // 3D
   'pf_self_set_3d', 'pf_self_get_3d', 'pf_jump_3d', 'pf_move_forward_3d', 'pf_move_right_3d', 'pf_look_at_3d', 'pf_rotate_y_3d', 'pf_camera_follow_3d',
 ]);
