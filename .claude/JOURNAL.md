@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (12) — P0.6 README présentable et version anglaise
+- **Fait** : refonte complète de README.md (badges CI/License/Node/Vite/Phaser, lien démo en ligne GitHub Pages, démarrage rapide en 5 min, architecture Mermaid, fonctionnalités détaillées, raccourcis Blueprints, guide MCP/CLI), création de README.en.md.
+- **Décisions** : documentation bilingue accessible à la communauté internationale.
+- **État** : tests et build OK.
+
 ## 2026-10-26 (11) — Fichiers communautaires et templates
 - **Fait** : CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, CHANGELOG.md, .github/ISSUE_TEMPLATE/ (bug.yml, feature.yml) et .github/pull_request_template.md.
 - **Décisions** : documentation des règles de contribution (tests obligatoires, règles architecturales), politique de sécurité pour l'évaluation new Function, et changelog 1.0 à 2.0.

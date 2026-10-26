@@ -1,132 +1,223 @@
 # PixelForge
 
-**PixelForge** est un éditeur de jeux 2D qui tourne dans le navigateur, avec son moteur de jeu intégré (Phaser 3).
-On y dessine ses sprites en pixel art, on construit ses niveaux avec des tuiles, on donne vie aux objets avec des scripts
-**Blueprint** (des graphes de nœuds façon Unreal Engine) ou en JavaScript, puis on teste le jeu sur place et on l'exporte en une seule page HTML.
+[![CI](https://github.com/dyzlek/pixelforge/actions/workflows/ci.yml/badge.svg)](https://github.com/dyzlek/pixelforge/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](package.json)
+[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
+[![Phaser 3](https://img.shields.io/badge/Phaser-3.90-orange)](https://phaser.io)
 
-Un jeu = **un seul fichier JSON** (`games/<id>.pixelforge.json`). L'éditeur surveille le dossier `games/` et se recharge quand le fichier change :
-un script, une CLI ou une IA peuvent donc construire un jeu pendant que l'éditeur est ouvert.
+> 🎮 **[Essayer la démo en ligne dans votre navigateur](https://dyzlek.github.io/pixelforge/)**  
+> 🌐 Read this in English: **[README.en.md](README.en.md)**
 
-Pile technique : Vite, JavaScript vanilla (modules ES), Phaser 3, CodeMirror 6.
+**PixelForge** est un environnement complet de création de jeux vidéo 2D rétro directement dans le navigateur, propulsé par **Phaser 3**.
+Dessinez vos sprites en pixel art, composez vos cartes en tuiles, programmez vos entités à l'aide de **Blueprints visuels** (graphes de nœuds inspirés d'Unreal Engine) ou directement en JavaScript, testez instantanément et exportez votre jeu en une seule page HTML autonome et partageable.
 
-## Fonctionnalités
+Un jeu = **un seul fichier JSON** (`games/<id>.pixelforge.json`). L'éditeur surveille le dossier `games/` et applique les modifications à chaud : vous, un script CLI ou une IA connectée en MCP pouvez concevoir ou modifier un jeu en direct !
 
-### Pixel art
-- Éditeur de sprites avec crayon, gomme, pot de peinture, pipette, ligne, rectangle, ellipse et sélection / déplacement (annuler / rétablir).
-- Palette de 16 couleurs par projet (« Sweetie 16 » par défaut), préréglages de taille de 8 à 64 pixels, jusqu'à 256.
-- Animations par sprite (images, vitesse, boucle). Un *tileset* est simplement un sprite dont chaque image est une tuile.
+---
 
-### Cartes
-- Éditeur de tuiles : pinceau, gomme, remplissage, rectangle, pipette, sélection, pose d'entités (instances d'objets).
-- Plusieurs calques par carte : collision, plateformes traversables par le bas (*one-way*), défilement parallaxe, affichage devant ou derrière les entités.
-- Plusieurs cartes par jeu, avec une carte de départ ; passage d'une carte à l'autre depuis les scripts.
+## ⚡ Démarrage rapide en 5 minutes
 
-### Objets et scripts
-- Un objet = un sprite, une physique (gravité, immobile, rebond, collision avec la carte et avec le monde), une hitbox et un script.
-- **Scripts Blueprint** : des nœuds reliés par des fils d'exécution (blancs) et des fils de données (colorés selon le type : nombre, booléen, texte, objet, couleur, liste, tout type).
-  Événements (créé, à chaque image, collision, chevauchement, touche, minuteur, message…), branches, boucles, séquences, délais, variables, fonctions,
-  maths, texte, listes, caméra, sons, tuiles, rayons… Le graphe est compilé en JavaScript (bouton « Voir le code »).
-- **Mode code** : le même script en JavaScript, dans CodeMirror avec autocomplétion de l'API (`self`, `game`, `input`, `on`) et aide intégrée. On passe d'un mode à l'autre
-  quand on veut (le texte garde le code compilé ; revenir au Blueprint le regénère).
-- **Script global** pour les règles du jeu (HUD, états, fin de niveau). Renommer un objet met à jour les références dans les nœuds et le code.
-- Les anciens scripts en blocs (Blockly) sont convertis automatiquement en graphes à l'ouverture d'un jeu.
-
-### Sons
-- Effets synthétisés (saut, pièce, coup, bonus, explosion, laser, bip, portail) réglables, ou import de fichiers audio. Le moteur fournit aussi quelques musiques chiptune prêtes à l'emploi (`game.playMusic('tetris')`, `'adventure'`, `'action'`).
-
-### Test, export, bibliothèque
-- Onglet **Jouer** : lancement immédiat, rejouer, choix de la carte, plein écran, réglage de la taille d'écran et de la gravité, contrôles tactiles pour mobile.
-- **Export HTML** : une page autonome (Phaser chargé depuis un CDN).
-- **Bibliothèque** : liste des jeux du dossier `games/` (sauvegarde automatique), création, duplication, renommage, import / export JSON.
-  Sans serveur de développement (build statique), les jeux sont gardés dans l'IndexedDB du navigateur.
-
-### Pour les IA : MCP et CLI
-- **Serveur MCP** (`npm run mcp`, déclaré dans `.mcp.json` pour Claude Code) : créer un jeu, dessiner des sprites en texte, définir des objets et leurs scripts
-  (code ou graphe Blueprint), peindre des cartes, placer des entités, valider, exporter. Outil de départ : `pixelforge_guide`.
-- **CLI** : `npm run pf -- list | show | validate | compile | render | export <jeu>` et `npm run pf -- nodes [mot]` (catalogue des nœuds Blueprint).
-- Guide pour les agents : [AGENTS.md](AGENTS.md) (y compris comment écrire un graphe en JSON) ; [llms.txt](llms.txt) en est l'index.
-
-## Éditeur de graphe Blueprint : raccourcis
-
-Souris
-| Action | Geste |
-|---|---|
-| Ajouter un nœud | clic droit sur le fond (palette « Toutes les actions » avec recherche), ou bouton « + Nœud » |
-| Relier deux broches | glisser d'une broche à une autre (ou sur un nœud : première broche compatible) ; les broches incompatibles sont refusées |
-| Relier vers un nouveau nœud | glisser depuis une broche et relâcher dans le vide : la palette ne propose que les nœuds compatibles |
-| Reprendre un fil | glisser depuis une entrée de données déjà reliée |
-| Couper un lien | Alt + clic sur la broche ou sur le fil ; ou clic droit sur la broche ou le fil, puis « Couper » |
-| Sélectionner | clic sur un nœud ou un fil ; glisser sur le fond pour une sélection rectangulaire ; Maj ou Ctrl pour ajouter à la sélection |
-| Déplacer | glisser un nœud ou un commentaire (aimantation à la grille de 16 ; Alt = déplacement libre) |
-| Déplacer la vue | glisser avec le clic milieu ou le clic droit |
-| Zoom | molette (de 25 % à 200 %) |
-| Menu d'un nœud | clic droit sur le nœud : dupliquer, commenter la sélection, couper tous les liens, supprimer |
-| Variables | glisser une variable du panneau « Mon Blueprint » sur le graphe : menu Obtenir / Définir / Modifier ; Ctrl = Obtenir, Alt = Définir |
-| Commentaire | double-clic sur son titre pour le renommer ; poignée en bas à droite pour le redimensionner ; il emporte les nœuds qu'il contient |
-
-Clavier (le curseur doit être sur le graphe)
-| Touche | Action |
-|---|---|
-| Espace ou Tab | ouvrir la palette « Toutes les actions » (↑ ↓ pour choisir, Entrée pour valider, Échap pour fermer) |
-| Suppr ou Retour arrière | supprimer la sélection (nœuds, commentaires ou fil) |
-| Ctrl + C, Ctrl + V | copier, coller à la position de la souris (d'un objet à un autre aussi) |
-| Ctrl + D | dupliquer la sélection |
-| Ctrl + A | tout sélectionner |
-| F | cadrer la sélection (ou tout le graphe) |
-| Origine (Home) | recentrer la vue |
-| C | entourer la sélection d'un commentaire |
-| Échap | fermer menu et palette |
-
-Le bouton « Carte » affiche une mini-carte du graphe ; le bandeau « n erreurs / n avertissements » en bas de la vue mène au premier nœud fautif.
-
-## Installation et commandes
-
-Il faut Node.js (le projet utilise des modules ES).
-
-```
+### 1. Installation et lancement
+```bash
+git clone https://github.com/dyzlek/pixelforge.git
+cd pixelforge
 npm install
-npm run dev        # éditeur sur http://localhost:5173 (ou le port affiché par Vite) ; games/ est servi en direct
-npm run build      # build de production dans dist/
-npm run preview    # sert le build
-npm run mcp        # serveur MCP (stdio)
-npm run pf -- list | show <jeu> | validate <jeu> | compile <jeu> | render <jeu> [carte] | export <jeu>
-npm run pf -- nodes [mot]
+npm run dev
+```
+Ouvrez votre navigateur sur **[http://localhost:5173](http://localhost:5173)**.
+
+### 2. Créer un personnage en 3 étapes dans l'éditeur
+1. **Dessiner le sprite** (onglet *Pixel*) : Choisissez une taille (ex. 16x16), sélectionnez une couleur dans la palette Sweetie 16 et dessinez votre personnage.
+2. **Programmer la physique et le comportement** (onglet *Objets*) :
+   - Créez un objet `Player`, assignez-lui le sprite créé et activez la physique (gravité + collision avec la carte).
+   - Dans le script Blueprint :
+     - Placez un nœud **À chaque image** (`pf_on_update`).
+     - Branchez-le sur une branche conditionnelle vérifiant **Touche enfoncée (Flèche Droite)**.
+     - Si vrai, reliez à **Définir vitesse x** (`self.vx = 100`).
+     - Ajoutez un nœud **Touche appuyée (Espace)** relié à **Sauter** (`self.jump(250)`).
+3. **Placer et Jouer** (onglet *Cartes* puis *Jouer*) :
+   - Dessinez quelques plateformes solides sur le calque de collision.
+   - Posez l'entité `Player` sur la scène.
+   - Cliquez sur l'onglet **Jouer** : vous contrôlez immédiatement votre jeu !
+   - Cliquez sur **Exporter** pour obtenir votre fichier `.html` prêt à être partagé sur itch.io ou par message.
+
+---
+
+## 🏗️ Architecture du projet
+
+```mermaid
+flowchart TD
+    subgraph Creation["Création & Édition"]
+        UI["Éditeur Web Browser<br/>(Pixel art, Tuiles, Blueprints)"]
+        CLI["CLI PixelForge<br/>(npm run pf)"]
+        AI["IA Agents & Assistants<br/>(Serveur MCP stdio)"]
+    end
+
+    subgraph Stockage["Source Unique de Vérité"]
+        JSON[("games/&lt;id&gt;.pixelforge.json<br/>- Paramètres & Palette<br/>- Sprites & Animations<br/>- Cartes & Calques<br/>- Scripts Blueprints / Code")]
+    end
+
+    subgraph Moteur["Runtime & Export"]
+        Engine["Moteur PixelForge<br/>(Phaser 3 + Audio Synth + Raycast)"]
+        HTML["Export HTML Autonome<br/>(exports/&lt;jeu&gt;.html)"]
+        Pages["Démo Web<br/>(GitHub Pages / IndexedDB)"]
+    end
+
+    UI <-->|Vite API REST / SSE| JSON
+    CLI <-->|Lecture / Écriture JSON| JSON
+    AI <-->|Outils MCP| JSON
+
+    JSON --> Engine
+    Engine --> HTML
+    Engine --> Pages
 ```
 
-`<jeu>` est l'identifiant (nom du fichier sans `.pixelforge.json`) ou le nom du jeu. La variable d'environnement `PIXELFORGE_GAMES` change le dossier des jeux.
-Les exports vont dans `exports/<id>.html`.
+---
 
-Tests :
+## ✨ Fonctionnalités détaillées
 
+### 🎨 Éditeur Pixel Art
+- Outils complets : crayon, gomme, pot de peinture, pipette, tracé de lignes, rectangles, ellipses, sélection libre et déplacement.
+- Palette Sweetie 16 par défaut (16 couleurs rétro sélectionnées pour un rendu cohérent).
+- Tailles de grille de 8x8 à 256x256 avec aperçu en direct du facteur de zoom.
+- Gestion d'animations multi-images (boucle, cadencement en fps).
+- Création de *tilesets* : chaque image d'un sprite tileset correspond à une tuile utilisable dans les cartes.
+
+### 🗺️ Concepteur de cartes et niveaux
+- Outils de dessin de tuiles (pinceau, seau de remplissage, rectangle, pipette, sélection).
+- Calques multiples avec paramètres avancés :
+  - Calques de collision solide (`collides: true`).
+  - Plateformes traversables par le bas (*one-way platforms*).
+  - Facteur de défilement parallaxe (profondeur de champ).
+  - Profondeur d'affichage (premier plan devant les entités ou arrière-plan).
+- Prise en charge de cartes multiples par jeu avec téléportations inter-cartes via `game.goToMap(nom)`.
+
+### 🧠 Blueprints : Scripting visuel puissant
+- **Nœuds et fils typés** :
+  - Fils d'exécution blancs définissant l'ordonnancement séquentiel.
+  - Fils de données colorés par type : nombres, booléens, chaînes, objets/instances, listes, couleurs.
+- **Catalogue exhaustif (+160 nœuds)** :
+  - *Événements* : Création (`create`), Mise à jour (`update`), Collision physique (`collide`), Chevauchement sans blocage (`overlap`), Début/fin de contact (`overlapStart` / `overlapEnd`), Clavier, Minuteur, Messages personnalisés.
+  - *Flux de contrôle* : Branches `if / else`, boucles `for` / `while`, séquences, délais (`wait`).
+  - *Physique et Mouvement* : Vitesses `vx`/`vy`, impulsions, sauts, frottements, rebonds, hitbox personnalisées, orientation (`flipX`, `flipY`).
+  - *Système et Caméra* : Suivi de cible, cadrage dynamique, tremblements d'écran, score, variables de jeu.
+  - *Audio rétro* : Jouer un effet ou déclencher des mélodies chiptune (`tetris`, `adventure`, `action`).
+  - *Raycast* : Lancer de rayons physique pour tester la visibilité ou détecter des obstacles.
+- **Compilateur sans dépendance DOM** : Les graphes sont compilés en JavaScript vanilla ultra-rapide exécutable dans Phaser.
+- **Bascule instantanée Blueprint / Code** : Visualisez et éditez le code source JavaScript généré à tout moment.
+
+### 🔊 Synthèse sonore & Musique
+- Générateur d'effets sonores intégré basé sur le Web Audio API (saut, tir laser, pièce, explosion, impact, bonus, portail) sans dépendances de fichiers externes.
+- Pistes musicales chiptune prêtes à l'emploi.
+
+### 📦 Export et distribution
+- **Export HTML tout-en-un** : Génère un fichier unique contenant l'intégralité du jeu, les sons et les sprites.
+- **Bibliothèque multi-projets** : Sauvegarde automatique locale (dossier disque en dev, IndexedDB sur le web).
+
+---
+
+## ⌨️ Raccourcis de l'éditeur Blueprint
+
+| Action | Souris | Clavier (curseur sur le graphe) |
+|---|---|---|
+| **Palette d'actions** | Clic droit sur le fond ou bouton « + Nœud » | `Espace` ou `Tab` |
+| **Relier deux broches** | Glisser d'une broche vers une autre | — |
+| **Créer et relier un nœud** | Glisser depuis une broche et relâcher dans le vide | — |
+| **Supprimer un lien** | `Alt` + Clic sur la broche ou le fil | `Suppr` ou `Retour arrière` |
+| **Sélection rectangulaire** | Glisser sur le fond du graphe | `Ctrl + A` (tout sélectionner) |
+| **Déplacer la vue** | Clic molette ou clic droit maintenu | Flèches |
+| **Zoom** | Molette de la souris (25 % à 200 %) | — |
+| **Copier / Coller / Dupliquer** | Clic droit sur un nœud | `Ctrl + C` / `Ctrl + V` / `Ctrl + D` |
+| **Centrer / Cadrer** | Bouton « Recentrer » | `F` (cadrer la sélection) ou `Origine` |
+| **Commenter la sélection** | Clic droit > « Entourer d'un commentaire » | `C` |
+
+---
+
+## 🤖 Pour les IA : Serveur MCP et CLI
+
+PixelForge a été pensé pour le pilotage autonome par des agents d'intelligence artificielle :
+
+### Serveur MCP (Model Context Protocol)
+PixelForge fournit un serveur MCP natif (`mcp/server.js`) activable avec :
+```bash
+npm run mcp
 ```
-node src/graph/test/graph.test.mjs   # compilateur Blueprint (comparé à l'ancien générateur Blockly, devDependency)
-node mcp/test/e2e.mjs                # scénario complet via le serveur MCP
+Il expose 20 outils spécialisés :
+- `pixelforge_guide` : documentation de référence et règles d'or.
+- `create_game`, `list_games`, `get_game`, `duplicate_game`, `delete_game`.
+- `upsert_sprite` : création de sprites et tilesets à partir de matrices textuelles ASCII.
+- `upsert_object` : création d'objets avec hitbox, physique et script Blueprint JSON.
+- `upsert_map`, `paint_map`, `place_entities`, `render_map` : construction et rendu de niveaux.
+- `validate_game` : vérification statique complète (0 erreurs, diagnostics précis).
+- `export_html` : compilation et export du jeu.
+
+Pour plus de détails, consultez [AGENTS.md](AGENTS.md) et [llms.txt](llms.txt).
+
+### Outils CLI (`npm run pf`)
+```bash
+npm run pf -- list                      # Liste tous les jeux disponibles
+npm run pf -- show <jeu>                # Affiche la fiche détaillée d'un jeu
+npm run pf -- validate <jeu>            # Valide l'intégrité du projet et des scripts
+npm run pf -- compile <jeu>             # Recompile les graphes Blueprint en JS
+npm run pf -- render <jeu> [carte]      # Rendu ASCII textuel d'un niveau
+npm run pf -- export <jeu>              # Exporte le jeu en fichier HTML autonome
+npm run pf -- nodes [mot]               # Recherche dans le catalogue des nœuds Blueprint
 ```
 
-## Structure du dépôt
+---
 
+## 🛠️ Commandes de développement et tests
+
+```bash
+npm install               # Installation des dépendances
+npm run dev               # Serveur de développement avec rechargement à chaud
+npm run build             # Build de production (dist/)
+npm run preview           # Prévisualisation du build de production
+npm test                  # Exécution de la suite complète de tests (graphes + e2e MCP)
 ```
-index.html, vite.config.js       page de l'éditeur ; config Vite (+ API REST et SSE qui servent games/)
+
+Suite de validation stricte :
+```bash
+npm run build
+npm test
+npm run pf -- validate tetris
+npm run pf -- validate exemple-plateforme-qiqv
+npm run pf -- validate monde-1-1
+```
+
+---
+
+## 📂 Structure du dépôt
+
+```text
+index.html, vite.config.js       Page de l'éditeur web et configuration Vite (+ API REST / SSE)
 src/
-  main.js                        coque : onglets, nom du projet, sauvegarde
-  core/                          schéma du projet (project.js), store, projet d'exemple (sample.js)
-  editors/pixel, map, sound      éditeurs de sprites, de cartes et de sons
-  editors/objects/               objets et scripts : editor.js (Blueprint / Code), graph-editor.js (éditeur de graphe)
-  graph/                         noyau des Blueprints, sans DOM : nodes.js (catalogue), compile.js (graphe -> JS),
-                                 fromBlockly.js (conversion de l'ancien format) ; test/ = tests
-  library/                       bibliothèque de jeux (stockage disque ou IndexedDB)
-  runtime/                       moteur de jeu (engine.js), onglet Jouer, export HTML
-mcp/                             serveur MCP (server.js), CLI (cli.js), bibliothèque Node (lib/), test e2e
-games/                           les jeux (un fichier JSON chacun) : Tetris, un niveau plateforme façon NES, un exemple
-games-src/                       générateurs de jeux (Tetris, Monde 1-1) qui écrivent dans games/
-docs/                            ARCHITECTURE.md, BLUEPRINTS.md, SCRIPT_API.md, PROJECT_SCHEMA.json
-AGENTS.md, llms.txt              guide pour les IA
+  main.js                        Point d'entrée de l'application : gestion des onglets et sauvegardes
+  core/                          Schéma du projet (project.js), store réactif, projet d'exemple
+  editors/
+    pixel/                       Éditeur de sprites et animations pixel art
+    map/                         Éditeur de niveaux, de tuiles et placement d'entités
+    sound/                       Générateur synthétisé et gestionnaire d'effets sonores
+    objects/                     Gestion des objets, éditeur de graphes Blueprint et CodeMirror
+  graph/                         Noyau sans DOM des Blueprints :
+                                 - nodes.js (catalogue des nœuds)
+                                 - compile.js (compilation graphe -> JavaScript)
+                                 - fromBlockly.js (migration d'anciens blocs vers graphes)
+  library/                       Bibliothèque de projets (stockage disque en dev, IndexedDB sur le web)
+  runtime/                       Moteur d'exécution Phaser 3 (engine.js sans import) et export HTML
+mcp/                             Serveur MCP (server.js), CLI (cli.js), utilitaires et tests e2e
+games/                           Jeux au format JSON : Tetris rétro, Monde 1-1, Exemple plateforme
+docs/                            Spécifications techniques : ARCHITECTURE.md, BLUEPRINTS.md, SCRIPT_API.md
 ```
 
-Documentation : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (architecture et stockage), [docs/BLUEPRINTS.md](docs/BLUEPRINTS.md) (format des graphes et catalogue de nœuds),
-[docs/SCRIPT_API.md](docs/SCRIPT_API.md) (API des scripts), [docs/PROJECT_SCHEMA.json](docs/PROJECT_SCHEMA.json) (schéma du fichier de jeu).
+---
 
-## Licence
+## 🗺️ Feuille de route & Contribution
 
-[MIT](LICENSE).
+Consultez **[ROADMAP.md](ROADMAP.md)** pour découvrir les chantiers en cours et les évolutions futures.  
+Pour contribuer au projet, lisez le guide **[CONTRIBUTING.md](CONTRIBUTING.md)** ainsi que le **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**.
 
+## 📄 Licence
+
+Ce projet est sous licence [MIT](LICENSE).
