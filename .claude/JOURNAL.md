@@ -7,10 +7,15 @@
 
 ---
 
+## 2026-10-26 (17) — Feuille de route v3 (studio)
+- **Fait** : ROADMAP-STUDIO.md — phase A interface façon Godot/GameMaker (dock, documents, ressources, inspecteur, scène, débogage), phase B studio musical 8-bit façon FL Studio (modèle `songs`, moteur chip partagé sans import, rack, piano roll, playlist, sfxr, API/Blueprints/MCP), phase C 3D (Three.js + Rapier, voxel, gridmap, Blueprints 3D, MCP), phase D transversale, jalons et risques.
+- **Décisions** : rien codé à la demande de l'utilisateur (une autre IA codera) ; décisions D1–D5 laissées à l'utilisateur.
+- **État** : fichier non commité.
+
 ## 2026-10-26 (16) — « Charger les jeux d'exemple » demande avant d'écraser
 - **Fait (Opus)** : src/library/index.js — télécharge tous les jeux d'abord ; si des ids existent déjà, confirm() qui les liste : OK = remplacer, Annuler = ne charger que les manquants ; le jeu ouvert est fermé avant d'être remplacé puis rouvert (sinon sa sauvegarde auto réécrivait l'ancienne version) ; repli sur l'exemple intégré seulement si games/index.json est introuvable.
 - **Vérifié** : build Pages servi en statique : Annuler → rien d'écrasé, OK → remplacés, jeu ouvert rouvert, aucune erreur ; build, npm test.
-- **État** : main, commit « Demande avant d'écraser… », poussé.
+- **État** : main, commit « Demande avant d'écraser… », poussé. Reste non commité : games/exemple-plateforme-qiqv.pixelforge.json (seul `updatedAt` a changé pendant les tests de l'éditeur ; restauration par `git checkout` refusée par le contrôle de permissions, laissé à l'utilisateur).
 
 ## 2026-10-26 (15) — Relecture (Opus) du travail P0 + P1.1 + P1.7
 - **Vérifié** : build, build Pages, npm test, check:doc, validate ×3, CI verte ; Ctrl+Z / Ctrl+Y du graphe testés dans le navigateur (suppression → annuler → rétablir, pas de double annulation avec le store) ; build Pages servi en statique sous /pixelforge/ : « Charger les jeux d'exemple » fonctionne.
