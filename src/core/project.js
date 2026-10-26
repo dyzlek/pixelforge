@@ -162,11 +162,20 @@ export function createEmptyProject(name = 'Mon jeu') {
     version: PROJECT_VERSION,
     name,
     meta: createMeta(name),
-    settings: { width: 320, height: 180, pixelZoom: 3, tileSize: 16, background: '#1a1c2c', startMapId: map.id, gravity: 800, touchControls: true },
+    settings: { width: 320, height: 180, pixelZoom: 3, tileSize: 16, background: '#1a1c2c', startMapId: map.id, gravity: 800, touchControls: true, dimension: '2d' },
     palette: [...DEFAULT_PALETTE],
     sprites: [],
     sounds: [],
     songs: [],
+    models: [],
+    materials: [],
+    scenes3d: [],
+    environment: {
+      skyColor: '#1a1c2c',
+      fog: { enabled: false, color: '#1a1c2c', density: 0.04 },
+      ambientLight: { color: '#ffffff', intensity: 0.6 },
+      directionalLight: { color: '#ffeedd', intensity: 1.0, position: [10, 20, 15] },
+    },
     objects: [],
     maps: [map],
     globalScript: emptyScript(),
@@ -219,6 +228,10 @@ export function normalizeProject(p) {
     }
     return song;
   });
+  p.models = Array.isArray(p.models) ? p.models.map((m) => ({ folder: '', ...m })) : [];
+  p.materials = Array.isArray(p.materials) ? p.materials : [];
+  p.scenes3d = Array.isArray(p.scenes3d) ? p.scenes3d.map((s) => ({ folder: '', gridmap: {}, entities: [], ...s })) : [];
+  p.environment = { ...base.environment, ...(p.environment || {}) };
   p.objects = (p.objects || []).map((o) => {
     const obj = { folder: '', exportedProps: [], ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };
     obj.script = normalizeScript(o.script, false);

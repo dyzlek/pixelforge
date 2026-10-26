@@ -32,7 +32,8 @@
         "background": { "$ref": "#/$defs/color" },
         "startMapId": { "type": "string", "description": "id of a map in maps[]." },
         "gravity": { "type": "number", "default": 800, "description": "px/s^2, applied to objects with physics.gravity." },
-        "touchControls": { "type": "boolean", "default": true }
+        "touchControls": { "type": "boolean", "default": true },
+        "dimension": { "enum": ["2d", "3d"], "default": "2d", "description": "Game dimension (2d Phaser or 3d Three.js runtime)." }
       }
     },
     "palette": {
@@ -42,6 +43,10 @@
     "sprites": { "type": "array", "items": { "$ref": "#/$defs/sprite" } },
     "sounds": { "type": "array", "items": { "$ref": "#/$defs/sound" } },
     "songs": { "type": "array", "items": { "$ref": "#/$defs/song" } },
+    "models": { "type": "array", "items": { "$ref": "#/$defs/model" } },
+    "materials": { "type": "array", "items": { "$ref": "#/$defs/material" } },
+    "scenes3d": { "type": "array", "items": { "$ref": "#/$defs/scene3d" } },
+    "environment": { "$ref": "#/$defs/environment" },
     "objects": { "type": "array", "items": { "$ref": "#/$defs/object" } },
     "maps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/map" } },
     "globalScript": { "$ref": "#/$defs/script" }
@@ -331,6 +336,73 @@
         "pattern": { "type": "string" },
         "track": { "type": "integer", "minimum": 0 },
         "start": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "model": {
+      "type": "object",
+      "required": ["id", "name", "type"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "folder": { "type": "string", "default": "" },
+        "type": { "enum": ["voxel", "gltf"] },
+        "slices": { "type": "array" },
+        "frames": { "type": "array" },
+        "dataUrl": { "type": "string" }
+      }
+    },
+    "material": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "color": { "$ref": "#/$defs/color" },
+        "textureSpriteId": { "type": ["string", "null"] },
+        "roughness": { "type": "number", "default": 0.8 },
+        "metalness": { "type": "number", "default": 0.1 }
+      }
+    },
+    "scene3d": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "folder": { "type": "string", "default": "" },
+        "gridmap": { "type": "object" },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "objectId", "x", "y", "z"],
+            "properties": {
+              "id": { "type": "string" },
+              "objectId": { "type": "string" },
+              "x": { "type": "number" },
+              "y": { "type": "number" },
+              "z": { "type": "number" },
+              "rotationY": { "type": "number", "default": 0 },
+              "props": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "properties": {
+        "skyColor": { "$ref": "#/$defs/color" },
+        "fog": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "color": { "$ref": "#/$defs/color" },
+            "density": { "type": "number" }
+          }
+        },
+        "ambientLight": { "type": "object" },
+        "directionalLight": { "type": "object" }
       }
     }
   }
