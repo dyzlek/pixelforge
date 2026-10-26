@@ -133,7 +133,7 @@ export function createScriptEditor(host, store, { isGlobal, objectId }) {
 
   function compile() {
     try {
-      return compileGraph(graph, { isGlobal });
+      return compileGraph(graph, { isGlobal, dimension: store.project?.settings?.dimension || '2d' });
     } catch (e) {
       console.error(e);
       return { code: '', errors: [{ nodeId: null, message: 'Compilation impossible : ' + e.message }], warnings: [] };

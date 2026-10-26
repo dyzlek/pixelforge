@@ -13,7 +13,7 @@
  * @param {number} options.dimX - Largeur en voxels
  * @param {number} options.dimY - Hauteur en voxels
  * @param {number} options.dimZ - Profondeur en voxels
- * @param {Function} options.getVoxel - Fonction (x, y, z) -> index de couleur (0 = vide) ou null
+ * @param {Function} options.getVoxel - Fonction (x, y, z) -> couleur (index de palette, 0 compris, ou '#rrggbb'), null/undefined = vide
  * @param {string[]} options.palette - Tableau des couleurs hexadécimales
  * @param {number} [options.scale=1] - Echelle d'un voxel en unites du monde
  * @returns {{ positions: Float32Array, normals: Float32Array, colors: Float32Array, count: number }}
@@ -22,7 +22,7 @@ export function greedyMeshVoxels({
   dimX = 16,
   dimY = 16,
   dimZ = 16,
-  getVoxel = () => 0,
+  getVoxel = () => null,
   palette = [],
   scale = 1,
 } = {}) {
@@ -68,7 +68,7 @@ export function greedyMeshVoxels({
           coord[v] = j;
 
           const currentVoxel = getVoxel(coord[0], coord[1], coord[2]);
-          if (!currentVoxel) continue;
+          if (currentVoxel == null) continue;
 
           // Voxel voisin dans la direction de la face
           const neighborCoord = [...coord];
@@ -77,7 +77,7 @@ export function greedyMeshVoxels({
           const hasNeighbor =
             neighborCoord[axis] >= 0 &&
             neighborCoord[axis] < maxD &&
-            Boolean(getVoxel(neighborCoord[0], neighborCoord[1], neighborCoord[2]));
+            getVoxel(neighborCoord[0], neighborCoord[1], neighborCoord[2]) != null;
 
           // Si le voisin est plein, la face est masquee
           if (!hasNeighbor) {
@@ -90,7 +90,7 @@ export function greedyMeshVoxels({
       for (let j = 0; j < maxV; j++) {
         for (let i = 0; i < maxU; ) {
           const colorVal = mask[i + j * maxU];
-          if (!colorVal) {
+          if (colorVal == null) {
             i++;
             continue;
           }

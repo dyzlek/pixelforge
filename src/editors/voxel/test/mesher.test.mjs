@@ -14,7 +14,7 @@ const singleMesh = greedyMeshVoxels({
   dimX: 4,
   dimY: 4,
   dimZ: 4,
-  getVoxel: (x, y, z) => (x === 1 && y === 1 && z === 1 ? 1 : 0),
+  getVoxel: (x, y, z) => (x === 1 && y === 1 && z === 1 ? 1 : null),
   palette,
   scale: 1,
 });
@@ -31,7 +31,7 @@ const mergedCubeMesh = greedyMeshVoxels({
   dimX: 4,
   dimY: 4,
   dimZ: 4,
-  getVoxel: (x, y, z) => (x >= 1 && x <= 2 && y >= 1 && y <= 2 && z >= 1 && z <= 2 ? 1 : 0),
+  getVoxel: (x, y, z) => (x >= 1 && x <= 2 && y >= 1 && y <= 2 && z >= 1 && z <= 2 ? 1 : null),
   palette,
   scale: 1,
 });
@@ -50,7 +50,7 @@ const twoColorMesh = greedyMeshVoxels({
   getVoxel: (x, y, z) => {
     if (x === 1 && y === 1 && z === 1) return 1; // Rouge
     if (x === 2 && y === 1 && z === 1) return 2; // Vert
-    return 0;
+    return null;
   },
   palette,
   scale: 1,
@@ -60,5 +60,16 @@ const twoColorMesh = greedyMeshVoxels({
 // Faces externes : 10 faces visibles au total.
 // 2 faces X externes, 4 faces Y (2 rouges, 2 vertes non fusionnables), 4 faces Z (2 rouges, 2 vertes non fusionnables) = 10 faces = 60 sommets.
 assert.strictEqual(twoColorMesh.count, 60, 'Les faces de couleurs distinctes ne doivent pas fusionner');
+
+// 4. La couleur 0 de la palette est un voxel visible (seul null/undefined est vide)
+const colorZeroMesh = greedyMeshVoxels({
+  dimX: 2,
+  dimY: 2,
+  dimZ: 2,
+  getVoxel: (x, y, z) => (x === 0 && y === 0 && z === 0 ? 0 : undefined),
+  palette,
+  scale: 1,
+});
+assert.strictEqual(colorZeroMesh.count, 36, 'un voxel de couleur 0 doit produire 6 faces');
 
 console.log('Tous les tests Greedy Mesher sont valides !');

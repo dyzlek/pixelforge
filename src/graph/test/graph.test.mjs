@@ -729,5 +729,15 @@ if (BK) {
   }
 }
 
+// Dimension du jeu : un nœud 2D est refusé dans un jeu 3D et inversement
+{
+  const g2d = { nodes: [{ id: 'e', type: 'pf_on_update' }, { id: 'n', type: 'pf_cam_shake' }], links: [{ from: 'e', fromPin: 'then', to: 'n', toPin: 'exec' }] };
+  ok(compileGraph(g2d, { dimension: '3d' }).errors.some((e) => e.nodeId === 'n'), 'pf_cam_shake refusé en 3D');
+  ok(compileGraph(g2d, { dimension: '2d' }).errors.length === 0, 'pf_cam_shake accepté en 2D');
+  ok(compileGraph(g2d).errors.length === 0, 'sans dimension : pas de contrôle');
+  const g3d = { nodes: [{ id: 'e', type: 'pf_on_create' }, { id: 'n', type: 'pf_pointer_lock' }], links: [{ from: 'e', fromPin: 'then', to: 'n', toPin: 'exec' }] };
+  ok(compileGraph(g3d, { dimension: '2d' }).errors.some((e) => e.nodeId === 'n'), 'pf_pointer_lock refusé en 2D');
+}
+
 console.log(`\n${checks} vérifications, ${failures} échec(s)`);
 process.exit(failures ? 1 : 0);

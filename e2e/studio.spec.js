@@ -44,7 +44,7 @@ test.describe('PixelForge Studio E2E Tests', () => {
     await expect(page.locator('#tabs')).toContainText(/Jouer/i);
 
     // Le conteneur de jeu doit etre visible dans la vue centrale
-    const playScreen = page.locator('.play-stage, .play-root, canvas');
+    const playScreen = page.locator('.play-stage:visible, .play-root:visible, canvas:visible');
     await expect(playScreen.first()).toBeVisible({ timeout: 10000 });
 
     // 6. Arret du jeu

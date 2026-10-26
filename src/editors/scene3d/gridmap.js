@@ -5,12 +5,18 @@
  * Concu sans dependance DOM pour tourner sous Node (tests, CLI, MCP) et dans le navigateur.
  */
 
+// Format stocke dans le projet (scene.gridmap) : { blockSize, blocks: { "x,y,z": couleur } },
+// couleur = index de palette (nombre) ou '#rrggbb'. L'ancien format plat { "x,y,z": couleur } est accepte en lecture.
 export class GridMap3D {
   constructor(initialData = {}) {
     this.blocks = new Map();
+    this.blockSize = 1;
     if (initialData && typeof initialData === 'object') {
-      Object.entries(initialData).forEach(([k, v]) => {
-        this.blocks.set(k, v);
+      const isWrapped = initialData.blocks && typeof initialData.blocks === 'object';
+      if (isWrapped && typeof initialData.blockSize === 'number') this.blockSize = initialData.blockSize;
+      const src = isWrapped ? initialData.blocks : initialData;
+      Object.entries(src).forEach(([k, v]) => {
+        if (GridMap3D.isKey(k) && v != null) this.blocks.set(k, v);
       });
     }
   }
@@ -19,9 +25,20 @@ export class GridMap3D {
     return `${Math.round(x)},${Math.round(y)},${Math.round(z)}`;
   }
 
+  static isKey(k) {
+    const parts = String(k).split(',');
+    return parts.length === 3 && parts.every((p) => p.trim() !== '' && Number.isInteger(Number(p)));
+  }
+
   static parseKey(k) {
     const parts = k.split(',').map((v) => parseInt(v, 10));
     return { x: parts[0] || 0, y: parts[1] || 0, z: parts[2] || 0 };
+  }
+
+  // Ecrit la grille au format du projet, en conservant les autres champs de l'objet existant
+  toProjectJSON(existing = {}) {
+    const base = existing && typeof existing === 'object' && existing.blocks ? existing : {};
+    return { ...base, blockSize: this.blockSize, blocks: this.toJSON() };
   }
 
   setBlock(x, y, z, blockInfo) {
@@ -34,7 +51,8 @@ export class GridMap3D {
   }
 
   getBlock(x, y, z) {
-    return this.blocks.get(GridMap3D.key(x, y, z)) || null;
+    const v = this.blocks.get(GridMap3D.key(x, y, z));
+    return v === undefined ? null : v;
   }
 
   hasBlock(x, y, z) {

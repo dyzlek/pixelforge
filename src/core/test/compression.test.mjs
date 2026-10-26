@@ -50,4 +50,15 @@ unpackProjectVoxels(packedCopy);
 assert.deepEqual(packedCopy.models[0].voxels, original, 'Unpack doit restaurer les voxels du modele');
 assert.deepEqual(packedCopy.scenes3d[0].gridmap.blocks, original, 'Unpack doit restaurer les blocs de la scene');
 
+assert.strictEqual(packedCopy.models[0].voxelsRLE, undefined, 'la forme RLE est retiree apres decodage');
+assert.strictEqual(project.models[0].voxels, undefined, 'pack remplace voxels par voxelsRLE');
+
+// 3. Les voxels developpes font foi : un RLE perime ne ressuscite pas un ancien contenu
+const stale = { models: [{ type: 'voxel', voxels: { '9,9,9': 1 }, voxelsRLE: [[0, 0, 0, 4, 2]] }] };
+unpackProjectVoxels(stale);
+assert.deepEqual(stale.models[0].voxels, { '9,9,9': 1 });
+
+// 4. RLE corrompu : runs invalides ou geants ignores, couleur 0 conservee
+assert.deepEqual(decodeRLEVoxels([[0, 0, 0, 1e9, 1], ['a', 0, 0, 2, 1], [0, 0, 0, 2, 0]]), { '0,0,0': 0, '1,0,0': 0 });
+
 console.log('Tous les tests de compression RLE voxel sont valides !');

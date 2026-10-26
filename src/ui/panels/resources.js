@@ -8,6 +8,8 @@ import { createMap, createSprite, createObject, createSong, uid } from '../../co
 import { getIconSvg } from '../icons.js';
 import { showNewSongDialog } from '../dialogs/new-song.js';
 
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 export function createResourcesPanel(container, store, workspace) {
   let filterText = '';
   let selectedItem = null; // { kind, id, name }
@@ -131,7 +133,7 @@ export function createResourcesPanel(container, store, workspace) {
 
           itemEl.innerHTML = `
             <div class="pf-res-thumb">${thumbHtml}</div>
-            <span class="pf-res-name">${item.name}</span>
+            <span class="pf-res-name">${esc(item.name)}</span>
             ${badgeHtml}
           `;
 

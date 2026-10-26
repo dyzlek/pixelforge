@@ -79,9 +79,13 @@ export function mount(container, store) {
       }
       if (state.dead || token !== state.token) return;
       try {
+        // Scene demandee par l'editeur de scene 3D (« Tester la scene »), une seule fois
+        const startScene3DId = store.ui.playScene3DId || null;
+        store.ui.playScene3DId = null;
         state.game = createGame3D(structuredClone(store.project), screen, THREE, {
           onLog: addLog,
-          chip: createChipAudio,
+          createChipAudio,
+          startScene3DId,
         });
       } catch (e) {
         addLog('Impossible de lancer le jeu 3D : ' + e.message, 'error');
@@ -135,7 +139,8 @@ export function mount(container, store) {
   runMap.addEventListener('change', () => start());
 
   // Garde le canvas ajusté à la zone quand elle change de taille (console, plein écran…)
-  state.ro = new ResizeObserver(() => { if (state.game) state.game.scale.refresh(); });
+  // (le jeu 3D n'a pas de gestionnaire d'echelle Phaser : son canvas suit la zone en CSS)
+  state.ro = new ResizeObserver(() => { state.game?.scale?.refresh?.(); });
   state.ro.observe(screen);
 
   // Compteur de FPS (discret, dans l'en-tête de la console)

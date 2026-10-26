@@ -1,6 +1,6 @@
 // Test unitaire du moteur audio chiptune (chip.js).
 import assert from 'node:assert/strict';
-import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER_GAIN, generateSfxr, mutateSfxr } from '../chip.js';
+import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER_GAIN, generateSfxr, mutateSfxr, drumPiece } from '../chip.js';
 import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../editors/music/pianoroll.js';
 import { encodeWav } from '../wav-encoder.js';
 import { parseMidi, midiToSong } from '../midi-parser.js';
@@ -423,6 +423,49 @@ for (const id of drumIds) {
   assert.ok(dp);
   assert.ok(dp.name);
   assert.ok(dp.notes.length >= 4);
+}
+
+// Batterie : piece choisie par le nom, sinon par la classe de hauteur (C3 kick, D3 snare, F#3 hat ferme, A#3 hat ouvert)
+assert.equal(drumPiece('C3'), 'kick');
+assert.equal(drumPiece('D3'), 'snare');
+assert.equal(drumPiece('F#3'), 'hat_closed');
+assert.equal(drumPiece('A#3'), 'hat_open');
+assert.equal(drumPiece('snare'), 'snare');
+assert.equal(drumPiece('hat_open'), 'hat_open');
+assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse claire');
+
+// Planification hors-ligne : tout le morceau d'un coup, solo respecte, note invalide ignoree sans bloquer
+{
+  const { mockCtx, nodes } = createMockAudioContext();
+  const chip = createChipAudio(mockCtx, mockCtx.destination);
+  const song = {
+    bpm: 120, stepsPerBeat: 4, loop: { enabled: false, start: 0 },
+    channels: [
+      { id: 'a', instrument: 'pulse50', volume: 0.8 },
+      { id: 'b', instrument: 'triangle', volume: 0.8, solo: true },
+    ],
+    patterns: [{ id: 'p', length: 8, notes: [
+      { step: 0, ch: 'a', pitch: 'C4' }, { step: 1, ch: 'b', pitch: 'E4' },
+      { step: 2, ch: 'b', pitch: Number.NaN }, { step: 3, ch: 'b', pitch: 'G4', env: { a: 'x' } },
+      { step: 20, ch: 'b', pitch: 'C5' },
+    ] }],
+    playlist: [{ pattern: 'p', start: 0, track: 0 }],
+  };
+  const before = nodes.filter((n) => n.frequency && n.setPeriodicWave).length;
+  chip.playSong(song, { loop: false, offline: true });
+  const oscs = nodes.filter((n) => n.frequency && n.setPeriodicWave).length - before;
+  assert.equal(oscs, 2, 'seules les 2 notes valides du canal solo sont jouees (obtenu ' + oscs + ')');
+  assert.throws(() => chip.playSong(song, { loop: true, offline: true }), /hors-ligne/);
+}
+
+// Boucle au format du projet : loop.enabled = false arrete le morceau, loop.start est le point de reprise
+{
+  const { mockCtx } = createMockAudioContext();
+  const chip = createChipAudio(mockCtx, mockCtx.destination);
+  const ctrl = chip.playSong({ bpm: 120, loop: { enabled: true, start: 4 }, channels: [], patterns: [{ id: 'p', length: 8, notes: [] }], playlist: [{ pattern: 'p', start: 0 }] });
+  mockCtx.currentTime = 10; // simule un long temps de lecture puis un tick
+  ctrl.stop();
+  assert.ok(!ctrl.isPlaying());
 }
 
 console.log('Tests chip.js reussis avec succes.');

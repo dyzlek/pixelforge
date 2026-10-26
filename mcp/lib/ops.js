@@ -106,11 +106,11 @@ export function getSprite(p, name) {
 
 // ---------- scripts : code JavaScript ou graphe Blueprint ----------
 // a = { code } ou { graph } (exactement un des deux). Lève une Error si le script est invalide.
-function makeScript(a, isGlobal, notSaved) {
+function makeScript(a, isGlobal, notSaved, dimension = '2d') {
   if (a.code !== undefined && a.graph !== undefined) throw new Error('give either "code" or "graph", not both');
   if (a.graph !== undefined) {
     let r;
-    try { r = buildGraphScript(a.graph, isGlobal); } catch (e) { throw new Error(`${e.message}\n${notSaved}`); }
+    try { r = buildGraphScript(a.graph, isGlobal, dimension); } catch (e) { throw new Error(`${e.message}\n${notSaved}`); }
     const err = checkSyntax(r.code);
     if (err) throw new Error(`compiled graph has a syntax error: ${err}. ${notSaved}`);
     const note = r.warnings.length ? `\nGraph warnings:\n- ${r.warnings.join('\n- ')}` : '';
@@ -147,7 +147,7 @@ export function upsertObject(p, a) {
   if (a.hitbox !== undefined) o.hitbox = a.hitbox;
   let scriptNote = '';
   if (a.code !== undefined || a.graph !== undefined) {
-    const r = makeScript(a, false, 'Object not saved.');
+    const r = makeScript(a, false, 'Object not saved.', p.settings?.dimension || '2d');
     o.script = r.script;
     scriptNote = r.note;
   }
@@ -161,7 +161,7 @@ export function setScript(p, objectRef, a) {
   if (a.code === undefined && a.graph === undefined) throw new Error('give "code" (JavaScript) or "graph" (Blueprint)');
   const isGlobal = objectRef === 'global';
   const o = isGlobal ? null : findObject(p, objectRef);
-  const r = makeScript(a, isGlobal, 'Script not saved.');
+  const r = makeScript(a, isGlobal, 'Script not saved.', p.settings?.dimension || '2d');
   if (isGlobal) p.globalScript = r.script; else o.script = r.script;
   return `${isGlobal ? 'Global script' : `Script of "${o.name}"`} set (${r.script.code.length} chars, mode ${r.script.mode}).${r.note}`;
 }

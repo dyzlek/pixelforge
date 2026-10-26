@@ -93,10 +93,10 @@ export function renderPlaylist(container, opts) {
   loopStartInput.className = 'pf-transport-val';
   loopStartInput.style.width = '48px';
   loopStartInput.min = '0';
-  loopStartInput.value = String(song.loopStart || 0);
+  loopStartInput.value = String(song.loop?.start || 0);
   loopStartInput.onchange = (e) => {
     const val = Math.max(0, parseInt(e.target.value, 10) || 0);
-    song.loopStart = val;
+    song.loop = { ...(song.loop || { enabled: true }), start: val };
     onPlaylistChange?.();
     renderMarkers();
   };
@@ -169,7 +169,7 @@ export function renderPlaylist(container, opts) {
   const loopMarkerEl = document.createElement('div');
   loopMarkerEl.className = 'pf-playlist-loop-marker';
   function renderMarkers() {
-    const loopStep = song.loopStart || 0;
+    const loopStep = song.loop?.start || 0;
     loopMarkerEl.style.left = (loopStep * STEP_WIDTH) + 'px';
     loopMarkerEl.innerHTML = `<span class="pf-loop-flag">LOOP</span>`;
   }

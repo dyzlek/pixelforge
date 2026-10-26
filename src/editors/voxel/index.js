@@ -7,48 +7,35 @@ import { greedyMeshVoxels } from './mesher.js';
 import { getIconSvg } from '../../ui/icons.js';
 import './voxel.css';
 
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const GLTF_MAX_BYTES = 5 * 1024 * 1024;
+
 export function mount(container, store, { refId } = {}) {
-  let model = (store.project?.models || []).find((m) => m.id === refId);
+  const findModel = () => (store.project?.models || []).find((m) => m.id === refId) || null;
+  let model = findModel();
   if (!model) {
-    model = {
-      id: refId || 'model_new',
-      name: 'Nouveau Modele 3D',
-      type: 'voxel',
-      dimX: 16,
-      dimY: 16,
-      dimZ: 16,
-      voxels: {}, // "x,y,z" => paletteColorIndex (0-15)
-      frames: [],
-    };
-    if (!store.project.models) store.project.models = [];
-    store.project.models.push(model);
+    container.className = 'pf-voxel-editor';
+    container.textContent = 'Modele 3D introuvable (supprime ?).';
+    return { dispose() {}, onShow() {}, onHide() {} };
   }
 
-  // Initialisation des voxels si modele vide : creer un petit socle ou personnage
-  if (!model.voxels || Object.keys(model.voxels).length === 0) {
-    model.voxels = {};
-    for (let x = 6; x <= 9; x++) {
-      for (let z = 6; z <= 9; z++) {
-        model.voxels[`${x},0,${z}`] = 6; // base verte
-        model.voxels[`${x},1,${z}`] = 9; // corps bleu
-        model.voxels[`${x},2,${z}`] = 9;
-      }
-    }
-    model.voxels['7,3,7'] = 4; // tete jaune
-    model.voxels['8,3,7'] = 4;
-    model.voxels['7,3,8'] = 4;
-    model.voxels['8,3,8'] = 4;
-  }
+  // Copie de travail des voxels ("x,y,z" -> index de palette, 0 compris) ; ecrite dans le projet par commit()
+  let voxels = { ...(model.voxels || {}) };
 
-  const dimX = model.dimX || 16;
-  const dimY = model.dimY || 16;
-  const dimZ = model.dimZ || 16;
+  // Dimensions du projet (width/height/depth, comme le MCP) ; dimX.. pour les anciens fichiers
+  const dimX = model.width || model.dimX || 16;
+  const dimY = model.height || model.dimY || 16;
+  const dimZ = model.depth || model.dimZ || 16;
 
   let activeTool = 'brush'; // 'brush' | 'erase' | 'paint' | 'picker'
   let activeColorIndex = 4; // Sweetie-16 index
   let mirrorX = false;
   let isDisposed = false;
+  let isActive = true;
   let animId = null;
+  let renderLoop = null;
+  let resizeObserver = null;
+  const disposables = [];
 
   const palette = store.project?.palette || [
     '#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', '#ffcd75', '#a7f070', '#38b764', '#257179',
@@ -87,10 +74,10 @@ export function mount(container, store, { refId } = {}) {
         <div class="pf-voxel-palette-grid" id="pf-voxel-palette-grid"></div>
 
         <div class="pf-voxel-info-card">
-          <div style="font-weight:600;color:var(--fg-0);">${model.name}</div>
+          <div style="font-weight:600;color:var(--fg-0);">${esc(model.name)}</div>
           <div>Dimensions : ${dimX} × ${dimY} × ${dimZ} voxels</div>
-          <div id="pf-voxel-count-label">Voxels : ${Object.keys(model.voxels).length}</div>
-          <div id="pf-voxel-gltf-info" style="display:${model.type === 'gltf' ? 'block' : 'none'};color:var(--accent);">Modèle glTF embarque</div>
+          <div id="pf-voxel-count-label">Voxels : ${Object.keys(voxels).length}</div>
+          <div id="pf-voxel-gltf-info" style="display:${model.type === 'gltf' ? 'block' : 'none'};color:var(--accent);">Modèle glTF embarqué (non affiché en jeu pour l'instant : cube par défaut)</div>
         </div>
       </div>
     </div>
@@ -98,16 +85,22 @@ export function mount(container, store, { refId } = {}) {
 
   // Construction de la grille de palette
   const paletteGrid = container.querySelector('#pf-voxel-palette-grid');
+  function selectColor(idx) {
+    activeColorIndex = idx;
+    paletteGrid.querySelectorAll('.pf-voxel-color-swatch').forEach((s, i) => {
+      s.classList.toggle('active', i === idx);
+      s.setAttribute('aria-pressed', String(i === idx));
+    });
+  }
   palette.forEach((hex, idx) => {
-    const swatch = document.createElement('div');
+    const swatch = document.createElement('button');
+    swatch.type = 'button';
     swatch.className = `pf-voxel-color-swatch${idx === activeColorIndex ? ' active' : ''}`;
     swatch.style.backgroundColor = hex;
     swatch.title = `Couleur ${idx} (${hex})`;
-    swatch.onclick = () => {
-      activeColorIndex = idx;
-      paletteGrid.querySelectorAll('.pf-voxel-color-swatch').forEach((s) => s.classList.remove('active'));
-      swatch.classList.add('active');
-    };
+    swatch.setAttribute('aria-label', `Couleur ${idx}`);
+    swatch.setAttribute('aria-pressed', String(idx === activeColorIndex));
+    swatch.onclick = () => selectColor(idx);
     paletteGrid.appendChild(swatch);
   });
 
@@ -130,38 +123,72 @@ export function mount(container, store, { refId } = {}) {
 
   const clearBtn = container.querySelector('#pf-voxel-clear-btn');
   clearBtn.onclick = () => {
-    if (confirm('Voulez-vous vraiment effacer tous les voxels de ce modele ?')) {
-      model.voxels = {};
+    if (confirm('Voulez-vous vraiment effacer tous les voxels de ce modele ? (Ctrl+Z pour annuler)')) {
+      voxels = {};
       rebuildMesh();
-      notifyChange();
+      commit();
     }
   };
 
-  // Import glTF
+  // Import glTF : en-tete verifie (GLB binaire « glTF » ou JSON avec « asset »), taille limitee
   const gltfInput = container.querySelector('#pf-gltf-file-input');
-  gltfInput.onchange = (e) => {
+  const gltfInfo = container.querySelector('#pf-voxel-gltf-info');
+  gltfInput.onchange = async (e) => {
     const file = e.target.files?.[0];
+    gltfInput.value = '';
     if (!file) return;
-
-    if (file.size > 2 * 1024 * 1024) {
-      alert('Attention : Ce fichier dépasse 2 Mo. Il peut ralentir le chargement.');
+    if (file.size > GLTF_MAX_BYTES) {
+      alert(`Fichier trop gros (${(file.size / 1048576).toFixed(1)} Mo) : la limite est de 5 Mo, car il est stocké dans le fichier du jeu.`);
+      return;
     }
-
+    let valid = false;
+    try {
+      const head = new Uint8Array(await file.slice(0, 4).arrayBuffer());
+      if (String.fromCharCode(...head) === 'glTF') valid = true;
+      else if (/\.gltf$/i.test(file.name)) valid = !!JSON.parse(await file.text()).asset;
+    } catch (err) {
+      valid = false;
+    }
+    if (!valid) {
+      alert(`« ${file.name} » n'est pas un fichier glTF / GLB valide.`);
+      return;
+    }
     const reader = new FileReader();
+    reader.onerror = () => alert(`Lecture impossible de « ${file.name} ».`);
     reader.onload = () => {
-      model.type = 'gltf';
-      model.dataUrl = reader.result;
-      container.querySelector('#pf-voxel-gltf-info').style.display = 'block';
-      notifyChange();
-      alert(`Modèle glTF "${file.name}" importé avec succès.`);
+      if (isDisposed) return;
+      commit((m) => {
+        m.type = 'gltf';
+        m.gltfData = reader.result;
+        delete m.dataUrl;
+      });
+      gltfInfo.style.display = 'block';
     };
     reader.readAsDataURL(file);
   };
 
-  function notifyChange() {
-    container.querySelector('#pf-voxel-count-label').textContent = `Voxels : ${Object.keys(model.voxels).length}`;
-    store.emit('change', 'model');
+  // Toute modification passe par store.update (une entree d'annulation prise AVANT le changement)
+  function commit(mutate) {
+    store.update((p) => {
+      const m = (p.models || []).find((x) => x.id === refId);
+      if (!m) return;
+      m.voxels = { ...voxels };
+      if (mutate) mutate(m);
+      model = m;
+    }, 'model');
+    container.querySelector('#pf-voxel-count-label').textContent = `Voxels : ${Object.keys(voxels).length}`;
   }
+
+  // Annuler / retablir / rechargement : le projet est remplace, on relit le modele
+  const offLoad = store.on('load', () => {
+    const m = findModel();
+    if (!m) return;
+    model = m;
+    voxels = { ...(m.voxels || {}) };
+    gltfInfo.style.display = m.type === 'gltf' ? 'block' : 'none';
+    container.querySelector('#pf-voxel-count-label').textContent = `Voxels : ${Object.keys(voxels).length}`;
+    rebuildMesh();
+  });
 
   // --- Initialisation Three.js Viewport ---
   const viewportContainer = container.querySelector('#pf-voxel-viewport');
@@ -203,6 +230,8 @@ export function mount(container, store, { refId } = {}) {
     const hoverGeo = new ThreeLib.BoxGeometry(1.02, 1.02, 1.02);
     const hoverMat = new ThreeLib.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.6 });
     const hoverBox = new ThreeLib.Mesh(hoverGeo, hoverMat);
+    voxelMat = new ThreeLib.MeshLambertMaterial({ vertexColors: true, flatShading: true });
+    disposables.push(hoverGeo, hoverMat, voxelMat, gridHelper.geometry, gridHelper.material);
     hoverBox.visible = false;
     scene.add(hoverBox);
 
@@ -275,7 +304,7 @@ export function mount(container, store, { refId } = {}) {
     };
 
     // Redimensionnement automatique
-    const resizeObserver = new ResizeObserver(() => {
+    resizeObserver = new ResizeObserver(() => {
       if (isDisposed) return;
       const w = viewportContainer.clientWidth || 400;
       const h = viewportContainer.clientHeight || 300;
@@ -285,26 +314,31 @@ export function mount(container, store, { refId } = {}) {
     });
     resizeObserver.observe(viewportContainer);
 
-    function loop() {
-      if (isDisposed) return;
+    // Rendu seulement quand l'onglet est visible
+    renderLoop = function loop() {
+      animId = null;
+      if (isDisposed || !isActive) return;
       animId = requestAnimationFrame(loop);
       renderer.render(scene, camera);
-    }
-    loop();
+    };
+    renderLoop();
   }
 
+  let voxelMat = null;
+
+  // null = vide (la couleur 0 de la palette est un vrai voxel)
   function getVoxelAt(x, y, z) {
-    if (x < 0 || x >= dimX || y < 0 || y >= dimY || z < 0 || z >= dimZ) return 0;
-    const val = model.voxels[`${x},${y},${z}`];
-    return val !== undefined ? val : 0;
+    if (x < 0 || x >= dimX || y < 0 || y >= dimY || z < 0 || z >= dimZ) return null;
+    const val = voxels[`${x},${y},${z}`];
+    return val === undefined ? null : val;
   }
 
   function setVoxelAt(x, y, z, val) {
     if (x < 0 || x >= dimX || y < 0 || y >= dimY || z < 0 || z >= dimZ) return;
     if (val === null || val === undefined) {
-      delete model.voxels[`${x},${y},${z}`];
+      delete voxels[`${x},${y},${z}`];
     } else {
-      model.voxels[`${x},${y},${z}`] = val;
+      voxels[`${x},${y},${z}`] = val;
     }
   }
 
@@ -337,17 +371,13 @@ export function mount(container, store, { refId } = {}) {
     geo.setAttribute('normal', new ThreeLib.BufferAttribute(meshData.normals, 3));
     geo.setAttribute('color', new ThreeLib.BufferAttribute(meshData.colors, 3));
 
-    const mat = new ThreeLib.MeshLambertMaterial({
-      vertexColors: true,
-      flatShading: true,
-    });
-
-    currentMesh = new ThreeLib.Mesh(geo, mat);
+    currentMesh = new ThreeLib.Mesh(geo, voxelMat);
     scene.add(currentMesh);
   }
 
+  // Rayon souris -> voxel touche ; a defaut, le plan du sol (Y = 0) pour poser un premier voxel
   function getRaycastIntersects(e) {
-    if (!currentMesh || !camera || !ThreeLib) return null;
+    if (!camera || !ThreeLib) return null;
     const rect = renderer.domElement.getBoundingClientRect();
     const mouse = new ThreeLib.Vector2(
       ((e.clientX - rect.left) / rect.width) * 2 - 1,
@@ -355,14 +385,25 @@ export function mount(container, store, { refId } = {}) {
     );
     const raycaster = new ThreeLib.Raycaster();
     raycaster.setFromCamera(mouse, camera);
-    const hits = raycaster.intersectObject(currentMesh);
-    return hits.length > 0 ? hits[0] : null;
+    const hits = currentMesh ? raycaster.intersectObject(currentMesh) : [];
+    if (hits.length > 0) return hits[0];
+    const point = new ThreeLib.Vector3();
+    if (!raycaster.ray.intersectPlane(new ThreeLib.Plane(new ThreeLib.Vector3(0, 1, 0), 0), point)) return null;
+    // Face du dessus d'un sol virtuel : « dedans » est sous le plan, « dehors » au-dessus
+    return { point, face: { normal: new ThreeLib.Vector3(0, 1, 0) }, ground: true };
   }
 
   function handleVoxelHover(e, hoverBox) {
     const hit = getRaycastIntersects(e);
-    if (!hit) {
+    if (!hit || (hit.ground && activeTool !== 'brush')) {
       hoverBox.visible = false;
+      return;
+    }
+    if (hit.ground) {
+      const gx = Math.floor(hit.point.x + dimX / 2);
+      const gz = Math.floor(hit.point.z + dimZ / 2);
+      hoverBox.visible = gx >= 0 && gx < dimX && gz >= 0 && gz < dimZ;
+      hoverBox.position.set(gx - dimX / 2 + 0.5, 0.5, gz - dimZ / 2 + 0.5);
       return;
     }
 
@@ -379,6 +420,7 @@ export function mount(container, store, { refId } = {}) {
   function handleVoxelClick(e) {
     const hit = getRaycastIntersects(e);
     if (!hit) return;
+    if (hit.ground && activeTool !== 'brush') return;
 
     const norm = hit.face.normal;
     const hitInside = hit.point.clone().sub(norm.clone().multiplyScalar(0.1));
@@ -412,17 +454,12 @@ export function mount(container, store, { refId } = {}) {
       }
     } else if (activeTool === 'picker') {
       const col = getVoxelAt(inX, inY, inZ);
-      if (col !== 0) {
-        activeColorIndex = col;
-        paletteGrid.querySelectorAll('.pf-voxel-color-swatch').forEach((s, idx) => {
-          s.classList.toggle('active', idx === col);
-        });
-      }
+      if (typeof col === 'number') selectColor(col);
       return;
     }
 
     rebuildMesh();
-    notifyChange();
+    commit();
   }
 
   initThree();
@@ -430,18 +467,30 @@ export function mount(container, store, { refId } = {}) {
   return {
     dispose() {
       isDisposed = true;
+      isActive = false;
       if (animId) cancelAnimationFrame(animId);
+      animId = null;
+      offLoad();
+      resizeObserver?.disconnect();
       if (currentMesh) {
         scene?.remove(currentMesh);
         currentMesh.geometry?.dispose();
       }
-      renderer?.dispose();
+      disposables.forEach((d) => d?.dispose?.());
+      if (renderer) {
+        renderer.dispose();
+        renderer.forceContextLoss?.();
+        renderer.domElement.remove();
+      }
     },
     onShow() {
-      // Reprise
+      isActive = true;
+      if (renderLoop && !animId) renderLoop();
     },
     onHide() {
-      // Pause
+      isActive = false;
+      if (animId) cancelAnimationFrame(animId);
+      animId = null;
     },
   };
 }
