@@ -5,6 +5,7 @@
 
 import './resources.css';
 import { createMap, createSprite, createObject, uid } from '../../core/project.js';
+import { getIconSvg } from '../icons.js';
 
 export function createResourcesPanel(container, store, workspace) {
   let filterText = '';
@@ -14,10 +15,10 @@ export function createResourcesPanel(container, store, workspace) {
   container.innerHTML = `
     <div class="pf-res-panel">
       <div class="pf-res-toolbar">
-        <input type="search" class="pf-res-search" placeholder="Filtrer les ressources…" spellcheck="false" />
-        <button class="pf-dock-btn" data-act="add" title="Ajouter une ressource">+</button>
-        <button class="pf-dock-btn" data-act="dup" title="Dupliquer la sélection">⧉</button>
-        <button class="pf-dock-btn" data-act="del" title="Supprimer la sélection" style="color:var(--danger)">🗑</button>
+        <input type="search" class="pf-res-search" placeholder="Filtrer les ressources…" spellcheck="false" aria-label="Recherche de ressources" />
+        <button class="pf-dock-btn" data-act="add" title="Ajouter une ressource" aria-label="Ajouter une ressource">${getIconSvg('plus', 12)}</button>
+        <button class="pf-dock-btn" data-act="dup" title="Dupliquer la sélection" aria-label="Dupliquer la ressource sélectionnée">${getIconSvg('copy', 12)}</button>
+        <button class="pf-dock-btn" data-act="del" title="Supprimer la sélection" aria-label="Supprimer la ressource sélectionnée" style="color:var(--danger)">${getIconSvg('trash', 12)}</button>
       </div>
       <div class="pf-res-tree"></div>
     </div>
@@ -34,7 +35,7 @@ export function createResourcesPanel(container, store, workspace) {
   function renderTree() {
     const p = store.project;
     if (!p) {
-      treeEl.innerHTML = '<div class="pf-res-empty">Aucun projet ouvert</div>';
+      treeEl.innerHTML = '<div class="pf-res-empty">Aucun projet ouvert.<br><span style="font-size:11px;color:var(--fg-2);">Ouvrez ou créez un projet depuis la bibliothèque.</span></div>';
       return;
     }
 
@@ -44,28 +45,28 @@ export function createResourcesPanel(container, store, workspace) {
       {
         id: 'maps',
         label: 'Scènes & Cartes',
-        icon: '🗺️',
+        iconName: 'map',
         kind: 'map',
         items: p.maps || [],
       },
       {
         id: 'objects',
         label: 'Objets',
-        icon: '👾',
+        iconName: 'object',
         kind: 'objects',
         items: p.objects || [],
       },
       {
         id: 'sprites',
         label: 'Sprites & Tuiles',
-        icon: '🎨',
+        iconName: 'sprite',
         kind: 'pixel',
         items: p.sprites || [],
       },
       {
         id: 'sounds',
         label: 'Sons & Audio',
-        icon: '🔊',
+        iconName: 'sound',
         kind: 'sound',
         items: p.sounds || [],
       },
@@ -81,8 +82,8 @@ export function createResourcesPanel(container, store, workspace) {
       const head = document.createElement('div');
       head.className = 'pf-res-group-head';
       head.innerHTML = `
-        <span class="pf-res-group-chev">▼</span>
-        <span>${g.icon}</span>
+        <span class="pf-res-group-chev">${getIconSvg('chevronDown', 10)}</span>
+        <span>${getIconSvg(g.iconName, 13)}</span>
         <span>${g.label} (${g.items.length})</span>
       `;
       head.onclick = () => {
@@ -96,7 +97,7 @@ export function createResourcesPanel(container, store, workspace) {
       itemsEl.className = 'pf-res-items';
 
       if (filtered.length === 0) {
-        itemsEl.innerHTML = '<div class="pf-res-empty">Vide</div>';
+        itemsEl.innerHTML = '<div class="pf-res-empty">Aucun élément dans cette catégorie.<br><span style="font-size:10px;color:var(--fg-2);">Utilisez le bouton [+] pour en créer un.</span></div>';
       } else {
         for (const item of filtered) {
           const itemEl = document.createElement('div');
@@ -105,7 +106,7 @@ export function createResourcesPanel(container, store, workspace) {
           itemEl.draggable = true;
 
           // Miniature ou icône
-          let thumbHtml = `<span>${g.icon}</span>`;
+          let thumbHtml = `<span>${getIconSvg(g.iconName, 13)}</span>`;
           if (g.kind === 'pixel' && item.frames?.[0]) {
             thumbHtml = `<img src="${item.frames[0]}" class="pf-res-thumb" alt="${item.name}" />`;
           } else if (g.kind === 'objects') {

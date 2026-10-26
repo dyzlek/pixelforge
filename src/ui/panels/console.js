@@ -5,6 +5,7 @@
 
 import './console.css';
 import { getDebugSnapshot } from '../../runtime/play.js';
+import { getIconSvg } from '../icons.js';
 
 export function createConsolePanel(container, store, workspace) {
   let activeTab = 'logs'; // 'logs' | 'remote'
@@ -67,6 +68,15 @@ export function createConsolePanel(container, store, workspace) {
   function renderLogs() {
     logsEl.innerHTML = '';
     const filtered = logs.filter((l) => !filterText || l.msg.toLowerCase().includes(filterText));
+    if (filtered.length === 0) {
+      logsEl.innerHTML = `
+        <div style="padding:16px;color:var(--fg-2);font-style:italic;display:flex;align-items:center;gap:8px;">
+          ${getIconSvg('info', 14)}
+          <span>${filterText ? 'Aucun log ne correspond au filtre.' : 'Aucun message dans la console. Les logs et erreurs s\'afficheront ici lors du test.'}</span>
+        </div>
+      `;
+      return;
+    }
     for (const l of filtered) {
       const line = document.createElement('div');
       line.className = `pf-con-line pf-con-${l.level}`;

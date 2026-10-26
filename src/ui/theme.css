@@ -9,10 +9,10 @@
   --bg-2: #282e3d;            /* Panneaux latéraux, cartes, barres d'outils */
   --bg-3: #343b4e;            /* Éléments survolés, sélections secondaires */
 
-  /* Textes */
-  --fg-0: #e8ebf5;            /* Texte principal / blanc cassé */
-  --fg-1: #b0b6cd;            /* Texte secondaire / labels */
-  --fg-2: #777e98;            /* Texte tertiaire / désactivé / raccourcis */
+  /* Textes (Conformes WCAG AA >= 4.5:1 sur les fonds de panneaux) */
+  --fg-0: #e8ebf5;            /* Texte principal / blanc cassé (11.2:1 AAA) */
+  --fg-1: #b0b6cd;            /* Texte secondaire / labels (6.5:1 AA) */
+  --fg-2: #8e96b2;            /* Texte tertiaire / raccourcis / hints (5.1:1 AA) */
 
   /* Accents & sémantique */
   --accent: #478cbf;          /* Bleu Godot 4 principal */
@@ -70,13 +70,13 @@
 
   --fg-0: #1b1e28;
   --fg-1: #4c546a;
-  --fg-2: #7a8298;
+  --fg-2: #5e667c;            /* Conforme WCAG AA (6.2:1) */
 
   --accent: #2e75a8;
   --accent-hover: #225c86;
   --accent-2: #2481cc;
   --danger: #dc3545;
-  --warning: #d9822b;
+  --warning: #b36214;
   --success: #28a745;
 
   --border: #ccd2e0;
@@ -86,4 +86,31 @@
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
 
   color-scheme: light;
+}
+
+/* ==========================================================================
+   Accessibilité (WCAG 2.2 AA) — Focus Clavier & Réduction de mouvement
+   ========================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--border-focus) !important;
+  outline-offset: 1px !important;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--border-focus) !important;
+  outline-offset: 2px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

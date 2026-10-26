@@ -4,6 +4,7 @@
  */
 
 import './dock.css';
+import { getIconSvg } from './icons.js';
 
 const STORAGE_KEY = 'pixelforge.layout';
 
@@ -89,9 +90,9 @@ export class DockManager {
             <div class="pf-menu-bar" id="pf-menubar"></div>
           </div>
           <div class="pf-top-center" id="pf-playbar">
-            <button class="pf-playbar-btn play" data-action="play-main" title="Lancer le jeu principal (F5)">▶ Jouer (F5)</button>
-            <button class="pf-playbar-btn" data-action="play-current" title="Lancer la scène courante (F6)">▶ Scène (F6)</button>
-            <button class="pf-playbar-btn stop" data-action="stop" title="Arrêter le jeu (F8)">■ Arrêter (F8)</button>
+            <button class="pf-playbar-btn play" data-action="play-main" title="Lancer le jeu principal (F5)" aria-label="Lancer le jeu principal (F5)">${getIconSvg('play', 12)} <span>Jouer</span> <kbd class="pf-kbd-hint">F5</kbd></button>
+            <button class="pf-playbar-btn" data-action="play-current" title="Lancer la scène courante (F6)" aria-label="Lancer la scène courante (F6)">${getIconSvg('playScene', 12)} <span>Scène</span> <kbd class="pf-kbd-hint">F6</kbd></button>
+            <button class="pf-playbar-btn stop" data-action="stop" title="Arrêter le jeu (F8)" aria-label="Arrêter le jeu (F8)">${getIconSvg('stop', 12)} <span>Arrêter</span> <kbd class="pf-kbd-hint">F8</kbd></button>
           </div>
           <div class="pf-top-right" id="pf-topright"></div>
         </header>
@@ -102,7 +103,7 @@ export class DockManager {
             <div class="pf-dock-header">
               <div class="pf-dock-tabs" data-tabs="left"></div>
               <div class="pf-dock-controls">
-                <button class="pf-dock-btn" data-toggle="left" title="Replier / Déplier le panneau">◀</button>
+                <button class="pf-dock-btn" data-toggle="left" title="Replier / Déplier le panneau" aria-label="Replier ou déplier le panneau gauche">${getIconSvg('chevronLeft', 12)}</button>
               </div>
             </div>
             <div class="pf-dock-body" data-body="left"></div>
@@ -125,7 +126,7 @@ export class DockManager {
               <div class="pf-dock-header">
                 <div class="pf-dock-tabs" data-tabs="bottom"></div>
                 <div class="pf-dock-controls">
-                  <button class="pf-dock-btn" data-toggle="bottom" title="Replier / Déplier la console">▼</button>
+                  <button class="pf-dock-btn" data-toggle="bottom" title="Replier / Déplier la console" aria-label="Replier ou déplier le panneau inférieur">${getIconSvg('chevronDown', 12)}</button>
                 </div>
               </div>
               <div class="pf-dock-body" data-body="bottom"></div>
@@ -140,12 +141,31 @@ export class DockManager {
             <div class="pf-dock-header">
               <div class="pf-dock-tabs" data-tabs="right"></div>
               <div class="pf-dock-controls">
-                <button class="pf-dock-btn" data-toggle="right" title="Replier / Déplier l'inspecteur">▶</button>
+                <button class="pf-dock-btn" data-toggle="right" title="Replier / Déplier l'inspecteur" aria-label="Replier ou déplier le panneau droit">${getIconSvg('chevronRight', 12)}</button>
               </div>
             </div>
             <div class="pf-dock-body" data-body="right"></div>
           </aside>
         </div>
+
+        <footer class="pf-dock-statusbar" id="pf-statusbar" role="status" aria-live="polite">
+          <div class="pf-statusbar-left">
+            <span class="pf-status-item" id="pf-status-sync" title="Statut de persistance du projet">
+              ${getIconSvg('database', 12)} <span class="pf-status-sync-text">Prêt (Disque / IndexedDB)</span>
+            </span>
+            <span class="pf-status-item pf-status-message" id="pf-status-message" title="Information système">
+              PixelForge Studio v3.0
+            </span>
+          </div>
+          <div class="pf-statusbar-right">
+            <span class="pf-status-item" id="pf-status-coords" title="Coordonnées du curseur (X, Y)">
+              ${getIconSvg('mousePointer', 12)} <span class="pf-coords-text">X: --, Y: --</span>
+            </span>
+            <span class="pf-status-item" id="pf-status-zoom" title="Niveau de zoom">
+              ${getIconSvg('zoom', 12)} <span class="pf-zoom-text">100%</span>
+            </span>
+          </div>
+        </footer>
       </div>
     `;
 
@@ -160,6 +180,7 @@ export class DockManager {
     this.setupMenus();
     this.setupPlaybar();
     this.setupShortcuts();
+    this.setupStatusListeners();
     this.applyDimensions();
 
     // Montage des panneaux déjà enregistrés
@@ -246,7 +267,55 @@ export class DockManager {
     const playBtn = this.container?.querySelector('[data-action="play-main"]');
     if (playBtn) {
       playBtn.classList.toggle('playing', playing);
-      playBtn.textContent = playing ? '↻ Relancer (F5)' : '▶ Jouer (F5)';
+      playBtn.innerHTML = playing
+        ? `${getIconSvg('refresh', 12)} <span>Relancer</span> <kbd class="pf-kbd-hint">F5</kbd>`
+        : `${getIconSvg('play', 12)} <span>Jouer</span> <kbd class="pf-kbd-hint">F5</kbd>`;
+    }
+  }
+
+  setupStatusListeners() {
+    window.addEventListener('pixelforge:coords', (e) => {
+      this.setCoords(e.detail?.x, e.detail?.y);
+    });
+    window.addEventListener('pixelforge:zoom', (e) => {
+      this.setZoom(e.detail?.zoom);
+    });
+    window.addEventListener('pixelforge:status', (e) => {
+      if (e.detail?.sync) this.setSyncStatus(e.detail.sync, e.detail.isError);
+      if (e.detail?.message) this.setStatusMessage(e.detail.message);
+    });
+  }
+
+  setCoords(x, y) {
+    const el = this.container?.querySelector('.pf-coords-text');
+    if (el) {
+      el.textContent = x != null && y != null ? `X: ${Math.round(x)}, Y: ${Math.round(y)}` : 'X: --, Y: --';
+    }
+  }
+
+  setZoom(pct) {
+    const el = this.container?.querySelector('.pf-zoom-text');
+    if (el) {
+      el.textContent = typeof pct === 'number' ? `${Math.round(pct)}%` : String(pct);
+    }
+  }
+
+  setSyncStatus(text, isError = false) {
+    const el = this.container?.querySelector('.pf-status-sync-text');
+    const parent = this.container?.querySelector('#pf-status-sync');
+    if (el) {
+      el.textContent = text;
+      if (parent) {
+        parent.classList.toggle('error', !!isError);
+        parent.classList.toggle('saving', text.includes('Sauvegarde'));
+      }
+    }
+  }
+
+  setStatusMessage(msg) {
+    const el = this.container?.querySelector('#pf-status-message');
+    if (el) {
+      el.textContent = msg;
     }
   }
 

@@ -5,6 +5,7 @@
 
 import './scene-tree.css';
 import { uid } from '../../core/project.js';
+import { getIconSvg } from '../icons.js';
 
 export function createSceneTree(container, store) {
   let selectedEntityId = null;
@@ -13,8 +14,8 @@ export function createSceneTree(container, store) {
     <div class="pf-scene-tree">
       <div class="pf-st-toolbar">
         <span style="font-weight:600;font-size:12px;color:var(--fg-0);flex:1;" id="pf-st-map-name">Scène</span>
-        <button class="pf-dock-btn" data-act="dup" title="Dupliquer l'entité sélectionnée (Ctrl+D)">⧉</button>
-        <button class="pf-dock-btn" data-act="del" title="Supprimer l'entité" style="color:var(--danger)">🗑</button>
+        <button class="pf-dock-btn" data-act="dup" title="Dupliquer l'entité sélectionnée (Ctrl+D)" aria-label="Dupliquer l'entité sélectionnée">${getIconSvg('copy', 12)}</button>
+        <button class="pf-dock-btn" data-act="del" title="Supprimer l'entité" aria-label="Supprimer l'entité sélectionnée" style="color:var(--danger)">${getIconSvg('trash', 12)}</button>
       </div>
       <div class="pf-st-body"></div>
     </div>
@@ -33,7 +34,7 @@ export function createSceneTree(container, store) {
     const map = getCurrentMap();
     if (!map) {
       titleEl.textContent = 'Aucune scène';
-      bodyEl.innerHTML = '<div class="pf-st-empty">Aucune scène active.</div>';
+      bodyEl.innerHTML = '<div class="pf-st-empty">Aucune scène active.<br><span style="font-size:11px;color:var(--fg-2);">Ouvrez une carte pour afficher son arborescence.</span></div>';
       return;
     }
 
@@ -47,7 +48,8 @@ export function createSceneTree(container, store) {
     layerGroup.className = 'pf-st-group';
     layerGroup.innerHTML = `
       <div class="pf-st-group-head">
-        <span>🧱 Calques (${map.layers?.length || 0})</span>
+        <span>${getIconSvg('layers', 13)}</span>
+        <span>Calques (${map.layers?.length || 0})</span>
       </div>
     `;
     const layerList = document.createElement('div');
@@ -58,11 +60,12 @@ export function createSceneTree(container, store) {
     for (const l of map.layers || []) {
       const item = document.createElement('div');
       item.className = 'pf-st-item';
+      const isVisible = l.visible !== false;
       item.innerHTML = `
         <span style="font-size:11px;">${l.collides ? '🛡️' : '░'}</span>
         <span class="pf-st-name">${l.name}</span>
         <div class="pf-st-actions">
-          <button class="pf-st-action-btn${l.visible !== false ? '' : ' off'}" data-vis-layer="${l.id}" title="Afficher/Masquer le calque">👁</button>
+          <button class="pf-st-action-btn${isVisible ? '' : ' off'}" data-vis-layer="${l.id}" title="${isVisible ? 'Masquer le calque' : 'Afficher le calque'}" aria-label="Afficher ou masquer le calque">${getIconSvg(isVisible ? 'eye' : 'eyeOff', 12)}</button>
         </div>
       `;
 
@@ -90,7 +93,8 @@ export function createSceneTree(container, store) {
     entGroup.className = 'pf-st-group';
     entGroup.innerHTML = `
       <div class="pf-st-group-head">
-        <span>👾 Entités (${map.entities?.length || 0})</span>
+        <span>${getIconSvg('object', 13)}</span>
+        <span>Entités (${map.entities?.length || 0})</span>
       </div>
     `;
 
@@ -100,7 +104,7 @@ export function createSceneTree(container, store) {
     entList.style.gap = '1px';
 
     if (!map.entities?.length) {
-      entList.innerHTML = '<div class="pf-st-empty">Aucune entité placée. Glissez un objet ici !</div>';
+      entList.innerHTML = '<div class="pf-st-empty">Cette scène ne contient aucune entité.<br><span style="font-size:10px;color:var(--fg-2);">Glissez un objet depuis le panneau Ressources pour l\'ajouter.</span></div>';
     } else {
       for (const ent of map.entities) {
         const obj = p.objects?.find((o) => o.id === ent.objectId);
@@ -110,17 +114,20 @@ export function createSceneTree(container, store) {
         const item = document.createElement('div');
         item.className = `pf-st-item${isSelected ? ' selected' : ''}${ent.locked ? ' locked' : ''}`;
 
-        let iconHtml = '👾';
+        let iconHtml = getIconSvg('object', 13);
         if (spr?.frames?.[0]) {
-          iconHtml = `<img src="${spr.frames[0]}" style="width:14px;height:14px;object-fit:contain;image-rendering:pixelated;" />`;
+          iconHtml = `<img src="${spr.frames[0]}" style="width:14px;height:14px;object-fit:contain;image-rendering:pixelated;" alt="${obj?.name || ''}" />`;
         }
+
+        const isVisible = ent.visible !== false;
+        const isLocked = !!ent.locked;
 
         item.innerHTML = `
           <span>${iconHtml}</span>
           <span class="pf-st-name">${obj?.name || 'Entité'} <small style="color:var(--fg-2)">(${Math.round(ent.x)}, ${Math.round(ent.y)})</small></span>
           <div class="pf-st-actions">
-            <button class="pf-st-action-btn${ent.visible !== false ? '' : ' off'}" data-vis-ent="${ent.id}" title="Afficher/Masquer">👁</button>
-            <button class="pf-st-action-btn${ent.locked ? '' : ' off'}" data-lock-ent="${ent.id}" title="Verrouiller">🔒</button>
+            <button class="pf-st-action-btn${isVisible ? '' : ' off'}" data-vis-ent="${ent.id}" title="${isVisible ? 'Masquer' : 'Afficher'}" aria-label="Afficher ou masquer l'entité">${getIconSvg(isVisible ? 'eye' : 'eyeOff', 12)}</button>
+            <button class="pf-st-action-btn${isLocked ? '' : ' off'}" data-lock-ent="${ent.id}" title="${isLocked ? 'Déverrouiller' : 'Verrouiller'}" aria-label="Verrouiller ou déverrouiller l'entité">${getIconSvg(isLocked ? 'lock' : 'unlock', 12)}</button>
           </div>
         `;
 

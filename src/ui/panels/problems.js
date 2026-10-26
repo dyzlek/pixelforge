@@ -2,6 +2,8 @@
  * PixelForge Studio — Panneau « Problèmes » (Validation continue en temps réel)
  */
 
+import { getIconSvg } from '../icons.js';
+
 export function createProblemsPanel(container, store, workspace) {
   let issues = [];
   let validateTimer = null;
@@ -10,7 +12,7 @@ export function createProblemsPanel(container, store, workspace) {
     <div style="display:flex;flex-direction:column;height:100%;width:100%;background:var(--bg-1);color:var(--fg-0);font-size:12px;overflow:hidden;">
       <div style="padding:4px 8px;background:var(--bg-2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
         <span id="pf-prob-count" style="font-weight:600;font-size:11px;color:var(--fg-1);">Aucun problème détecté</span>
-        <button class="pf-dock-btn" data-act="recheck" title="Relancer la vérification">↻ Vérifier</button>
+        <button class="pf-dock-btn" data-act="recheck" title="Relancer la vérification" aria-label="Relancer la vérification du projet">${getIconSvg('refresh', 11)} <span>Vérifier</span></button>
       </div>
       <div id="pf-prob-list" style="flex:1;min-height:0;overflow-y:auto;padding:4px 8px;display:flex;flex-direction:column;gap:3px;"></div>
     </div>
@@ -61,9 +63,14 @@ export function createProblemsPanel(container, store, workspace) {
     const warnCount = issues.filter((i) => i.level === 'warn').length;
 
     if (issues.length === 0) {
-      countEl.textContent = '✓ Aucun problème détecté';
+      countEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('check', 12)} Aucun problème détecté</span>`;
       countEl.style.color = 'var(--success)';
-      listEl.innerHTML = '<div style="padding:16px;color:var(--fg-2);font-style:italic;">Le projet est valide et prêt à être testé.</div>';
+      listEl.innerHTML = `
+        <div style="padding:16px;color:var(--fg-2);font-style:italic;display:flex;align-items:center;gap:8px;">
+          ${getIconSvg('check', 16)}
+          <span>Le projet est valide et prêt à être testé.</span>
+        </div>
+      `;
       return;
     }
 
@@ -78,8 +85,9 @@ export function createProblemsPanel(container, store, workspace) {
         border-radius: var(--radius-sm); cursor: pointer; user-select: none;
         background: var(--bg-0); border: 1px solid var(--border); font-size: 11px;
       `;
-      const icon = it.level === 'error' ? '🔴' : '⚠️';
-      itemEl.innerHTML = `<span>${icon}</span><span style="flex:1;">${it.text}</span><span style="color:var(--accent);">Aller à →</span>`;
+      const isErr = it.level === 'error';
+      const icon = getIconSvg(isErr ? 'alert' : 'info', 13, isErr ? 'pf-prob-err' : 'pf-prob-warn');
+      itemEl.innerHTML = `<span style="color:${isErr ? 'var(--danger)' : 'var(--warning)'};">${icon}</span><span style="flex:1;">${it.text}</span><span style="color:var(--accent);">Aller à →</span>`;
 
       itemEl.onclick = () => {
         if (it.kind) {
