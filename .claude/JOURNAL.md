@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (14) — P1.1 Annuler / rétablir dans le graphe (Ctrl+Z / Ctrl+Y)
+- **Fait** : pile d'historique locale dans src/editors/objects/graph-editor.js (limite 100 snapshots), pushHistory appelé à chaque action (création, liaison, suppression, déplacement, champ), annulation/rétablissement via Ctrl+Z, Ctrl+Maj+Z et Ctrl+Y ; exclusion du capture store.js sur .bp-canvas et .bp-root.
+- **Décisions** : historique isolé au graphe pour une annulation granulaire et fiable de chaque manipulation de nœuds/fils.
+- **État** : tests et build OK.
+
 ## 2026-10-26 (13) — P1.7 Documentation utilisateur des nœuds
 - **Fait** : scripts/gen-nodes-doc.mjs générant docs/NODES.md (161 nœuds, 18 catégories, entrées, sorties, champs, exemples de code compilé), scripts "doc:nodes" et "check:doc" dans package.json et vérification dans la CI ; bouton d'aide "?" dans l'en-tête de chaque nœud du graphe et dans son menu contextuel ouvrant une fiche d'aide.
 - **Décisions** : documentation générée automatiquement pour garantir l'absence de dérive avec le catalogue src/graph/nodes.js.

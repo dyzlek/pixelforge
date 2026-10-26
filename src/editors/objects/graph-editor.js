@@ -182,11 +182,56 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     return id;
   }
 
+  // ------------------------------------------------------------ historique annuler / rétablir (Ctrl+Z / Ctrl+Y)
+  const undoStack = [];
+  const redoStack = [];
+  const MAX_HISTORY = 100;
+  let isRestoringHistory = false;
+
+  function pushHistory() {
+    if (isRestoringHistory || !graph) return;
+    const snap = JSON.stringify(graph);
+    if (undoStack.length && undoStack[undoStack.length - 1] === snap) return;
+    undoStack.push(snap);
+    if (undoStack.length > MAX_HISTORY) undoStack.shift();
+    redoStack.length = 0;
+  }
+
+  function undo() {
+    if (undoStack.length <= 1) return false;
+    const current = undoStack.pop();
+    redoStack.push(current);
+    const prev = undoStack[undoStack.length - 1];
+    isRestoringHistory = true;
+    try {
+      setGraph(JSON.parse(prev));
+      onChange?.(graph);
+    } finally {
+      isRestoringHistory = false;
+    }
+    return true;
+  }
+
+  function redo() {
+    if (!redoStack.length) return false;
+    const next = redoStack.pop();
+    undoStack.push(next);
+    isRestoringHistory = true;
+    try {
+      setGraph(JSON.parse(next));
+      onChange?.(graph);
+    } finally {
+      isRestoringHistory = false;
+    }
+    return true;
+  }
+
   const emit = (opts) => {
     if (disposed) return;
     scheduleMinimap();
     updateHint();
     if (!opts?.keepPanel) refreshPanel();
+    pushHistory();
     onChange?.(graph);
   };
 
@@ -1904,6 +1949,16 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     if (key === 'Delete' || key === 'Backspace') { e.preventDefault(); deleteSelection(); return; }
     if (mod && !e.altKey) {
       const k = key.toLowerCase();
+      if (k === 'z') {
+        e.preventDefault();
+        if (e.shiftKey) redo(); else undo();
+        return;
+      }
+      if (k === 'y') {
+        e.preventDefault();
+        redo();
+        return;
+      }
       if (k === 'c') { if (copySelection()) e.preventDefault(); } else if (k === 'v') { if (clipboard) { e.preventDefault(); pasteAtMouse(); } } else if (k === 'd') { e.preventDefault(); duplicate(); } else if (k === 'a') { e.preventDefault(); applySelection(new Set([...graph.nodes.map((n) => n.id), ...graph.comments.map((c) => c.id)])); }
       return;
     }
@@ -1956,6 +2011,7 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
   function setGraph(g) {
     closePalette();
     closeMenu();
+    closeNodeDoc();
     graph = normalize(g);
     pinCache.clear();
     selection.clear();
@@ -1964,6 +2020,11 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     diagByNode = new Map();
     renderAll();
     if (canvas.clientWidth > 0) initialView(); else { pendingFrame = true; applyView(); }
+    if (!isRestoringHistory) {
+      undoStack.length = 0;
+      redoStack.length = 0;
+      if (graph) undoStack.push(JSON.stringify(graph));
+    }
   }
 
   function focusNode(id) {
@@ -1993,5 +2054,5 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
 
   setGraph(getGraph ? getGraph() : null);
 
-  return { setGraph, getGraph: () => graph, focusNode, setDiagnostics, dispose };
+  return { setGraph, getGraph: () => graph, focusNode, setDiagnostics, undo, redo, dispose };
 }

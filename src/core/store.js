@@ -226,7 +226,7 @@ function createStore() {
   if (typeof window !== 'undefined') {
     window.addEventListener('keydown', (e) => {
       const tag = (e.target && e.target.tagName) || '';
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.closest?.('.cm-editor')) return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.closest?.('.cm-editor, .bp-canvas, .bp-root')) return;
       const isCtrl = e.ctrlKey || e.metaKey;
       if (isCtrl && !e.altKey) {
         if (e.key === 'z' || e.key === 'Z') {
