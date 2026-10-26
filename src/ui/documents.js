@@ -213,6 +213,7 @@ export class DocumentWorkspace {
       else if (kind === 'sound') mod = await import('../editors/sound/index.js');
       else if (kind === 'song' || kind === 'music') mod = await import('../editors/music/index.js');
       else if (kind === 'model3d' || kind === 'voxel') mod = await import('../editors/voxel/index.js');
+      else if (kind === 'scene3d') mod = await import('../editors/scene3d/index.js');
       else if (kind === 'play') mod = await import('../runtime/play.js');
 
       if (mod) {

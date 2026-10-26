@@ -1,0 +1,117 @@
+/* PixelForge Studio — Editeur de Scene 3D (GridMap & Entites) */
+
+.pf-scene3d-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: var(--font-ui);
+  overflow: hidden;
+  user-select: none;
+}
+
+.pf-scene3d-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pf-scene3d-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-scene3d-btn {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--fg-1);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-scene3d-btn:hover {
+  background: var(--bg-3);
+  color: var(--fg-0);
+}
+
+.pf-scene3d-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+.pf-scene3d-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.pf-scene3d-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #232838 0%, #151821 100%);
+}
+
+.pf-scene3d-viewport canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.pf-scene3d-sidebar {
+  width: 240px;
+  background: var(--bg-1);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  gap: 12px;
+  padding: 10px;
+  flex-shrink: 0;
+}
+
+.pf-scene3d-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.pf-scene3d-card-title {
+  font-weight: 600;
+  color: var(--fg-1);
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.pf-scene3d-overlay-hint {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--fg-2);
+  pointer-events: none;
+}
