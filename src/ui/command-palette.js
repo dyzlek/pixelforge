@@ -87,6 +87,19 @@ export class CommandPalette {
       shortcutText: 'Ctrl+,',
       action: () => this.onOpenPrefs(),
     });
+
+    shortcuts.register({
+      id: 'ai-assistant',
+      label: "Ouvrir l'assistant IA local (LM Studio)",
+      category: 'Outils',
+      key: 'i',
+      ctrl: true,
+      shift: true,
+      shortcutText: 'Ctrl+Maj+I',
+      action: () => {
+        this.dock.activatePanel('ai-assistant');
+      },
+    });
   }
 
   openCommands() {

@@ -14,6 +14,8 @@ export function getPreferences() {
     scale: '100%',
     lang: 'fr',
     defaultGrid: 16,
+    aiEndpoint: 'http://localhost:1234/v1',
+    aiModel: 'local-model',
   };
 }
 
@@ -83,6 +85,16 @@ export function openPreferencesModal({ onThemeChange = () => {} } = {}) {
             <option value="32"${prefs.defaultGrid === 32 ? ' selected' : ''}>32 × 32 px</option>
           </select>
         </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label style="color:var(--fg-1);font-weight:600;">Endpoint IA local :</label>
+          <input type="text" id="pf-pref-ai-endpoint" class="pf-insp-input" style="width:160px;" value="${prefs.aiEndpoint || 'http://localhost:1234/v1'}" placeholder="http://localhost:1234/v1" />
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <label style="color:var(--fg-1);font-weight:600;">Modèle IA par défaut :</label>
+          <input type="text" id="pf-pref-ai-model" class="pf-insp-input" style="width:160px;" value="${prefs.aiModel || 'local-model'}" placeholder="local-model" />
+        </div>
       </div>
 
       <div style="display:flex;justify-content:flex-end;border-top:1px solid var(--border);padding-top:10px;">
@@ -104,6 +116,8 @@ export function openPreferencesModal({ onThemeChange = () => {} } = {}) {
       scale: back.querySelector('#pf-pref-scale').value,
       lang: back.querySelector('#pf-pref-lang').value,
       defaultGrid: parseInt(back.querySelector('#pf-pref-grid').value, 10) || 16,
+      aiEndpoint: back.querySelector('#pf-pref-ai-endpoint').value.trim() || 'http://localhost:1234/v1',
+      aiModel: back.querySelector('#pf-pref-ai-model').value.trim() || 'local-model',
     };
     savePreferences(updated);
     onThemeChange(updated.theme);
