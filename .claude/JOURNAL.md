@@ -1,5 +1,19 @@
 # Journal — PixelForge
 
+## 2026-10-26 (34) — [Phase B] B6 : Generateur d'effets sonores avance (sfxr / jsfxr)
+- **Fait** :
+  - Implementation de la synthese procedurale sfxr dans `src/audio/chip.js` (`generateSfxr`, `mutateSfxr`, `playSfxr`) sans dependance externe.
+  - Formes d'ondes supportees : carre (square), impulsion 12.5%, 25%, 50%, dent de scie, triangle, bruit LFSR.
+  - Enveloppe ADSR avec punch, glissement de frequence, vibrato (profondeur et frequence), et filtrage bi-quadratique passe-bas et passe-haut.
+  - 9 generateurs 1-clic : Piece, Laser, Explosion, Bonus, Coup, Saut, Bip, Aleatoire, Muter.
+  - Editeur d'effets dans `src/editors/sound/index.js` et `style.css` avec sliders parametres sfxr detailles.
+  - Historique visuel des 10 derniers sons generes pour reecoute et restauration en 1 clic.
+  - Export direct en WAV autonome via `encodeWav` / `audioBufferToWavBlob`.
+  - Prise en charge dans `src/runtime/engine.js` (`chip.playSfx({ params })`) tout en conservant 100% de retrocompatibilite avec les presets sonores simples et l'absence d'imports.
+  - Tests unitaires dans `src/audio/test/chip.test.mjs`.
+- **Verifie** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **Etat** : Closes #17.
+
 ## 2026-10-26 (20) — Correctifs phase A en attente
 - **Essayé (Opus)** : corriger ouverture de projet, jeux d'exemple et A2 ; arrêté avant toute écriture car une autre IA modifie en direct les mêmes fichiers (icônes SVG : documents.js, project-manager.js, éditeurs…).
 - **Décisions** : attendre que l'utilisateur confirme que l'autre IA a fini avant d'écrire.

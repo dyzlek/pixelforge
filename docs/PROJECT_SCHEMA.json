@@ -136,7 +136,8 @@
             "preset": { "enum": ["jump", "coin", "hit", "powerup", "explosion", "laser", "blip", "portal"] },
             "seed": { "type": "number", "default": 0 },
             "volume": { "type": "number", "default": 0.5 },
-            "pitch": { "type": "number", "default": 1 }
+            "pitch": { "type": "number", "default": 1 },
+            "params": { "type": "object", "description": "Procedural sfxr synthesis parameters." }
           }
         },
         "dataUrl": { "type": "string", "pattern": "^data:audio/", "description": "Only when kind = file." }

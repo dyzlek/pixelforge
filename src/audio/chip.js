@@ -141,6 +141,142 @@ export function chiptuneToSong(track) {
   };
 }
 
+export function generateSfxr(type, seed = 0) {
+  const r = rng(seed || Math.floor(Math.random() * 100000));
+  switch (type) {
+    case 'coin':
+      return {
+        waveType: 'square',
+        baseFreq: 800 + r() * 400,
+        freqSlide: 0.1 + r() * 0.2,
+        attack: 0.005,
+        sustain: 0.05 + r() * 0.05,
+        decay: 0.15 + r() * 0.15,
+        punch: 0.3,
+        vibratoDepth: 0,
+        vibratoSpeed: 0,
+        lpf: 20000,
+        hpf: 20
+      };
+    case 'laser':
+      return {
+        waveType: r() > 0.5 ? 'sawtooth' : 'pulse25',
+        baseFreq: 1200 + r() * 600,
+        freqSlide: -0.6 - r() * 0.3,
+        attack: 0.001,
+        sustain: 0.04 + r() * 0.04,
+        decay: 0.1 + r() * 0.15,
+        punch: 0.2,
+        vibratoDepth: 0,
+        vibratoSpeed: 0,
+        lpf: 15000,
+        hpf: 100
+      };
+    case 'explosion':
+      return {
+        waveType: 'noise',
+        baseFreq: 100 + r() * 100,
+        freqSlide: -0.3 - r() * 0.4,
+        attack: 0.005,
+        sustain: 0.1 + r() * 0.2,
+        decay: 0.4 + r() * 0.3,
+        punch: 0.5,
+        vibratoDepth: 0,
+        vibratoSpeed: 0,
+        lpf: 2500 + r() * 2000,
+        hpf: 20
+      };
+    case 'powerup':
+      return {
+        waveType: 'pulse50',
+        baseFreq: 300 + r() * 200,
+        freqSlide: 0.5 + r() * 0.4,
+        attack: 0.01,
+        sustain: 0.1 + r() * 0.1,
+        decay: 0.2 + r() * 0.2,
+        punch: 0.3,
+        vibratoDepth: 0.1,
+        vibratoSpeed: 8,
+        lpf: 20000,
+        hpf: 20
+      };
+    case 'hit':
+      return {
+        waveType: r() > 0.5 ? 'sawtooth' : 'noise',
+        baseFreq: 200 + r() * 150,
+        freqSlide: -0.5 - r() * 0.3,
+        attack: 0.001,
+        sustain: 0.03 + r() * 0.05,
+        decay: 0.1 + r() * 0.15,
+        punch: 0.4,
+        vibratoDepth: 0,
+        vibratoSpeed: 0,
+        lpf: 5000,
+        hpf: 20
+      };
+    case 'jump':
+      return {
+        waveType: 'square',
+        baseFreq: 180 + r() * 80,
+        freqSlide: 0.4 + r() * 0.3,
+        attack: 0.005,
+        sustain: 0.05 + r() * 0.05,
+        decay: 0.12 + r() * 0.1,
+        punch: 0.2,
+        vibratoDepth: 0,
+        vibratoSpeed: 0,
+        lpf: 20000,
+        hpf: 20
+      };
+    case 'blip':
+      return {
+        waveType: 'square',
+        baseFreq: 500 + r() * 300,
+        freqSlide: 0,
+        attack: 0.002,
+        sustain: 0.03 + r() * 0.03,
+        decay: 0.05 + r() * 0.05,
+        punch: 0.1,
+        vibratoDepth: 0,
+        vibratoSpeed: 0,
+        lpf: 20000,
+        hpf: 20
+      };
+    default:
+      const waves = ['square', 'sawtooth', 'triangle', 'noise', 'pulse25'];
+      return {
+        waveType: waves[Math.floor(r() * waves.length)],
+        baseFreq: 100 + r() * 1200,
+        freqSlide: (r() - 0.5) * 1.2,
+        attack: 0.001 + r() * 0.05,
+        sustain: 0.02 + r() * 0.2,
+        decay: 0.05 + r() * 0.4,
+        punch: r() * 0.5,
+        vibratoDepth: r() > 0.7 ? r() * 0.3 : 0,
+        vibratoSpeed: 5 + r() * 15,
+        lpf: 1000 + r() * 19000,
+        hpf: 20 + r() * 500
+      };
+  }
+}
+
+export function mutateSfxr(params, seed = 0) {
+  const r = rng(seed || Math.floor(Math.random() * 100000));
+  const mutateNum = (val, range, min, max) => {
+    const delta = (r() - 0.5) * range;
+    return Math.max(min, Math.min(max, val + delta));
+  };
+  return {
+    ...params,
+    baseFreq: mutateNum(params.baseFreq || 440, 100, 20, 5000),
+    freqSlide: mutateNum(params.freqSlide || 0, 0.2, -1, 1),
+    attack: mutateNum(params.attack || 0.01, 0.02, 0.001, 1),
+    sustain: mutateNum(params.sustain || 0.1, 0.05, 0.01, 1.5),
+    decay: mutateNum(params.decay || 0.2, 0.1, 0.01, 2),
+    vibratoDepth: mutateNum(params.vibratoDepth || 0, 0.1, 0, 1)
+  };
+}
+
 export function createChipAudio(ctx, destination) {
   const dest = destination || ctx.destination;
   let activeSong = null;
@@ -181,10 +317,89 @@ export function createChipAudio(ctx, destination) {
     return { source: s, filter: f, gain: g };
   }
 
+  // Synthese procedurale sfxr parametree (bruitages personnalises)
+  function playSfxr(params, volume = 1, pitch = 1, atTime = null) {
+    const t = (atTime != null ? atTime : ctx.currentTime) + 0.005;
+    const v = Math.max(0, Math.min(1, typeof volume === 'number' ? volume : 1));
+    const k = typeof pitch === 'number' && pitch > 0 ? pitch : 1;
+
+    const waveType = params.waveType || 'square';
+    const baseFreq = Math.max(20, Math.min(10000, (params.baseFreq || 440) * k));
+    const freqSlide = params.freqSlide || 0;
+    const endFreq = Math.max(20, Math.min(12000, baseFreq * Math.pow(2, freqSlide * 3)));
+
+    const a = Math.max(0.001, params.attack || 0.005);
+    const s = Math.max(0.005, params.sustain || 0.1);
+    const d = Math.max(0.005, params.decay || 0.2);
+    const totalDur = a + s + d;
+
+    const gainNode = ctx.createGain();
+    const lpf = ctx.createBiquadFilter();
+    lpf.type = 'lowpass';
+    lpf.frequency.setValueAtTime(Math.max(100, params.lpf || 20000), t);
+
+    const hpf = ctx.createBiquadFilter();
+    hpf.type = 'highpass';
+    hpf.frequency.setValueAtTime(Math.max(20, params.hpf || 20), t);
+
+    gainNode.gain.setValueAtTime(0.0001, t);
+    gainNode.gain.linearRampToValueAtTime(v * 0.4 * (1 + (params.punch || 0) * 0.5), t + a);
+    gainNode.gain.setValueAtTime(v * 0.4, t + a + s);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, t + totalDur);
+
+    gainNode.connect(lpf);
+    lpf.connect(hpf);
+    hpf.connect(dest);
+
+    if (waveType === 'noise') {
+      const src = ctx.createBufferSource();
+      src.buffer = getLfsrBuffer(ctx, params.shortNoise || false);
+      src.loop = true;
+      src.connect(gainNode);
+      src.start(t);
+      src.stop(t + totalDur + 0.03);
+    } else {
+      const osc = ctx.createOscillator();
+      if (waveType === 'pulse12') osc.setPeriodicWave(getPulseWave(ctx, 0.125));
+      else if (waveType === 'pulse25') osc.setPeriodicWave(getPulseWave(ctx, 0.25));
+      else if (waveType === 'pulse50') osc.setPeriodicWave(getPulseWave(ctx, 0.5));
+      else if (waveType === 'triangle') osc.type = 'triangle';
+      else if (waveType === 'sawtooth') osc.type = 'sawtooth';
+      else osc.type = 'square';
+
+      osc.frequency.setValueAtTime(baseFreq, t);
+      if (freqSlide !== 0) {
+        osc.frequency.exponentialRampToValueAtTime(endFreq, t + totalDur);
+      }
+
+      let vibOsc = null;
+      if (params.vibratoDepth > 0) {
+        vibOsc = ctx.createOscillator();
+        const vibGain = ctx.createGain();
+        vibOsc.type = 'sine';
+        vibOsc.frequency.setValueAtTime(params.vibratoSpeed || 10, t);
+        vibGain.gain.setValueAtTime(baseFreq * params.vibratoDepth * 0.3, t);
+        vibOsc.connect(vibGain);
+        vibGain.connect(osc.frequency);
+        vibOsc.start(t);
+        vibOsc.stop(t + totalDur + 0.03);
+      }
+
+      osc.connect(gainNode);
+      osc.start(t);
+      osc.stop(t + totalDur + 0.03);
+    }
+
+    return totalDur;
+  }
+
   // Joue un preset sonore (jump, coin, hit...). Compatible avec l'ancienne signature synth(preset, seed, volume, pitch).
   function playSfx(preset, seed = 0, volume = 1, pitch = 1, atTime = null) {
     if (typeof preset === 'object' && preset !== null) {
       const opts = preset;
+      if (opts.params) {
+        return playSfxr(opts.params, opts.volume, opts.pitch, opts.atTime);
+      }
       preset = opts.preset;
       seed = opts.seed || 0;
       volume = opts.volume != null ? opts.volume : 1;
@@ -585,7 +800,9 @@ export function createChipAudio(ctx, destination) {
     playSong,
     stopSong,
     playChiptuneTrack,
-    renderOffline
+    renderOffline,
+    generateSfxr,
+    mutateSfxr
   };
 }
 

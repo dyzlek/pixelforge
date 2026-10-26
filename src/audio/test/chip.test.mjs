@@ -1,6 +1,6 @@
 // Test unitaire du moteur audio chiptune (chip.js).
 import assert from 'node:assert/strict';
-import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER_GAIN } from '../chip.js';
+import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER_GAIN, generateSfxr, mutateSfxr } from '../chip.js';
 import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../editors/music/pianoroll.js';
 import { encodeWav } from '../wav-encoder.js';
 import { parseMidi, midiToSong } from '../midi-parser.js';
@@ -324,5 +324,28 @@ assert.equal(convertedMidiSong.channels.length, 1);
 assert.equal(convertedMidiSong.patterns[0].notes.length, 1);
 assert.equal(convertedMidiSong.patterns[0].notes[0].pitch, 'C4');
 assert.equal(convertedMidiSong.patterns[0].notes[0].len, 4);
+
+// 13. Test du generateur procedural sfxr et mutation
+const types = ['coin', 'laser', 'explosion', 'powerup', 'hit', 'jump', 'blip', 'random'];
+for (const t of types) {
+  const p = generateSfxr(t, 42);
+  assert.ok(p.waveType);
+  assert.ok(p.baseFreq > 0);
+  assert.ok(p.attack >= 0);
+  assert.ok(p.sustain >= 0);
+  assert.ok(p.decay >= 0);
+}
+
+const orig = generateSfxr('coin', 123);
+const mutated = mutateSfxr(orig, 456);
+assert.notDeepEqual(orig, mutated);
+assert.ok(mutated.baseFreq > 0);
+assert.ok(mutated.decay > 0);
+
+// Test de synthese procedurale playSfx({ params })
+const { mockCtx: sfxCtx } = createMockAudioContext();
+const chipSfx = createChipAudio(sfxCtx);
+const dur = chipSfx.playSfx({ params: orig });
+assert.ok(dur > 0);
 
 console.log('Tests chip.js reussis avec succes.');
