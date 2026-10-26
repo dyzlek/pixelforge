@@ -647,10 +647,23 @@ export function mount(container, store, { refId = null } = {}) {
 
   render();
 
+  if (typeof window !== 'undefined') {
+    window.__pfMusicEditor = {
+      isPlaying: () => isPlaying,
+      getCurrentStep: () => currentStep,
+      getController: () => activeController,
+      play: () => startPlayback(0),
+      stop: () => stopPlayback(),
+    };
+  }
+
   return {
     dispose() {
       active = false;
       stopPlayback();
+      if (typeof window !== 'undefined' && window.__pfMusicEditor?.getController() === activeController) {
+        window.__pfMusicEditor = null;
+      }
       for (const fn of cleanups) fn();
       if (viewCleanup) viewCleanup();
       viewCleanup = null;

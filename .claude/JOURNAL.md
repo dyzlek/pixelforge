@@ -1,5 +1,18 @@
 # Journal — PixelForge
 
+## 2026-10-26 (42) — [Prérequis] P2 : tests Playwright réels sur le jeu 3D et le DAW (Issue #64, B-9, C-23)
+- **Fait** :
+  - `vite.config.js` : configuration du port serveur fixe 5173 (`strictPort: true`) pour Playwright.
+  - `src/main.js` : exposition globale securisee des hooks de test `window.__pfStore`, `window.__pfWorkspace` et `window.__pfDock`.
+  - `src/editors/music/index.js` : exposition du controleur musical sur `window.__pfMusicEditor` (`isPlaying`, `getCurrentStep`, etc.).
+  - `e2e/studio.spec.js` : suite complete de 4 tests E2E reels sous Chromium :
+    1. Navigation complete dans les onglets du studio (Carte, Sprite, Objet, Son, Musique), lancement F5 du jeu 2D par defaut et arret F8 avec fermeture du document.
+    2. Palette de commandes Ctrl+Shift+P et ouverture rapide Ctrl+P avec verification de l'affichage et fermeture Echap sans conditionnel.
+    3. Lancement reel du jeu 3D Cube Runner, attente de l'atterrissage sur la gridmap (`onGround === true`), deplacement effectif sans traversee des blocs ni chute dans le vide.
+    4. Composition pas-a-pas de 4 notes dans le sequenceur musical, declenchement de la lecture transport, verification de l'avancement effectif du planificateur (`currentStep >= 1`) et arret.
+- **Verifie** : `npm run test:e2e` (4 tests verts en 4.5s), `npm test`, `npm run check:doc`, `npm run build`.
+- **Etat** : Branche `feat/e2e-playwright-real-tests`, Closes #64.
+
 ## 2026-10-26 (41) — [Prérequis] P1b : validation 3D, cameras.js et même Three.js dans l'export (Issue #63, C-20 à C-22)
 - **Fait** :
   - `mcp/lib/validate.js` :
