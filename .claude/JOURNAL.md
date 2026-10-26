@@ -258,6 +258,18 @@
   - Raccordement du type de document `song` dans `src/ui/documents.js` permettant l'ouverture directe d'une musique depuis l'explorateur ou la palette de commandes.
 - **Verifie** : `npm run build`, `npm test` (tests de batterie a 180 BPM reussis), `npm run check:doc`, validation des 3 jeux avec 0 erreur. Zero emoji dans tout le code et l'interface.
 
+## 2026-10-26 (14) — [Phase B] B3 : Piano roll interactif avec aides musicales (Closes #14)
+- **Fait** :
+  - Creation de `src/editors/music/pianoroll.js` : vue 2D temps x hauteur avec clavier vertical interactif 61 touches (C2 a C7) avec touches blanches et noires.
+  - Edition intuitive des notes : creation au clic, deplacement fluide au glisser, redimensionnement de duree par etirement de la poignee droite, suppression au clic droit.
+  - Aides musicales intelligentes : selecteur de gamme (Majeure, Mineure naturelle/harmonique, Pentatonique majeure/mineure, Blues chiptune) avec grisage des notes hors-gamme et aimantation automatique.
+  - Generateur d'accords instantane en 1 clic (Majeur, Mineur, 7e, Sus4, Diminue).
+  - Outil d'arpegation rapide chiptune a 60 Hz convertissant des accords en cascade NES authentique.
+  - Saisie musicale au clavier d'ordinateur (support AZERTY et QWERTY) avec retour visuel et pre-ecoute sonore immediate.
+  - Commutateur de vue Rack / Piano Roll dans la barre de transport et ouverture directe sur selection d'un canal.
+- **Verifie** : `npm run build`, `npm test` (tests unitaires des conversions MIDI, gammes et accords integres), `npm run check:doc`, validation des 3 jeux. Zero emoji.
+
+
 
 
 

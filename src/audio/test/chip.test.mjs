@@ -1,6 +1,7 @@
 // Test unitaire du moteur audio chiptune (chip.js).
 import assert from 'node:assert/strict';
 import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER_GAIN } from '../chip.js';
+import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../editors/music/pianoroll.js';
 
 function createMockAudioContext() {
   const scheduledValues = [];
@@ -219,5 +220,32 @@ assert.ok(drumCtrl);
 assert.equal(drumCtrl.isPlaying(), true);
 drumCtrl.stop();
 assert.equal(drumCtrl.isPlaying(), false);
+
+// 9. Test des utilitaires Piano Roll (conversions MIDI, gammes et accords)
+assert.equal(pitchToMidi('C4'), 60);
+assert.equal(pitchToMidi('A4'), 69);
+assert.equal(pitchToMidi('C3'), 48);
+assert.equal(pitchToMidi('C#4'), 61);
+assert.equal(pitchToMidi(60), 60);
+
+assert.equal(midiToPitch(60), 'C4');
+assert.equal(midiToPitch(69), 'A4');
+assert.equal(midiToPitch(61), 'C#4');
+
+assert.equal(isBlackKey(60), false); // C4 = blanche
+assert.equal(isBlackKey(61), true);  // C#4 = noire
+assert.equal(isBlackKey(62), false); // D4 = blanche
+assert.equal(isBlackKey(63), true);  // D#4 = noire
+
+// Gammes musicales
+assert.equal(SCALES.major.intervals.length, 7);
+assert.equal(SCALES.minor.intervals.length, 7);
+assert.equal(SCALES.pentatonic_major.intervals.length, 5);
+assert.equal(SCALES.blues.intervals.length, 6);
+
+// Accords
+assert.deepEqual(CHORDS.maj.semitones, [0, 4, 7]);
+assert.deepEqual(CHORDS.min.semitones, [0, 3, 7]);
+assert.deepEqual(CHORDS.maj7.semitones, [0, 4, 7, 11]);
 
 console.log('Tests chip.js reussis avec succes.');
