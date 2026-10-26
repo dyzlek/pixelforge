@@ -3,6 +3,7 @@
 import { createObject, createMap, createLayer, uid } from '../../src/core/project.js';
 import { textToFrames, framesToText } from './sprites.js';
 import { checkSyntax } from './validate.js';
+import { buildGraphScript } from './graph.js';
 
 export const SOUND_PRESETS = ['jump', 'coin', 'hit', 'powerup', 'explosion', 'laser', 'blip', 'portal', 'tetris', 'korobeiniki', 'adventure', 'action'];
 const list = (arr) => arr.join(', ') || 'none';
@@ -32,9 +33,9 @@ export function summarize(p) {
     const sp = p.sprites.find((x) => x.id === o.spriteId);
     const ph = o.physics;
     const flags = ['gravity', 'immovable', 'collideMap', 'collideWorld'].filter((k) => ph[k]).join('+') || 'static';
-    L.push(`  - ${o.name}: sprite ${sp ? sp.name : 'none'}, anim ${o.defaultAnim || '-'}, physics ${ph.enabled ? flags : 'off'}${ph.bounce ? ', bounce ' + ph.bounce : ''}, hitbox ${o.hitbox ? JSON.stringify(o.hitbox) : 'full'}, script ${o.script?.code?.length || 0} chars`);
+    L.push(`  - ${o.name}: sprite ${sp ? sp.name : 'none'}, anim ${o.defaultAnim || '-'}, physics ${ph.enabled ? flags : 'off'}${ph.bounce ? ', bounce ' + ph.bounce : ''}, hitbox ${o.hitbox ? JSON.stringify(o.hitbox) : 'full'}, script ${o.script?.mode || 'code'} ${o.script?.code?.length || 0} chars`);
   }
-  L.push(`Global script: ${p.globalScript?.code?.length || 0} chars`);
+  L.push(`Global script: ${p.globalScript?.mode || 'code'}, ${p.globalScript?.code?.length || 0} chars`);
   L.push(`Maps (${p.maps.length}):`);
   for (const m of p.maps) {
     const ts = p.sprites.find((x) => x.id === m.tilesetSpriteId);
@@ -88,6 +89,24 @@ export function getSprite(p, name) {
     frames.map((f, i) => `frame ${i}:\n${f.join('\n')}`).join('\n') };
 }
 
+// ---------- scripts : code JavaScript ou graphe Blueprint ----------
+// a = { code } ou { graph } (exactement un des deux). Lève une Error si le script est invalide.
+function makeScript(a, isGlobal, notSaved) {
+  if (a.code !== undefined && a.graph !== undefined) throw new Error('give either "code" or "graph", not both');
+  if (a.graph !== undefined) {
+    let r;
+    try { r = buildGraphScript(a.graph, isGlobal); } catch (e) { throw new Error(`${e.message}\n${notSaved}`); }
+    const err = checkSyntax(r.code);
+    if (err) throw new Error(`compiled graph has a syntax error: ${err}. ${notSaved}`);
+    const note = r.warnings.length ? `\nGraph warnings:\n- ${r.warnings.join('\n- ')}` : '';
+    return { script: { mode: 'graph', code: r.code, graph: r.graph }, note };
+  }
+  const code = a.code ?? '';
+  const err = checkSyntax(code);
+  if (err) throw new Error(`script syntax error: ${err}. ${notSaved}`);
+  return { script: { mode: 'code', code }, note: '' };
+}
+
 // ---------- objets ----------
 export function upsertObject(p, a) {
   let o = p.objects.find((x) => x.name === a.name);
@@ -102,33 +121,30 @@ export function upsertObject(p, a) {
     }
   }
   if (a.defaultAnim !== undefined) o.defaultAnim = a.defaultAnim;
-  if (a.code !== undefined || a.blocks !== undefined) {
-    const code = a.code ?? '';
-    const err = checkSyntax(code);
-    if (err) throw new Error(`script syntax error: ${err}. Object not saved.`);
-    o.script = {
-      mode: a.mode ?? (a.blocks ? 'blocks' : 'code'),
-      code,
-      blocks: a.blocks ?? null,
-    };
-  } else if (isNew) o.script = { mode: 'code', code: '', blocks: null };
+  let scriptNote = '';
+  if (a.code !== undefined || a.graph !== undefined) {
+    const r = makeScript(a, false, 'Object not saved.');
+    o.script = r.script;
+    scriptNote = r.note;
+  }
   const sp = p.sprites.find((s) => s.id === o.spriteId);
-  return `${isNew ? 'Created' : 'Updated'} object "${o.name}" (sprite ${sp ? sp.name : 'none'}, anim ${o.defaultAnim || '-'}, physics ${JSON.stringify(o.physics)}, script ${o.script.code.length} chars).`;
+  return `${isNew ? 'Created' : 'Updated'} object "${o.name}" (sprite ${sp ? sp.name : 'none'}, anim ${o.defaultAnim || '-'}, physics ${JSON.stringify(o.physics)}, script ${o.script.mode} ${o.script.code.length} chars).${scriptNote}`;
 }
 
-export function setScript(p, objectRef, code) {
-  const err = checkSyntax(code);
-  if (err) throw new Error(`script syntax error: ${err}. Script not saved.`);
-  const script = { mode: 'code', code, blocks: null };
-  if (objectRef === 'global') { p.globalScript = script; return `Global script set (${code.length} chars).`; }
-  const o = findObject(p, objectRef);
-  o.script = script;
-  return `Script of "${o.name}" set (${code.length} chars, mode code).`;
+export function setScript(p, objectRef, a) {
+  if (a.code === undefined && a.graph === undefined) throw new Error('give "code" (JavaScript) or "graph" (Blueprint)');
+  const isGlobal = objectRef === 'global';
+  const o = isGlobal ? null : findObject(p, objectRef);
+  const r = makeScript(a, isGlobal, 'Script not saved.');
+  if (isGlobal) p.globalScript = r.script; else o.script = r.script;
+  return `${isGlobal ? 'Global script' : `Script of "${o.name}"`} set (${r.script.code.length} chars, mode ${r.script.mode}).${r.note}`;
 }
 
 export function getScript(p, objectRef) {
-  if (objectRef === 'global') return p.globalScript?.code || '';
-  return findObject(p, objectRef).script?.code || '';
+  const s = objectRef === 'global' ? p.globalScript : findObject(p, objectRef).script;
+  if (!s?.graph?.nodes?.length) return s?.code || '';
+  const what = s.mode === 'graph' ? 'compiled from the graph' : 'hand-written code; the graph is ignored while mode is code';
+  return [`mode: ${s.mode}`, '--- graph (JSON, same format as set_script "graph") ---', JSON.stringify(s.graph), `--- script.code (${what}) ---`, s.code].join('\n');
 }
 
 // ---------- cartes ----------

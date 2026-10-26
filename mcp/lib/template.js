@@ -138,7 +138,7 @@ export function applyPlatformerTemplate(p) {
   upsertObject(p, { name: 'Coin', sprite: 'Coin', defaultAnim: 'spin', hitbox: { x: 3, y: 3, w: 10, h: 10 }, physics: still, code: S_COIN });
   upsertObject(p, { name: 'Enemy', sprite: 'Slime', defaultAnim: 'idle', hitbox: { x: 1, y: 6, w: 14, h: 10 }, physics: { immovable: true, collideWorld: false }, code: S_ENEMY });
   upsertObject(p, { name: 'Flag', sprite: 'Flag', hitbox: { x: 2, y: 0, w: 10, h: 16 }, physics: still, code: S_FLAG });
-  p.globalScript = { mode: 'code', code: S_GLOBAL, blocks: null };
+  p.globalScript = { mode: 'code', code: S_GLOBAL };
 
   setSettings(p, { background: '#41a6f6' });
   upsertMap(p, { name: 'Level 1', width: 40, height: 12, tileset: 'Tileset', background: '#41a6f6', start: true, layers: [{ name: 'Background', collides: false }, { name: 'Ground', collides: true }] });

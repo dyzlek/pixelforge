@@ -27,7 +27,7 @@ async function call(name, args = {}, { expectError = false } = {}) {
 try {
   const tools = (await client.listTools()).tools.map((t) => t.name);
   console.log('tools:', tools.join(', '));
-  for (const n of ['pixelforge_guide', 'list_games', 'create_game', 'get_game', 'delete_game', 'duplicate_game', 'set_settings', 'upsert_sprite', 'get_sprite', 'upsert_object', 'set_script', 'get_script', 'upsert_map', 'paint_map', 'set_layer', 'place_entities', 'render_map', 'add_sound', 'validate_game', 'export_html']) assert.ok(tools.includes(n), 'missing tool ' + n);
+  for (const n of ['pixelforge_guide', 'list_games', 'create_game', 'get_game', 'delete_game', 'duplicate_game', 'set_settings', 'upsert_sprite', 'get_sprite', 'upsert_object', 'set_script', 'get_script', 'list_nodes', 'upsert_map', 'paint_map', 'set_layer', 'place_entities', 'render_map', 'add_sound', 'validate_game', 'export_html']) assert.ok(tools.includes(n), 'missing tool ' + n);
 
   assert.match(await call('pixelforge_guide'), /PixelForge/);
   await call('create_game', { name: 'test-mcp' });
@@ -59,6 +59,42 @@ on('update', () => {
   assert.match(bad, /unknown event "bogus"/, 'unknown event should be reported');
   await call('set_script', { game: 'test-mcp', object: 'global', code: "on('create', () => game.setText('t', 'test-mcp', 4, 4));" });
 
+  // --- Blueprint : événement update -> si la touche ESPACE vient d'être pressée -> Sauter
+  const nodes = await call('list_nodes', { search: 'sauter' });
+  assert.match(nodes, /pf_jump/);
+  const jumpGraph = {
+    nodes: [
+      { id: 'n1', type: 'pf_on_update' },
+      { id: 'n2', type: 'flow_branch' },
+      { id: 'n3', type: 'pf_key_just', fields: { KEY: 'SPACE' } },
+      { id: 'n4', type: 'pf_jump', values: { SPEED: 300 } },
+    ],
+    links: [
+      { from: 'n1', fromPin: 'then', to: 'n2', toPin: 'exec' },
+      { from: 'n3', fromPin: 'out', to: 'n2', toPin: 'COND' },
+      { from: 'n2', fromPin: 'true', to: 'n4', toPin: 'exec' },
+    ],
+  };
+  await call('upsert_object', { game: 'test-mcp', name: 'Jumper', sprite: 'Hero', graph: jumpGraph });
+  const jumper = await call('get_script', { game: 'test-mcp', object: 'Jumper' });
+  assert.match(jumper, /^mode: graph/, 'get_script returns the mode and the graph');
+  assert.match(jumper, /"type":"pf_jump"/, 'get_script returns the graph');
+  assert.match(jumper, /on\('update', \(dt\) => \{\n {2}if \(input\.justPressed\('SPACE'\)\) \{\n {4}self\.jump\(300\);/, 'compiled code:\n' + jumper);
+  // erreurs de graphe renvoyées comme erreurs d'outil (rien n'est enregistré)
+  const badType = await call('set_script', { game: 'test-mcp', object: 'Jumper', graph: { nodes: [{ id: 'a', type: 'pf_nope' }] } }, { expectError: true });
+  assert.match(badType, /unknown type "pf_nope"/);
+  const badPin = await call('set_script', { game: 'test-mcp', object: 'Jumper', graph: { nodes: [{ id: 'a', type: 'pf_on_update' }, { id: 'b', type: 'pf_jump' }], links: [{ from: 'a', fromPin: 'then', to: 'b', toPin: 'nope' }] } }, { expectError: true });
+  assert.match(badPin, /no input pin "nope"/);
+  const selfOnly = await call('set_script', { game: 'test-mcp', object: 'global', graph: { nodes: [{ id: 'a', type: 'pf_on_create' }, { id: 'b', type: 'pf_jump' }], links: [{ from: 'a', fromPin: 'then', to: 'b', toPin: 'exec' }] } }, { expectError: true });
+  assert.match(selfOnly, /node b \(pf_jump\)/, 'compile errors name the node id and type');
+  await call('set_script', { game: 'test-mcp', object: 'Jumper', code: 'x', graph: jumpGraph }, { expectError: true });
+  assert.match(await call('get_script', { game: 'test-mcp', object: 'Jumper' }), /self\.jump\(300\)/, 'a refused call leaves the script untouched');
+  // un graphe sans x/y est mis en page automatiquement
+  const laid = JSON.parse(fs.readFileSync(path.join(gamesDir, 'test-mcp.pixelforge.json'), 'utf8')).objects.find((o) => o.name === 'Jumper').script;
+  assert.equal(laid.mode, 'graph');
+  assert.ok(laid.graph.nodes.every((n) => Number.isFinite(n.x) && Number.isFinite(n.y)), 'auto layout');
+  assert.ok(!('blocks' in laid), 'no blocks field');
+
   await call('upsert_map', { game: 'test-mcp', name: 'Main', width: 20, height: 10, tileset: 'Tiles', background: '#29366f', start: true, layers: [{ name: 'Ground', collides: true }] });
   await call('paint_map', { game: 'test-mcp', map: 'Main', layer: 'Ground', legend: { '#': 1, d: 0 }, rows: [
     '#..................#', '#..................#', '#..................#', '#..................#', '#..................#',
@@ -71,6 +107,19 @@ on('update', () => {
   assert.match(summary, /Player/);
   const v = await call('validate_game', { game: 'test-mcp' });
   assert.match(v, /^OK|0 error/, 'validate_game must report no error:\n' + v);
+  // code recompilé != script.code -> avertissement ; ancien script Blockly -> converti au chargement
+  const gf = path.join(gamesDir, 'test-mcp.pixelforge.json');
+  const edited = JSON.parse(fs.readFileSync(gf, 'utf8'));
+  edited.objects.find((o) => o.name === 'Jumper').script.code += '// edited by hand\n';
+  const legacy = { mode: 'blocks', code: 'stale', blocks: { blocks: { languageVersion: 0, blocks: [{ type: 'pf_on_overlap', id: 'b1', fields: { OBJ: 'Player' }, inputs: { DO: { block: { type: 'pf_destroy_self', id: 'b2' } } } }] } } };
+  edited.objects.push({ ...edited.objects.find((o) => o.name === 'Player'), id: 'obj_legacy', name: 'Legacy', script: legacy });
+  fs.writeFileSync(gf, JSON.stringify(edited, null, 2));
+  const warned = await call('validate_game', { game: 'test-mcp' });
+  assert.match(warned, /script\.code differs from the code recompiled/, 'stale compiled code is reported:\n' + warned);
+  const converted = await call('get_script', { game: 'test-mcp', object: 'Legacy' });
+  assert.match(converted, /^mode: graph/);
+  assert.match(converted, /on\('overlap', 'Player', \(other\) => \{\n {2}self\.destroy\(\);/, 'legacy blocks converted and recompiled:\n' + converted);
+  await call('set_script', { game: 'test-mcp', object: 'Jumper', graph: jumpGraph }); // regénère le code
   const map = await call('render_map', { game: 'test-mcp', map: 'Main' });
   console.log(map);
   assert.match(map, /P/);

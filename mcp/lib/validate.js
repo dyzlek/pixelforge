@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { ROOT } from './store.js';
 import { dataURLToBuffer, pngSize } from './png.js';
+import { compileGraph } from '../../src/graph/index.js';
+import { checkGraph, describeIssue } from './graph.js';
 
 const BASE_EVENTS = ['create', 'update', 'collide', 'overlap', 'overlapStart', 'overlapEnd', 'keydown', 'timer', 'destroy', 'hitTile', 'click', 'mousedown', 'message'];
 const BASE_KEYS = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE', 'ENTER', 'SHIFT', 'Z', 'X', 'C', 'A', 'W', 'S', 'D', 'Q', 'E'];
@@ -84,9 +86,26 @@ export function validateProject(p) {
       if (![h.x, h.y, h.w, h.h].every(Number.isFinite) || h.w <= 0 || h.h <= 0) add('error', w, 'hitbox must be {x, y, w, h} with w,h > 0');
       else if (spr && (h.x < 0 || h.y < 0 || h.x + h.w > spr.width || h.y + h.h > spr.height)) add('warning', w, `hitbox exceeds the ${spr.width}x${spr.height} frame`);
     }
-    checkScript(o.script?.code, `${w} script`, spr);
+    checkScriptObject(o.script, `${w} script`, spr, false);
   }
-  checkScript(p.globalScript?.code, 'global script', null);
+  checkScriptObject(p.globalScript, 'global script', null, true);
+
+  // Script d'un objet : mode graph = compilation du graphe + cohérence avec script.code ; puis contrôle du code exécuté (script.code)
+  function checkScriptObject(script, where, spr, isGlobal) {
+    if (script?.mode === 'graph' && script.graph) {
+      const g = script.graph;
+      for (const m of checkGraph(g)) add('error', where, 'graph: ' + m);
+      let r = null;
+      try { r = compileGraph(g, { isGlobal }); } catch (e) { add('error', where, 'graph compilation failed: ' + e.message); }
+      if (r) {
+        for (const e of r.errors) add('error', where, 'graph: ' + describeIssue(g, e));
+        for (const w2 of r.warnings) add('warning', where, 'graph: ' + describeIssue(g, w2));
+        if (!r.errors.length && r.code !== (script.code || '')) add('warning', where, 'script.code differs from the code recompiled from the graph (the game runs script.code; it is regenerated when the graph is saved in the editor)');
+      }
+    } else if (script?.mode === 'graph') add('error', where, 'mode is "graph" but the script has no graph');
+    else if (script?.mode === 'blocks') add('warning', where, 'legacy Blockly script (mode "blocks"): it will be converted to a Blueprint graph when the game is opened in the editor');
+    checkScript(script?.code, where, spr);
+  }
 
   function checkScript(code, where, spr) {
     if (!code || !code.trim()) return;

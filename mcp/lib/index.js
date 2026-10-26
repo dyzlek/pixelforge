@@ -6,6 +6,7 @@ import { ROOT } from './store.js';
 export * from './store.js';
 export * from './ops.js';
 export * from './validate.js';
+export * from './graph.js';
 export * from './render.js';
 export * from './exporter.js';
 export { applyPlatformerTemplate } from './template.js';

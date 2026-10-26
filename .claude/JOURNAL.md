@@ -7,6 +7,17 @@
 
 ---
 
+## 2026-10-26 (4) — Blueprints (en cours)
+- **Fait (Opus)** : contrat du nouveau format graphe de nœuds façon Unreal dans docs/BLUEPRINTS.md ; `git init` + commit de base 429b2ba (.gitignore : node_modules, dist, exports) ; `npm install`.
+- **Fait (Sonnet)** : éditeur visuel src/editors/objects/graph-editor.js + graph.css, editor.js sans Blockly (modes Blueprint / Code), rewriteRefs parcourt aussi s.graph ; build OK. Limites : pas de Ctrl+Z propre au graphe, pas de reroute.
+- **Fait (Sonnet)** : noyau src/graph/ (161 nœuds, compilateur, blocklyToGraph, test 2264 vérifs OK, code identique à Blockly sur les scripts réels).
+- **Vérifié (Opus)** : rendu Unreal correct dans le navigateur (Flag converti, palette « Toutes les actions »).
+- **Fait (Sonnet)** : intégration — normalizeProject migre 'blocks' → graphe (code recompilé), sample en graphes, blocks.js → src/graph/test/legacy-blocks.js, blockly en devDependency (bundle −43 %), MCP `graph` dans upsert_object/set_script + outil `list_nodes`, CLI `compile` / `nodes`, validate des graphes, games/ migrés, docs + AGENTS.md + README.md.
+- **Vérifié (Opus)** : build, graph.test 2277/0, e2e ALL OK, validate des 3 jeux OK, Tetris converti jouable dans le navigateur.
+- **Décisions** : `script.mode: 'graph'`, `script.graph` ; types de nœuds = noms des anciens blocs ; dépôt GitHub **privé** (dyzlek/pixelforge).
+- **Limites** : pas de Ctrl+Z propre au graphe ; graphes convertis très larges (Flag ≈ 4400 px) ; games-src/tetris.mjs et generate_tetris_blocks.mjs sont des doublons.
+- **État** : branche main, commit Blueprints poussé sur GitHub (privé).
+
 ## 2026-10-26 (3) — v1.2 : prêt pour Portal en blocs
 - **Fait (Sonnet, effort medium)** : overlapStart/overlapEnd, setCollideMap/setCollideObjects, flipY, setHitbox, raycast contre les instances (+ layer/instance/objectName), camera.setOffset ; blocs correspondants (cibles, rayons, caméra) ; docs v1.2, validate.js, autocomplétion.
 - **Vérifié (Opus)** : build, e2e MCP ALL OK, validate monde-1-1 OK, engine.js toujours 1 seul export. Mini Portal en blocs joué en headless par l'agent.

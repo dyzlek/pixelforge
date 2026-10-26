@@ -1,7 +1,8 @@
-// Onglet « Objets & code » : liste d'objets, propriétés/physique, script (blocs ou code).
+// Onglet « Objets & code » : liste d'objets, propriétés/physique, script (Blueprint ou code).
 import './style.css';
 import { createObject, findById, uid } from '../../core/project.js';
 import { createScriptEditor } from './editor.js';
+import { resolvePins } from '../../graph/index.js';
 
 const GLOBAL_ID = '__global__';
 const NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ_][A-Za-zÀ-ÖØ-öø-ÿ0-9_ -]*$/;
@@ -47,18 +48,26 @@ function uniqueName(base) {
   for (let i = 2; ; i++) if (!taken.has((base + i).toLowerCase())) return base + i;
 }
 
-// Remplace les références à un objet dans tous les scripts (champs OBJ des blocs, littéraux 'Nom' dans le code)
+// Remplace les références à un objet dans tous les scripts : champs de nœuds de type « objet » (OBJ…),
+// littéraux 'Nom' du code compilé et du code libre (y compris les nœuds JavaScript brut du graphe)
 function rewriteRefs(p, oldName, newName) {
-  const walk = (n) => {
-    if (!n || typeof n !== 'object') return;
-    if (Array.isArray(n)) return n.forEach(walk);
-    if (typeof n.type === 'string' && n.type.startsWith('pf_') && n.fields?.OBJ === oldName) n.fields.OBJ = newName;
-    for (const v of Object.values(n)) walk(v);
+  const swap = (text) => { for (const qt of ["'", '"']) text = text.split(qt + oldName + qt).join(qt + newName + qt); return text; };
+  const rewriteGraph = (graph) => {
+    for (const n of graph?.nodes || []) {
+      for (const [k, v] of Object.entries(n.values || {})) if (v === oldName) n.values[k] = newName; // littéral sur une broche (comme les chaînes du code)
+      let fields;
+      try { fields = resolvePins(n, graph).fields || []; } catch { continue; }
+      for (const f of fields) {
+        const v = n.fields?.[f.name];
+        if (typeof v !== 'string') continue;
+        if (f.kind === 'object') { if (v === oldName) n.fields[f.name] = newName; } else if (f.multiline) n.fields[f.name] = swap(v);
+      }
+    }
   };
   for (const s of [p.globalScript, ...p.objects.map((o) => o.script)]) {
     if (!s) continue;
-    walk(s.blocks);
-    if (s.code) for (const qt of ["'", '"']) s.code = s.code.split(qt + oldName + qt).join(qt + newName + qt);
+    rewriteGraph(s.graph);
+    if (s.code) s.code = swap(s.code);
   }
 }
 
@@ -106,7 +115,7 @@ function renameObject() {
   if (!obj) return;
   const name = askName(
     `Renommer « ${obj.name} »\n\nAttention : le nom sert dans les scripts (game.spawn('${obj.name}'), collisions…). `
-    + 'Les références dans les blocs et les chaînes du code seront mises à jour automatiquement, '
+    + 'Les références dans les nœuds Blueprint et les chaînes du code seront mises à jour automatiquement, '
     + 'mais vérifiez vos scripts écrits à la main.',
     obj.name, obj.id,
   );

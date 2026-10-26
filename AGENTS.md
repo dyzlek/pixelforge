@@ -1,6 +1,6 @@
 # PixelForge - guide for AI agents
 
-PixelForge is a 2D game editor + engine that runs in the browser (Vite, vanilla JS, Phaser 3, Blockly). A game is **one JSON file**:
+PixelForge is a 2D game editor + engine that runs in the browser (Vite, vanilla JS, Phaser 3, Blueprint node graphs). A game is **one JSON file**:
 `games/<meta.id>.pixelforge.json` (indented 2 spaces). The web editor watches `games/` and reloads when a file changes, so you can
 build a game from the terminal and see it live. You can create a complete game without opening the editor.
 
@@ -8,7 +8,7 @@ build a game from the terminal and see it live. You can create a complete game w
 npm install
 npm run dev        # editor at http://localhost:5173 (or the port Vite prints); games/ is served live
 npm run mcp        # MCP server (stdio), declared in .mcp.json for Claude Code
-npm run pf -- list | show <game> | validate <game> | render <game> [map] | export <game>
+npm run pf -- list | show <game> | validate <game> | compile <game> | render <game> [map] | export <game> | nodes [word]
 npm run build      # must keep passing
 ```
 
@@ -17,9 +17,9 @@ Games and names: every tool/CLI argument `game` accepts the game id or its name.
 ## Two ways to build a game
 
 **A. MCP tools** (preferred; they validate for you). Call `pixelforge_guide` first (returns this file + the scripting API), then:
-`create_game {template:'platformer'|'empty'}` -> `upsert_sprite` (tileset + characters, as text) -> `upsert_object` (sprite, physics, `code`)
+`create_game {template:'platformer'|'empty'}` -> `upsert_sprite` (tileset + characters, as text) -> `upsert_object` (sprite, physics, `code` or Blueprint `graph`)
 -> `upsert_map` -> `paint_map` -> `place_entities` -> `render_map` (look at your level!) -> `validate_game` -> `export_html`.
-Other tools: `list_games get_game duplicate_game delete_game set_settings get_sprite set_script get_script set_layer add_sound`.
+Other tools: `list_games get_game duplicate_game delete_game set_settings get_sprite set_script get_script list_nodes set_layer add_sound`.
 
 **B. Edit the JSON directly**, then run `npm run pf -- validate <game>`. Schema: `docs/PROJECT_SCHEMA.json`; architecture: `docs/ARCHITECTURE.md`.
 Sprite frames in the file are PNG data URLs, so for sprites prefer the MCP tool (or `mcp/lib/sprites.js`: `textToFrames`) instead of hand-writing PNG.
@@ -34,7 +34,7 @@ Always finish with `validate_game` (0 errors) and `render_map`. Fix every error;
 - `sounds[]` (synthesized presets: jump coin hit powerup explosion laser blip portal) - `globalScript`.
 A tileset is a sprite whose every frame is one tile; a map points to it with `tilesetSpriteId`. Tile value in `layer.data` = frame index, `-1` = empty,
 `data.length` must equal `width*height`. Entities: `{id, objectId, x, y, props}` with x,y in **pixels** (top-left of the sprite frame).
-Scripts only run from `script.code` (always write `mode: 'code'`). Scripts and tools refer to things **by name**; the JSON links them **by id**.
+Scripts only run from `script.code`: write it as JavaScript (`mode: 'code'`) or as a Blueprint node graph that compiles to it (`mode: 'graph'`, see **Blueprints**). Scripts and tools refer to things **by name**; the JSON links them **by id**.
 
 ## Text sprites
 
@@ -119,8 +119,83 @@ on('collide', 'Player', (p) => {
 ```
 Level exit: `on('overlap','Player', () => game.goToMap('Level 2'));` (map must exist).
 
+## Blueprints (script as a node graph)
+
+The editor's visual scripts are **Blueprint graphs** (nodes + wires, like Unreal): `script = { mode: 'graph', code, graph }`. The game still runs only
+`script.code`; the graph is **compiled to JavaScript** (same API as above, `docs/SCRIPT_API.md`). Full contract: `docs/BLUEPRINTS.md`.
+You can write scripts as plain JavaScript (`mode: 'code'`, recipes above) **or** as a graph. Graph = best when the user wants to read/edit the logic visually.
+
+**With the MCP**: `upsert_object {name, graph}` or `set_script {object, graph}` (object name or `"global"`). `x`/`y` are optional (auto layout), each link `id` is
+optional, `fields` / `values` / `extra` default to `{}`. The graph is checked and compiled; errors come back as tool errors (`node n3 (pf_jump): ...`) and nothing
+is saved. `get_script` returns the graph (JSON) and the compiled code. `list_nodes {category?, search?}` (CLI: `npm run pf -- nodes [word]`) lists every node
+type with its pins and fields: **look nodes up there, do not guess names**. `validate_game` recompiles graphs (errors, warnings, and a warning if `script.code` no longer
+matches the graph). **By hand in the JSON**: write `mode: 'graph'`, the `graph` and `code: ""`, then run `npm run pf -- compile <game>`: it compiles every graph script of the
+game, writes `script.code` and prints the compile errors (the game runs `script.code`, so an empty or stale `code` means a dead script).
+
+```
+graph = { version: 1,
+  nodes: [{ id, type, x, y, fields: {}, values: {}, extra: {} }],
+  links: [{ id, from: <node id>, fromPin, to: <node id>, toPin }],
+  variables: [{ name, default? }],            // script variables (var at the top of the code)
+  comments: [] }
+```
+
+- **Two kinds of wires.** *Execution* wires (white) set the order of actions: from an output `then` (or `true` / `false` of `flow_branch`, `body` of loops, `done` of
+  `pf_wait`, `then0..N` of `flow_sequence`) to the input pin `exec` of the next node. *Data* wires carry a value from an output pin (`out` for pure nodes, `other` /
+  `dt` / `tile` / `data` for event nodes) to a data input pin (`VALUE`, `COND`, `X`, `TARGET`...). A node with `kind: 'event'` (`pf_on_update`, `pf_on_overlap`...) starts a
+  handler and has no `exec` input; a `pure` node (`pf_key_down`, `math_arithmetic`, `pf_score_get`...) has no exec pins: it is re-evaluated every time it is read.
+- **Pin names** = those of `list_nodes` (exact, case-sensitive). One execution output -> at most one wire; an execution input accepts several; a data input accepts one wire,
+  a data output many. Types: exec, number, boolean, string, object, color, list, any (a number/boolean/color can feed a string; `any` fits everything).
+- **`fields`** = the node's widgets by name (`OBJ`, `PROP`, `KEY`, `NAME`, `SOUND`, `MAP`, `ANIM`, `MS`...). Object / map / sound / animation names are the same case-sensitive names as in scripts.
+- **`values`** = literal for each *unconnected* data input, by pin name (`{ "VALUE": 1 }`, `{ "X": 4, "Y": 4, "TEXT": "Score: " }`); otherwise the pin's default (shown by `list_nodes`).
+  A wire on the pin takes precedence.
+- **`extra`** = dynamic pins: `{ items: 3 }` (`text_join`, `lists_create_with`, `pf_dict`: pins `ADD0..` / `V0..`), `{ params: ['a','b'] }` (`fn_def`; its outputs `ARG0..` carry
+  the parameters), `{ name: 'f', params: ['a','b'] }` (`fn_call` / `fn_call_value`, inputs `ARG0..`), `{ outs: 3 }` (`flow_sequence`).
+- Nodes marked `[self only]` (anything acting on `self`) are forbidden in the global script (compile error). Nodes not wired to an event or function are ignored.
+- Same golden rules as JavaScript (top-left coordinates, overlap vs collide, names...). Use a `flow_branch` for `if`, `flow_while` / `flow_for` / `flow_for_each` for loops,
+  `pf_wait` (Delay) for timers, `var_get` / `var_set` for script variables (declare them in `graph.variables`), `pf_selfvar_*` for per-instance variables.
+
+Minimal valid graph, a pickup (Coin object): when the Player overlaps -> destroy self -> score +1 -> play a sound.
+
+```json
+{ "mode": "graph", "code": "", "graph": { "version": 1,
+  "nodes": [
+    { "id": "n1", "type": "pf_on_overlap", "fields": { "OBJ": "Player" } },
+    { "id": "n2", "type": "pf_destroy_self" },
+    { "id": "n3", "type": "pf_score_add", "values": { "VALUE": 1 } },
+    { "id": "n4", "type": "pf_play_sound", "fields": { "SOUND": "coin" } }
+  ],
+  "links": [
+    { "from": "n1", "fromPin": "then", "to": "n2", "toPin": "exec" },
+    { "from": "n2", "fromPin": "then", "to": "n3", "toPin": "exec" },
+    { "from": "n3", "fromPin": "then", "to": "n4", "toPin": "exec" }
+  ] } }
+```
+compiles to `on('overlap', 'Player', (other) => { self.destroy(); game.score += 1; game.playSound('coin', 1, 1); });`. Same thing through MCP:
+`upsert_object {game, name: 'Coin', sprite: 'Coin', physics: {...}, graph: {nodes: [...], links: [...]}}` (no `mode` / `code` needed).
+
+With a condition (data wire into `flow_branch.COND`, branch `true`): moving right while RIGHT is held.
+
+```json
+{ "nodes": [
+    { "id": "n1", "type": "pf_on_update" },
+    { "id": "n2", "type": "pf_self_set", "fields": { "PROP": "vx" }, "values": { "VALUE": 0 } },
+    { "id": "n3", "type": "flow_branch" },
+    { "id": "n4", "type": "pf_key_down", "fields": { "KEY": "RIGHT" } },
+    { "id": "n5", "type": "pf_self_set", "fields": { "PROP": "vx" }, "values": { "VALUE": 90 } } ],
+  "links": [
+    { "from": "n1", "fromPin": "then", "to": "n2", "toPin": "exec" },
+    { "from": "n2", "fromPin": "then", "to": "n3", "toPin": "exec" },
+    { "from": "n4", "fromPin": "out", "to": "n3", "toPin": "COND" },
+    { "from": "n3", "fromPin": "true", "to": "n5", "toPin": "exec" } ] }
+```
+-> `on('update', (dt) => { self.vx = 0; if (input.isDown('RIGHT')) { self.vx = 90; } });`
+
+In the editor the user can switch a script between Blueprint and Code (the text keeps the compiled code; going back to the graph regenerates it). Old games saved with Blockly blocks
+(`mode: 'blocks'`) are converted automatically on load (`normalizeProject`): never write `mode: 'blocks'` yourself.
+
 ## Files
 
-`mcp/server.js` MCP server - `mcp/cli.js` CLI - `mcp/lib/` Node library (PNG codec, text sprites, validation, ASCII map render, export) -
-`mcp/test/e2e.mjs` end-to-end test (`node mcp/test/e2e.mjs`) - `src/runtime/engine.js` the engine (no imports) - `src/core/project.js` schema defaults.
+`src/graph/` Blueprint core (node catalogue, compiler, Blockly converter; no DOM) - `src/editors/objects/graph-editor.js` visual editor - `mcp/server.js` MCP server - `mcp/cli.js` CLI - `mcp/lib/` Node library (PNG codec, text sprites, validation, ASCII map render, export, graph checks) -
+`mcp/test/e2e.mjs` end-to-end test (`node mcp/test/e2e.mjs`) - `src/runtime/engine.js` the engine (no imports) - `src/core/project.js` schema defaults and script migration - `node src/graph/test/graph.test.mjs` Blueprint compiler test.
 Exports go to `exports/<id>.html` (standalone, Phaser from a CDN).

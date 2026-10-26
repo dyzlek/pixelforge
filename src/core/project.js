@@ -1,4 +1,5 @@
 // Schéma du projet : voir docs/ARCHITECTURE.md
+import { compileGraph, blocklyToGraph } from '../graph/index.js';
 
 export const PROJECT_VERSION = 1;
 
@@ -12,8 +13,39 @@ export function uid(prefix = 'id') {
   return prefix + '_' + Math.random().toString(36).slice(2, 9);
 }
 
-export function emptyScript(mode = 'blocks') {
-  return { mode, code: '', blocks: null };
+export const emptyGraph = () => ({ version: 1, nodes: [], links: [], variables: [], comments: [] });
+
+// Script vide : un Blueprint sans nœud
+export function emptyScript() {
+  return { mode: 'graph', code: '', graph: emptyGraph() };
+}
+
+// Normalise un script chargé (objet ou global). Ancien format Blockly (mode 'blocks') : converti en graphe et recompilé
+// (le code enregistré par Blockly peut être faux, la conversion le répare) ; sans blocs mais avec du code → mode 'code' ; vide → graphe vide.
+export function normalizeScript(s, isGlobal = false) {
+  if (!s || typeof s !== 'object') return emptyScript();
+  const blocks = s.blocks;
+  delete s.blocks;
+  if (typeof s.code !== 'string') s.code = '';
+  if (s.mode === 'graph') {
+    if (!s.graph || typeof s.graph !== 'object') s.graph = emptyGraph();
+  } else if (s.mode !== 'code') {
+    const top = blocks?.blocks?.blocks ?? blocks?.blocks;
+    const hasBlocks = Array.isArray(top) && top.length > 0;
+    if (hasBlocks) {
+      let graph;
+      try { graph = blocklyToGraph(blocks); } catch (e) { console.error('Conversion des blocs impossible :', e); graph = emptyGraph(); }
+      s.graph = graph;
+      s.mode = 'graph';
+      s.code = compileGraph(graph, { isGlobal }).code;
+    } else if (s.code.trim()) {
+      s.mode = 'code';
+    } else {
+      s.mode = 'graph';
+      s.graph = emptyGraph();
+    }
+  }
+  return s;
 }
 
 export function blankFrame(width, height) {
@@ -35,7 +67,7 @@ export function createObject(name = 'Objet', spriteId = null) {
   return {
     id: uid('obj'), name, spriteId, defaultAnim: 'idle', hitbox: null,
     physics: { enabled: true, gravity: true, immovable: false, bounce: 0, collideMap: true, collideWorld: true },
-    script: emptyScript('blocks'),
+    script: emptyScript(),
   };
 }
 
@@ -75,7 +107,7 @@ export function createEmptyProject(name = 'Mon jeu') {
     sounds: [],
     objects: [],
     maps: [map],
-    globalScript: emptyScript('blocks'),
+    globalScript: emptyScript(),
   };
 }
 
@@ -88,7 +120,11 @@ export function normalizeProject(p) {
   p.meta = { ...base.meta, ...(p.meta || {}) };
   p.sprites = p.sprites || [];
   p.sounds = p.sounds || [];
-  p.objects = (p.objects || []).map((o) => ({ ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } }));
+  p.objects = (p.objects || []).map((o) => {
+    const obj = { ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };
+    obj.script = normalizeScript(o.script, false);
+    return obj;
+  });
   p.maps = p.maps?.length ? p.maps : base.maps;
   for (const m of p.maps) {
     for (const l of m.layers || []) {
@@ -98,7 +134,7 @@ export function normalizeProject(p) {
     }
     for (const e of m.entities || []) e.props = e.props || {};
   }
-  p.globalScript = p.globalScript || emptyScript();
+  p.globalScript = normalizeScript(p.globalScript, true);
   if (!p.maps.some((m) => m.id === p.settings.startMapId)) p.settings.startMapId = p.maps[0].id;
   return p;
 }

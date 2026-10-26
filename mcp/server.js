@@ -30,7 +30,18 @@ const physicsShape = z.object({
   bounce: z.number().optional(), collideMap: z.boolean().optional(), collideWorld: z.boolean().optional(),
 }).describe('Partial physics flags; defaults {enabled:true,gravity:true,immovable:false,bounce:0,collideMap:true,collideWorld:true}');
 
-tool('pixelforge_guide', 'Read this first. Returns the AGENTS.md guide (workflow, formats, golden rules, recipes) and the scripting API (SCRIPT_API.md).', {}, () =>
+// Graphe Blueprint : même format que script.graph dans le fichier du jeu (docs/BLUEPRINTS.md)
+const graphShape = z.object({
+  nodes: z.array(z.object({
+    id: z.string(), type: z.string(), x: z.number().optional(), y: z.number().optional(),
+    fields: z.record(z.string(), z.any()).optional(), values: z.record(z.string(), z.any()).optional(), extra: z.record(z.string(), z.any()).optional(),
+  })),
+  links: z.array(z.object({ id: z.string().optional(), from: z.string(), fromPin: z.string(), to: z.string(), toPin: z.string() })).optional(),
+  variables: z.array(z.object({ name: z.string(), default: z.any().optional() })).optional(),
+  comments: z.array(z.record(z.string(), z.any())).optional(),
+}).describe('Blueprint graph: nodes [{id, type, fields, values, extra}] + links [{from, fromPin, to, toPin}] (exec pins: exec / then / true / false / body...; data pins: out -> input name). x,y are optional (auto layout). Node types and pins: list_nodes. Details: pixelforge_guide.');
+
+tool('pixelforge_guide', 'Read this first. Returns the AGENTS.md guide (workflow, formats, golden rules, recipes, Blueprint graphs) and the scripting API (SCRIPT_API.md).', {}, () =>
   pf.readDoc('AGENTS.md') + '\n\n---\n\n' + pf.readDoc('docs', 'SCRIPT_API.md'));
 
 tool('list_games', 'List the games in the library (id, name, last update).', {}, () => {
@@ -75,17 +86,23 @@ tool('upsert_sprite', 'Create or replace a sprite (or tileset: a sprite whose fr
 
 tool('get_sprite', 'Show a sprite as text (frames, legend, animations) in the same format as upsert_sprite.', { game: gameArg, name: z.string() }, ({ game, name }) => pf.getSprite(pf.loadGame(game), name).text);
 
-tool('upsert_object', 'Create or update a game object (a template for entities: sprite, physics, hitbox, script). Object names are case-sensitive and used by scripts. code = script body (see pixelforge_guide); it is syntax-checked and the call is refused if invalid.', {
+tool('upsert_object', 'Create or update a game object (a template for entities: sprite, physics, hitbox, script). Object names are case-sensitive and used by scripts. code = script body (see pixelforge_guide) OR graph = Blueprint node graph (see list_nodes); both are checked and the call is refused if invalid.', {
   game: gameArg, name: z.string(), sprite: z.string().nullable().optional().describe('sprite name'), defaultAnim: z.string().nullable().optional(),
   physics: physicsShape.optional(), hitbox: z.object({ x: z.number(), y: z.number(), w: z.number(), h: z.number() }).nullable().optional().describe('pixels relative to the frame; null = whole frame'),
-  code: z.string().optional(),
+  code: z.string().optional().describe('script as JavaScript (mode code)'),
+  graph: graphShape.optional().describe('script as a Blueprint graph (mode graph): compiled to JavaScript; refused with the compile errors if invalid. Give code OR graph, not both.'),
 }, ({ game, ...a }) => write(game, `object "${a.name}"`, (p) => pf.upsertObject(p, a)));
 
-tool('set_script', 'Set the script of an object (or "global" for the global script). Syntax is checked; invalid code is refused with the error.', {
-  game: gameArg, object: z.string().describe('object name or "global"'), code: z.string(),
-}, ({ game, object, code }) => write(game, object === 'global' ? 'global script' : `object "${object}"`, (p) => pf.setScript(p, object, code)));
+tool('set_script', 'Set the script of an object (or "global" for the global script), either as JavaScript `code` or as a Blueprint `graph` (compiled to JavaScript, mode graph). Syntax / compile errors refuse the call with the error.', {
+  game: gameArg, object: z.string().describe('object name or "global"'),
+  code: z.string().optional(), graph: graphShape.optional().describe('Blueprint graph (give code OR graph)'),
+}, ({ game, object, code, graph }) => write(game, object === 'global' ? 'global script' : `object "${object}"`, (p) => pf.setScript(p, object, { code, graph })));
 
-tool('get_script', 'Read the script code of an object (or "global").', { game: gameArg, object: z.string() }, ({ game, object }) => pf.getScript(pf.loadGame(game), object) || '(empty script)');
+tool('get_script', 'Read the script of an object (or "global"): the code, plus the Blueprint graph (JSON) when it has one.', { game: gameArg, object: z.string() }, ({ game, object }) => pf.getScript(pf.loadGame(game), object) || '(empty script)');
+
+tool('list_nodes', 'Catalogue of Blueprint node types for the "graph" argument of upsert_object / set_script: type, title, kind (event / exec / pure), input and output pins (name:type), fields. Filter with category (e.g. event, move, flow, math) or a search word.', {
+  category: z.string().optional(), search: z.string().optional(),
+}, (a) => pf.listNodes(a));
 
 tool('upsert_map', 'Create or update a map. New map: width/height in tiles (default 40x12), tileset = sprite name, layers = [{name, collides, depth:"below"|"above", visible}] in drawing order (default: Décor, Sol[collides]). Resizing keeps existing tiles. start:true makes it the start map. A pristine default map is replaced by the first map you create.', {
   game: gameArg, name: z.string(), width: z.number().int().optional(), height: z.number().int().optional(), tileset: z.string().nullable().optional(),

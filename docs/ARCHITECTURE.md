@@ -15,13 +15,19 @@ src/
   editors/
     pixel/             éditeur de pixel art + animations                           [agent pixel]
     map/               éditeur de cartes (tuiles, calques, collisions, entités)    [agent map]
-    objects/           objets du jeu : propriétés, physique, script code OU blocs  [agent code]
+    objects/           objets du jeu : propriétés, physique, script Blueprint OU code
+                       (editor.js : bascule Blueprint / Code ; graph-editor.js : éditeur de graphe de nœuds)
+  graph/               noyau des Blueprints, sans DOM ni dépendance (navigateur ET node) :
+                       nodes.js (catalogue), compile.js (graphe -> JS), fromBlockly.js (ancien format -> graphe),
+                       test/ (node src/graph/test/graph.test.mjs ; legacy-blocks.js = référence Blockly du test seulement)
   runtime/
     engine.js          transforme un projet en jeu Phaser (aucun import !)         [agent runtime]
     play.js            onglet « Jouer » + export HTML autonome                    [agent runtime]
 docs/
   ARCHITECTURE.md      ce fichier
-  SCRIPT_API.md        API des scripts (partagée entre blocs, code et runtime)
+  SCRIPT_API.md        API des scripts (partagée entre Blueprint, code et runtime)
+  BLUEPRINTS.md        format des graphes de nœuds, catalogue, compilation
+  PROJECT_SCHEMA.json  JSON Schema du fichier de jeu
 ```
 
 ## Contrat des modules d'onglet
@@ -75,7 +81,7 @@ Ne pas garder de copie du projet : toujours relire `store.project` (il est rempl
     spriteId, defaultAnim: 'idle' | null,
     hitbox: null | { x, y, w, h },     // en pixels relatifs à la frame ; null = toute la frame
     physics: { enabled: true, gravity: true, immovable: false, bounce: 0, collideMap: true, collideWorld: true },
-    script: { mode: 'blocks' | 'code', code: '', blocks: null }   // blocks = sérialisation JSON Blockly
+    script: { mode: 'graph' | 'code', code: '', graph: {…} }      // graph : voir docs/BLUEPRINTS.md (absent en mode code)
   }],
 
   maps: [{
@@ -89,11 +95,17 @@ Ne pas garder de copie du projet : toujours relire `store.project` (il est rempl
     entities: [{ id, objectId, x, y }]   // x,y en pixels (coin haut-gauche de la frame)
   }],
 
-  globalScript: { mode: 'blocks' | 'code', code: '', blocks: null }
+  globalScript: { mode: 'graph' | 'code', code: '', graph: {…} }
 }
 ```
 
-Le runtime n'exécute **que** `script.code`. Le mode blocs régénère `code` à chaque modification.
+Le runtime n'exécute **que** `script.code`. En mode `graph`, l'éditeur Blueprint recompile le graphe en JavaScript
+(`compileGraph`, `src/graph/compile.js`) et réécrit `code` à chaque modification ; en mode `code`, le texte est libre.
+
+**Migration** : `normalizeProject` (src/core/project.js) convertit les anciens scripts `mode: 'blocks'` (Blockly) : blocs -> graphe
+(`blocklyToGraph`), recompilation du code, `mode = 'graph'`, champ `blocks` supprimé ; sans blocs mais avec du code -> `mode: 'code'` ;
+vide -> graphe vide. Un script `graph` sans `graph` reçoit un graphe vide. L'éditeur, le serveur MCP et la CLI passent tous par
+`normalizeProject` : un jeu ancien s'ouvre donc sans manipulation (le fichier n'est réécrit qu'à la prochaine modification).
 
 ### Champs ajoutés en v1.1 (remplis par normalizeProject si absents)
 

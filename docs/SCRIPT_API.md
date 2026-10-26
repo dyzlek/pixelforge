@@ -77,7 +77,7 @@ on('overlap', 'Coin', (coin) => { coin.destroy(); game.score += 1; game.setText(
 # v1.1 — ajouts (100 % compatibles avec ce qui précède)
 
 Tout ce qui précède reste valable. Les signatures ci-dessous sont volontairement « plates » (arguments simples) :
-chacune peut devenir un bloc. Les angles sont en **degrés** : 0 = droite, 90 = bas, −90 = haut (sens horaire, comme Phaser).
+chacune peut devenir un nœud Blueprint. Les angles sont en **degrés** : 0 = droite, 90 = bas, −90 = haut (sens horaire, comme Phaser).
 
 ## Schéma du projet
 
@@ -251,14 +251,14 @@ on('keydown', 'ENTER', () => { if (game.paused) { game.resume(); game.removeText
 
 # v1.2 — ajouts (actions sur une autre instance, Portal 2D)
 
-Tout est rétrocompatible. Les blocs correspondants sont dans les catégories « Objet », « Événements », « Tuiles & rayons » et « Caméra & texte ».
+Tout est rétrocompatible. Les nœuds Blueprint correspondants sont dans les catégories « Objet », « Événements », « Tuiles & rayons » et « Caméra & texte ».
 
 ## Agir sur une autre instance
 
 Les instances reçues par `on('collide'|'overlap'|'overlapStart'|'overlapEnd', …, (other) => …)`, `game.find`, `game.findAll`, `game.spawn`
 et `r.instance` (rayon) exposent **exactement la même API que `self`** : `other.setPosition(x, y)`, `other.setVelocity(vx, vy)`,
-`other.setVelocityAngle(angle, force)`, `other.angle = …`, `other.props`, `other.destroy()`… Dans les blocs : « moi-même (instance) »,
-« l'autre », « premier … » ou une variable se branchent sur l'entrée **cible** des blocs « cible : se placer en x y », « cible : vitesse vx vy »,
+`other.setVelocityAngle(angle, force)`, `other.angle = …`, `other.props`, `other.destroy()`… Dans un Blueprint : « moi-même (instance) »,
+« l'autre », « premier … » ou une variable se branchent sur l'entrée **cible** des nœuds « cible : se placer en x y », « cible : vitesse vx vy »,
 « cible : vitesse angle force », « cible : s'orienter selon la normale », « cible : collision avec la carte / les objets », « cible : hitbox », « cible : propriété ».
 Sans effet si la cible est vide (`null`).
 
@@ -291,7 +291,7 @@ Le résultat contient en plus : `layer` (nom du calque solide touché — le der
 
 ## `game.camera` — ajouts
 
-`game.camera.setDeadzone(w, h)` (déjà dispo, bloc ajouté) et `game.camera.setOffset(x, y)` : décalage de la caméra par rapport à la cible suivie.
+`game.camera.setDeadzone(w, h)` (déjà dispo, nœud ajouté) et `game.camera.setOffset(x, y)` : décalage de la caméra par rapport à la cible suivie.
 
 ```js
 // Portail : tir au clic, refusé sur le calque « Métal », orienté selon la normale

@@ -1,5 +1,4 @@
-import * as Blockly from 'blockly';
-import { generateCode, setBlocksContext } from '../src/editors/objects/blocks.js';
+import { blocklyToGraph, compileGraph } from '../src/graph/index.js';
 import { createEmptyProject, createObject, createMap, uid as genUid } from '../src/core/project.js';
 import * as pf from '../mcp/lib/index.js';
 import fs from 'node:fs';
@@ -106,7 +105,7 @@ function uid(prefix = 'b') {
   return `${prefix}_${blockIdCounter++}`;
 }
 
-// Helpers pour blocs Blockly
+// Helpers pour la sérialisation Blockly (format intermédiaire converti en graphe)
 const n = (num) => ({ block: { type: 'math_number', id: uid('num'), fields: { NUM: num } } });
 const str = (text) => ({ block: { type: 'text', id: uid('txt'), fields: { TEXT: text } } });
 const bool = (v) => ({ block: { type: 'logic_boolean', id: uid('bool'), fields: { BOOL: v ? 'TRUE' : 'FALSE' } } });
@@ -1107,7 +1106,7 @@ function planFond() {
 export function buildTetrisProject() {
   const project = createEmptyProject('Tetris');
   project.meta.id = 'tetris';
-  project.meta.description = 'Tetris rétro complet codé à 100% en Blocs (Blockly) avec rotation SRS, 7-bag, ghost piece, hold et musique chiptune';
+  project.meta.description = 'Tetris rétro complet codé à 100% en Blueprints (graphe de nœuds) avec rotation SRS, 7-bag, ghost piece, hold et musique chiptune';
   project.palette = PALETTE;
   project.settings.width = 256;
   project.settings.height = 240;
@@ -1147,28 +1146,19 @@ export function buildTetrisProject() {
     pf.addSound(project, s);
   }
 
-  // Définir le contexte Blockly avec le projet (pour que les dropdowns trouvent les sons)
-  setBlocksContext({ getProject: () => project });
+  // Le workspace ci-dessous est écrit au format de sérialisation Blockly (plus pratique à générer) :
+  // il est converti en graphe Blueprint, puis compilé en JavaScript.
+  const graph = blocklyToGraph(buildTetrisBlockWorkspace());
+  const compiled = compileGraph(graph);
+  if (compiled.errors.length) throw new Error('Compilation du graphe Tetris : ' + compiled.errors.map((e) => e.message).join(' ; '));
 
-  // Construction du workspace Blockly
-  const blocksWorkspaceState = buildTetrisBlockWorkspace();
-
-  // Création d'un workspace Blockly temporaire en mémoire pour générer le code
-  const ws = new Blockly.Workspace();
-  Blockly.serialization.workspaces.load(blocksWorkspaceState, ws);
-  const generatedCode = generateCode(ws);
-
-  // Objet TetrisGame en MODE BLOCS
+  // Objet TetrisGame en mode Blueprint
   const tetrisObj = createObject('TetrisGame', pf.findSprite(project, 'Vide').id);
   tetrisObj.physics.gravity = false;
   tetrisObj.physics.collideWorld = false;
   tetrisObj.physics.collideMap = false;
   tetrisObj.physics.immovable = true;
-  tetrisObj.script = {
-    mode: 'blocks',
-    code: generatedCode,
-    blocks: blocksWorkspaceState
-  };
+  tetrisObj.script = { mode: 'graph', code: compiled.code, graph };
   project.objects.push(tetrisObj);
 
   // Carte
@@ -1207,7 +1197,7 @@ export function buildTetrisProject() {
 
 // Exécution si appelé directement
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, '/')}`) {
-  console.log('Construction du projet Tetris en mode Blocs...');
+  console.log('Construction du projet Tetris en mode Blueprint...');
   const project = buildTetrisProject();
   pf.saveGame(project);
   console.log('Jeu sauvegardé dans games/tetris.pixelforge.json');

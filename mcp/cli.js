@@ -1,9 +1,10 @@
 #!/usr/bin/env node
-// CLI : node mcp/cli.js list | validate <jeu> | export <jeu> | render <jeu> <carte> | show <jeu>
+// CLI : node mcp/cli.js list | validate <jeu> | compile <jeu> | export <jeu> | render <jeu> <carte> | show <jeu> | nodes [mot]
 import * as pf from './lib/index.js';
 
 const [cmd, game, map] = process.argv.slice(2);
-const usage = 'usage: node mcp/cli.js list | validate <game> | export <game> | render <game> <map> | show <game>';
+const NL = String.fromCharCode(10);
+const usage = 'usage: node mcp/cli.js list | validate <game> | compile <game> | export <game> | render <game> <map> | show <game> | nodes [category|word]';
 
 try {
   if (cmd === 'list') {
@@ -13,6 +14,17 @@ try {
     const issues = pf.validateProject(pf.loadGame(game));
     console.log(pf.formatIssues(issues));
     process.exitCode = issues.some((i) => i.level === 'error') ? 1 : 0;
+  } else if (cmd === 'compile' && game) {
+    // recompile les scripts Blueprint du jeu (script.code) et sauvegarde
+    const p = pf.loadGame(game);
+    const { changed, errors } = pf.recompileGraphs(p);
+    if (changed.length) pf.saveGame(p);
+    console.log(changed.length ? 'Recompiled: ' + changed.join(', ') + '.' : 'Blueprint scripts already up to date.');
+    if (errors.length) { console.log('Compile errors:' + NL + '- ' + errors.join(NL + '- ')); process.exitCode = 1; }
+  } else if (cmd === 'nodes') {
+    // catalogue des nœuds : un mot de catégorie (event, move, flow...) ou une recherche libre
+    const known = pf.listNodes({ category: game }).startsWith('##');
+    console.log(pf.listNodes(known ? { category: game } : { search: game }));
   } else if (cmd === 'export' && game) {
     const { file, bytes } = await pf.exportGameHTML(pf.loadGame(game));
     console.log(`Exported ${file} (${Math.round(bytes / 1024)} KB)`);

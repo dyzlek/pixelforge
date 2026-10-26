@@ -51,9 +51,47 @@
       "type": "object",
       "required": ["mode", "code"],
       "properties": {
-        "mode": { "enum": ["code", "blocks"], "description": "Only `code` is executed. When writing by hand always use mode \"code\", blocks null." },
-        "code": { "type": "string", "description": "Body of new Function('self','game','input','on', code). See docs/SCRIPT_API.md." },
-        "blocks": { "type": ["object", "null"], "description": "Blockly serialisation (editor only)." }
+        "mode": { "enum": ["graph", "code"], "description": "Only `code` is executed by the game. `graph` = Blueprint (node graph) compiled to `code` by the editor / MCP tools; `code` = hand-written JavaScript (always valid when writing JSON by hand). Legacy `blocks` (Blockly) files are converted to `graph` on load." },
+        "code": { "type": "string", "description": "Body of new Function('self','game','input','on', code). See docs/SCRIPT_API.md. In mode `graph` it is the compiled output (never edit it by hand: it is regenerated from the graph)." },
+        "graph": { "$ref": "#/$defs/graph", "description": "Blueprint graph (mode `graph`). Format and node catalogue: docs/BLUEPRINTS.md." }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "required": ["nodes", "links"],
+      "properties": {
+        "version": { "const": 1 },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "type"],
+            "properties": {
+              "id": { "type": "string", "description": "Unique inside the graph (e.g. n1)." },
+              "type": { "type": "string", "description": "Node type from src/graph/nodes.js: pf_on_update, pf_jump, flow_branch, var_set, math_arithmetic... (MCP tool list_nodes)." },
+              "x": { "type": "number" }, "y": { "type": "number" },
+              "fields": { "type": "object", "description": "Widget values of the node (dropdowns, text...): { OBJ: 'Player', KEY: 'SPACE' }." },
+              "values": { "type": "object", "description": "Literal values of unconnected data input pins, by pin name: { X: 0, TEXT: 'Score: ' }." },
+              "extra": { "type": "object", "description": "State of nodes with dynamic pins: { items: 3 } (text_join, lists_create_with, pf_dict), { params: ['a'] } (fn_def), { name: 'f', params: ['a'] } (fn_call), { outs: 3 } (flow_sequence)." }
+            }
+          }
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "fromPin", "to", "toPin"],
+            "properties": {
+              "id": { "type": "string" },
+              "from": { "type": "string", "description": "Source node id (output pin: then, true, false, body, done, out, other, dt...)." },
+              "fromPin": { "type": "string" },
+              "to": { "type": "string", "description": "Target node id (input pin: exec or a data pin name)." },
+              "toPin": { "type": "string" }
+            }
+          }
+        },
+        "variables": { "type": "array", "items": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" }, "default": {} } } },
+        "comments": { "type": "array", "items": { "type": "object", "properties": { "id": { "type": "string" }, "x": { "type": "number" }, "y": { "type": "number" }, "w": { "type": "number" }, "h": { "type": "number" }, "text": { "type": "string" }, "color": { "type": "string" } } } }
       }
     },
     "sprite": {

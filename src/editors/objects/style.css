@@ -41,10 +41,10 @@
 .obj-seg button { border-radius: 0; }
 .obj-seg button:first-child { border-radius: var(--radius) 0 0 var(--radius); }
 .obj-seg button:last-child { border-radius: 0 var(--radius) var(--radius) 0; margin-left: -1px; }
-.obj-ed-note { color: var(--muted); font-size: 12px; }
+.obj-ed-bar button { white-space: nowrap; }
 .obj-ed-main { flex: 1; min-height: 0; display: flex; }
 .obj-ed-body { flex: 1; min-width: 0; position: relative; }
-.obj-blockly { position: absolute; inset: 0; }
+.obj-graph { position: absolute; inset: 0; }
 .obj-ed-body .cm-editor { height: 100%; }
 .obj-ed-gen { width: 320px; flex: none; margin: 0; padding: 10px; overflow: auto; background: #0f1017; border-left: 1px solid var(--border); font: 12px/1.5 var(--mono); color: #c9d1e8; }
 .obj-ed-gen[hidden], .obj-help[hidden], .obj-ed-bar button[hidden] { display: none; }
@@ -52,6 +52,3 @@
 .obj-help { position: absolute; top: 44px; right: 10px; bottom: 10px; width: min(520px, 90%); display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 8px 30px #000a; z-index: 20; }
 .obj-help-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--border); }
 .obj-help-body { flex: 1; margin: 0; padding: 10px; overflow: auto; white-space: pre-wrap; font: 12px/1.5 var(--mono); }
-
-/* Blockly : l'éditeur n'a pas de fond propre, le thème fournit les couleurs */
-.obj-blockly .blocklyToolboxDiv { border-right: 1px solid var(--border); }
