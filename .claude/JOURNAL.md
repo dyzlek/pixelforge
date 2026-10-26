@@ -1,5 +1,22 @@
 # Journal — PixelForge
 
+## 2026-10-26 (36) — [Phase B] B8 : Contenu de depart et morceaux de demonstration
+- **Fait** :
+  - Composition et integration de 6 morceaux chiptune originaux complets dans `src/audio/presets/` :
+    - `adventure.js` : Theme Aventure / Overworld (140 BPM, joyeux et entrainant en do majeur).
+    - `dungeon.js` : Theme Donjon / Souterrain (110 BPM, mysterieux et sombre en la mineur).
+    - `boss.js` : Theme Combat de Boss (160 BPM, rapide, intense et agressif en re mineur).
+    - `menu.js` : Theme Menu Principal (120 BPM, melodie douce et accueillante en fa majeur).
+    - `victory.js` : Theme Victoire / Niveau reussi (150 BPM, fanfare heroique triomphante).
+    - `gameover.js` : Theme Defaite / Game Over (90 BPM, chute melancolique en do mineur).
+  - Creation de 4 modeles rythmiques de batterie 8-bit classiques dans `src/audio/presets/drums.js` (Rock 8-bit, Disco / Techno retro, Marche cadensee, Demi-tempo).
+  - Integration dans `src/editors/music/rack.js` d'un selecteur de modele de batterie en 1-clic pour les canaux percussifs.
+  - Creation de la boite de dialogue modale `src/ui/dialogs/new-song.js` permettant de choisir un modele de morceau lors de la creation d'une nouvelle musique dans le panneau Ressources.
+  - Integration du theme Aventure dans le projet d'exemple (`src/core/sample.js`) avec declenchement automatique via `game.playSong('Aventure')`.
+  - Tests unitaires dans `src/audio/test/chip.test.mjs` validant les 6 presets, les 4 modeles de batterie et la lecture audio.
+- **Verifie** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **Etat** : Closes #19. Finalisation de toute la Phase B de la roadmap studio (Issues #11 a #19).
+
 ## 2026-10-26 (35) — [Phase B] B7 : Integration musicale dans les scripts, Blueprints et MCP
 - **Fait** :
   - Extension de l'API runtime dans `src/runtime/engine.js` (zero import) : `game.playSong(name, { loop, volume, fadeIn })`, `game.stopSong({ fadeOut })`, `game.setSongVolume(v)` et evenement de rythme `on('beat', fn(beatNumber))`.

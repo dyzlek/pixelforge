@@ -7,6 +7,7 @@ import { renderPianoRoll } from './pianoroll.js';
 import { renderPlaylist } from './playlist.js';
 import { renderMixer } from './mixer.js';
 import { getIconSvg } from '../../ui/icons.js';
+import { DRUM_PATTERNS } from '../../audio/presets/drums.js';
 
 let sharedAudioCtx = null;
 let sharedMasterGain = null;
@@ -497,6 +498,23 @@ export function mount(container, store, { refId = null } = {}) {
       onChannelSelect(chId) {
         selectedChannelId = chId;
         setView('pianoroll');
+      },
+      onApplyDrumPattern(patternId, chId) {
+        const tmpl = DRUM_PATTERNS[patternId];
+        if (!tmpl) return;
+        store.update((p) => {
+          const curSong = (p.songs || []).find((s) => s.id === song.id);
+          const curPat = (curSong?.patterns || []).find((pt) => pt.id === activePatternId);
+          if (!curPat) return;
+          curPat.notes = (curPat.notes || []).filter((n) => n.ch !== chId);
+          const pLen = curPat.length || 16;
+          for (const n of tmpl.notes) {
+            if (n.step < pLen) {
+              curPat.notes.push({ ch: chId, step: n.step, pitch: n.pitch, len: 1, vel: 1 });
+            }
+          }
+        }, 'song:apply_drum_pattern');
+        render();
       },
       onStepToggle(chId, stepIndex, pitch, active) {
         store.update((p) => {

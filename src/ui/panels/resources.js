@@ -6,6 +6,7 @@
 import './resources.css';
 import { createMap, createSprite, createObject, createSong, uid } from '../../core/project.js';
 import { getIconSvg } from '../icons.js';
+import { showNewSongDialog } from '../dialogs/new-song.js';
 
 export function createResourcesPanel(container, store, workspace) {
   let filterText = '';
@@ -213,15 +214,7 @@ export function createResourcesPanel(container, store, workspace) {
           }, 'sound');
         }
       } else if (type === '5') {
-        const name = prompt('Nom de la musique :', 'Nouvelle musique');
-        if (name) {
-          store.update((p) => {
-            p.songs = p.songs || [];
-            const sng = createSong(name);
-            p.songs.push(sng);
-            workspace.open({ kind: 'song', refId: sng.id, title: sng.name });
-          }, 'song');
-        }
+        showNewSongDialog(store, workspace);
       }
     } else if (act === 'dup' && selectedItem) {
       store.update((p) => {

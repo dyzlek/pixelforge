@@ -3,6 +3,7 @@
 // (0-9 puis a-f, voir DEFAULT_PALETTE), '.' = transparent.
 
 import { createEmptyProject, createSprite, createObject, createMap, DEFAULT_PALETTE, uid } from './project.js';
+import { createAdventureSong } from '../audio/presets/adventure.js';
 
 const HEX = '0123456789abcdef';
 
@@ -129,6 +130,7 @@ on('create', () => {
   game.vars.showScore = () => game.setText('score', 'Pièces : ' + game.score, 4, 4);
   game.vars.showScore();
   game.setText('help', 'Flèches ou Q/D : bouger   Espace : sauter', 4, game.height - 16);
+  game.playSong('Aventure', { loop: true, volume: 0.6 });
 });
 
 // L'aide disparaît au bout de 6 secondes
@@ -306,6 +308,7 @@ export function createSampleProject() {
     entity(oFlag, 56, 9),
   ];
 
+  project.songs = [createAdventureSong()];
   project.maps = [map];
   project.settings.startMapId = map.id;
   project.settings.background = map.background;

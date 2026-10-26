@@ -5,6 +5,7 @@ import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../edit
 import { encodeWav } from '../wav-encoder.js';
 import { parseMidi, midiToSong } from '../midi-parser.js';
 import { parseSongText, songToText } from '../../../mcp/lib/song-text.js';
+import { SONG_PRESETS, getSongPreset, DRUM_PATTERNS } from '../presets/index.js';
 
 function createMockAudioContext() {
   const scheduledValues = [];
@@ -399,5 +400,29 @@ assert.equal(typeof songCtrl.setVolume, 'function');
 assert.ok(songCtrl.isPlaying());
 songCtrl.setVolume(0.5);
 songCtrl.stop({ fadeOut: 0.1 });
+
+// 16. Test des 6 morceaux de demonstration et 4 modeles de batterie
+assert.equal(SONG_PRESETS.length, 6);
+for (const p of SONG_PRESETS) {
+  const song = p.create();
+  assert.ok(song.id);
+  assert.ok(song.name);
+  assert.ok(song.bpm > 60 && song.bpm < 200);
+  assert.ok(song.channels.length >= 3);
+  assert.ok(song.patterns.length >= 1);
+  assert.ok(song.playlist.length >= 1);
+  // Verification de lecture sans erreur dans le mock audio
+  const ctrl = chipSong.playSong(song);
+  assert.ok(ctrl);
+  ctrl.stop();
+}
+
+const drumIds = ['rock8bit', 'discoRetro', 'march', 'halfTime'];
+for (const id of drumIds) {
+  const dp = DRUM_PATTERNS[id];
+  assert.ok(dp);
+  assert.ok(dp.name);
+  assert.ok(dp.notes.length >= 4);
+}
 
 console.log('Tests chip.js reussis avec succes.');
