@@ -1,5 +1,19 @@
 # Journal — PixelForge
 
+## 2026-10-26 (41) — [Prérequis] P1b : validation 3D, cameras.js et même Three.js dans l'export (Issue #63, C-20 à C-22)
+- **Fait** :
+  - `mcp/lib/validate.js` :
+    - Validation stricte de la presence d'une entite joueur dans la scene 3D de depart (erreur si absent).
+    - Validation du format des coordonnees de blocs de gridmap (`x,y,z` entiers) et des couleurs (index palette 0-15 ou `#rrggbb`).
+    - Detection et avertissement lorsqu'une entite avec gravite activee n'a aucun bloc de sol sous elle (prevention de la chute dans le vide).
+    - Interdiction des appels `game.goToMap` vers des cartes 2D depuis un jeu dont la dimension est `3d` (et reciproquement).
+  - `mcp/lib/ops.js` (`paintGridMap`) : validation des caracteres passes dans `rows` avec rejet explicite de tout caractere non defini en legende et hors palette hexadécimale `0-9a-f`.
+  - Nettoyage du code mort : suppression de `src/runtime3d/cameras.js` et de son test isole `src/runtime3d/test/cameras.test.mjs` (la camera complete et l'anti-occlusion etant deja integrees sans import dans `src/runtime3d/engine3d.js`).
+  - `src/runtime3d/export-template-3d.js` : alignement de l'export 3D sur Three.js 0.186.1 (identique a l'editeur) charge en module ES via importmap CDN jsdelivr (decision V3), transmission de `createChipAudio` pour le son et affichage des logs d'erreur via `onLog`.
+  - Tests unitaires enrichis dans `src/runtime3d/test/engine3d.test.mjs` couvrant l'export Three.js 0.186.1, la validation durcie et le rejet de caracteres dans `paintGridMap`.
+- **Verifie** : `npm test`, `npm run check:doc`, `npm run build`, validation des 5 jeux de demo (`npm run pf -- validate`).
+- **Etat** : Branche `feat/validation-3d-cameras-export`, Closes #63.
+
 ## 2026-10-26 (40) — [Prérequis] P1a : aller-retour texte ↔ musique du MCP sans perte (Issue #62, B-8)
 - **Fait** :
   - Mise a niveau de `mcp/lib/song-text.js` pour un aller-retour 100% sans perte (hors ids) :

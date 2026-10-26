@@ -379,8 +379,18 @@ export function paintGridMap(p, a) {
       } else {
         let val = legend[ch];
         if (val === undefined) {
-          const idx = parseInt(ch, 16);
-          val = !Number.isNaN(idx) && idx >= 0 && idx < 16 ? idx : ch;
+          if (/^[0-9a-fA-F]$/.test(ch)) {
+            val = parseInt(ch, 16);
+          } else {
+            throw new Error(`row ${z}, col ${x}: unknown character "${ch}" (must be 0-9a-f for palette index, "." to erase, " " to leave unchanged, or define in legend: {"${ch}": 0-15})`);
+          }
+        } else {
+          if (typeof val === 'string' && /^[0-9a-fA-F]$/.test(val)) val = parseInt(val, 16);
+          const isValidInt = Number.isInteger(val) && val >= 0 && val < 16;
+          const isValidHex = typeof val === 'string' && /^#[0-9a-fA-F]{6}$/.test(val);
+          if (!isValidInt && !isValidHex) {
+            throw new Error(`legend value for "${ch}" must be a palette index 0-15 or "#rrggbb" hex (got ${JSON.stringify(val)})`);
+          }
         }
         sc.gridmap.blocks[key] = val;
         count++;

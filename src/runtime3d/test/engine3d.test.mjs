@@ -7,6 +7,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildStandaloneHTML3D } from '../export-template-3d.js';
+import { validateProject } from '../../../mcp/lib/validate.js';
+import { paintGridMap } from '../../../mcp/lib/ops.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const engine3dPath = path.join(__dirname, '..', 'engine3d.js');
@@ -56,9 +58,96 @@ const chipSource = 'export function createChipAudio() { return {}; }';
 const html = buildStandaloneHTML3D(dummyProject, engine3dSource, chipSource);
 
 assert.ok(html.includes('<!doctype html>'), 'HTML export must include doctype');
-assert.ok(html.includes('three.min.js'), 'HTML export must load Three.js');
+assert.ok(html.includes('three.module.min.js') && html.includes('three@0.186.1'), 'HTML export must load Three.js 0.186.1 via importmap');
 assert.ok(html.includes('createGame3D(PROJECT'), 'HTML export must launch createGame3D');
 assert.ok(html.includes('image-rendering: pixelated'), 'HTML export must enforce pixelated rendering');
 assert.ok(!emojiRegex.test(html), 'HTML export must not contain any emoji');
+
+// 4. Validation 3D durcie (Issue #63, C-20)
+{
+  // (a) Joueur absent de la scene de depart -> erreur
+  const noPlayerProj = {
+    settings: { dimension: '3d', startScene3DId: 'sc1' },
+    objects: [{ id: 'o1', name: 'Coin', physics: { enabled: true } }],
+    scenes3d: [{ id: 'sc1', name: 'Main', entities: [{ objectId: 'o1', x: 0, y: 1, z: 0 }] }],
+    maps: [], sprites: [], sounds: [], songs: []
+  };
+  const issuesNoPlayer = validateProject(noPlayerProj);
+  assert.ok(
+    issuesNoPlayer.some((i) => i.level === 'error' && i.message.includes('must contain a player entity')),
+    'Un jeu 3D sans joueur dans la scene de depart doit declencher une erreur'
+  );
+
+  // (b) Blocs de gridmap mal formes -> erreur
+  const badBlocksProj = {
+    settings: { dimension: '3d', startScene3DId: 'sc1' },
+    objects: [{ id: 'p', name: 'Player', physics: { enabled: true } }],
+    scenes3d: [{
+      id: 'sc1',
+      name: 'Main',
+      gridmap: { blocks: { 'invalid_key': 5, '0,0,0': 'invalid_color' } },
+      entities: [{ objectId: 'p', x: 0, y: 1, z: 0 }]
+    }],
+    maps: [], sprites: [], sounds: [], songs: []
+  };
+  const issuesBadBlocks = validateProject(badBlocksProj);
+  assert.ok(
+    issuesBadBlocks.some((i) => i.level === 'error' && i.message.includes('invalid block position key')),
+    'Cle de coordonnee de bloc invalide doit declencher une erreur'
+  );
+  assert.ok(
+    issuesBadBlocks.some((i) => i.level === 'error' && i.message.includes('invalid color')),
+    'Couleur de bloc invalide doit declencher une erreur'
+  );
+
+  // (c) goToMap ciblant une carte 2D depuis un jeu 3D -> erreur
+  const crossDimProj = {
+    settings: { dimension: '3d', startScene3DId: 'sc1' },
+    objects: [{
+      id: 'p',
+      name: 'Player',
+      physics: { enabled: true },
+      script: { mode: 'code', code: "on('create', () => { game.goToMap('Map2D'); });" }
+    }],
+    scenes3d: [{ id: 'sc1', name: 'Main', gridmap: { blocks: { '0,0,0': 1 } }, entities: [{ objectId: 'p', x: 0, y: 1, z: 0 }] }],
+    maps: [{ id: 'm1', name: 'Map2D', width: 10, height: 10, tileSize: 16, layers: [{ data: [] }], entities: [] }],
+    sprites: [], sounds: [], songs: []
+  };
+  const issuesCrossDim = validateProject(crossDimProj);
+  assert.ok(
+    issuesCrossDim.some((i) => i.level === 'error' && i.message.includes('is a 2D map, but game dimension is 3D')),
+    'goToMap vers une carte 2D depuis un jeu 3D doit declencher une erreur'
+  );
+
+  // (d) Entite avec gravite sans sol sous ses pieds -> avertissement
+  const voidProj = {
+    settings: { dimension: '3d', startScene3DId: 'sc1' },
+    objects: [{ id: 'p', name: 'Player', physics: { enabled: true, gravity: true } }],
+    scenes3d: [{ id: 'sc1', name: 'Main', gridmap: { blocks: {} }, entities: [{ objectId: 'p', x: 0, y: 1, z: 0 }] }],
+    maps: [], sprites: [], sounds: [], songs: []
+  };
+  const issuesVoid = validateProject(voidProj);
+  assert.ok(
+    issuesVoid.some((i) => i.level === 'warning' && i.message.includes('fall into the void')),
+    'Entite avec gravite sans sol doit declencher un avertissement de chute dans le vide'
+  );
+}
+
+// 5. paintGridMap validation des caracteres inconnus (Issue #63, point 2)
+{
+  const proj = {
+    settings: { dimension: '3d' },
+    scenes3d: [{ id: 'sc1', name: 'Main', gridmap: { blockSize: 1, blocks: {} } }],
+    objects: [], maps: [], sprites: []
+  };
+  assert.throws(
+    () => paintGridMap(proj, { scene: 'Main', level: 0, rows: ['??'] }),
+    /unknown character "\?"/,
+    'paintGridMap doit lever une erreur sur un caractere inconnu hors palette et hors legende'
+  );
+  // Avec legende valide -> succes
+  paintGridMap(proj, { scene: 'Main', level: 0, rows: ['??'], legend: { '?': 4 } });
+  assert.strictEqual(proj.scenes3d[0].gridmap.blocks['0,0,0'], 4);
+}
 
 console.log('Tous les tests Runtime 3D Retro sont valides !');
