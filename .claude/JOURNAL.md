@@ -200,3 +200,12 @@
 - **Vérifié** : `npm run build` OK ; les 4 onglets s'affichent dans le navigateur ; dessin + annuler OK ; le jeu d'exemple tourne.
 - **Décisions** : un tileset = un sprite dont chaque frame est une tuile ; le runtime n'exécute que `script.code` (les blocs régénèrent le code) ; engine.js sans import pour être inliné dans l'export HTML (`?raw`) ; noms d'objets de l'exemple en anglais (Player, Coin, Enemy, Flag).
 - **État / limites connues** : `collide` arrive après séparation physique (vy = 0) → tester « sauter sur la tête » par la géométrie ; calques de tuiles toujours sous les entités ; suppression d'un sprite laisse des spriteId orphelins ; export HTML charge Phaser depuis le CDN jsdelivr ; pas de son.
+
+## 2026-10-26 (9) — [Phase A] A9 : Finition pro et accessibilité (Closes #10)
+- **Fait** :
+  - Création de `src/ui/icons.js` fournissant un catalogue SVG unifié, net et sans flou (style Lucide / Godot 4).
+  - Intégration des icônes SVG dans les docks, la barre de lecture, les onglets rapides, l'arbre de scène, les ressources, l'inspecteur, la console et les problèmes.
+  - Ajout d'une barre d'état au bas du studio (`.pf-dock-statusbar`) avec coordonnées du curseur (X, Y), niveau de zoom et statut de synchronisation persistant (Disque / IndexedDB).
+  - Amélioration de l'accessibilité WCAG 2.2 AA : anneaux de focus `:focus-visible` à fort contraste, support de `prefers-reduced-motion`, labels `aria-label` et états vides pédagogiques sur tous les panneaux.
+- **Vérifié** : `npm run build`, `npm test` (2277 vérifications, 0 échec), `npm run check:doc`, validation des 3 jeux (tetris, exemple-plateforme-qiqv, monde-1-1). Tous conformes avec 0 erreur.
+

@@ -5,6 +5,7 @@
 
 import './inspector.css';
 import { SCHEMAS } from './inspector-schemas.js';
+import { getIconSvg } from './icons.js';
 
 function getDeep(obj, path) {
   if (!obj || !path) return undefined;
@@ -74,7 +75,13 @@ export function createInspector(container, store) {
   function render() {
     const target = getActiveTarget();
     if (!target) {
-      container.innerHTML = '<div class="pf-insp-empty">Sélectionnez un élément pour inspecter ses propriétés.</div>';
+      container.innerHTML = `
+        <div class="pf-insp-empty">
+          <div style="margin-bottom:8px;color:var(--fg-2);">${getIconSvg('search', 24)}</div>
+          <div style="font-weight:600;">Aucun élément sélectionné</div>
+          <div style="font-size:11px;color:var(--fg-2);margin-top:4px;">Sélectionnez une ressource ou une entité dans la scène pour inspecter ses propriétés.</div>
+        </div>
+      `;
       return;
     }
 
@@ -105,7 +112,7 @@ export function createInspector(container, store) {
 
       const head = document.createElement('div');
       head.className = 'pf-insp-group-head';
-      head.innerHTML = `<span>${g.label}</span><span class="pf-insp-group-chev">▼</span>`;
+      head.innerHTML = `<span>${g.label}</span><span class="pf-insp-group-chev">${getIconSvg('chevronDown', 10)}</span>`;
       head.onclick = () => {
         if (collapsedGroups.has(g.id)) collapsedGroups.delete(g.id);
         else collapsedGroups.add(g.id);
@@ -269,7 +276,8 @@ export function createInspector(container, store) {
       const resetBtn = document.createElement('button');
       resetBtn.className = 'pf-insp-reset';
       resetBtn.title = `Réinitialiser à la valeur par défaut (${f.default})`;
-      resetBtn.textContent = '↺';
+      resetBtn.setAttribute('aria-label', `Réinitialiser ${f.label} à la valeur par défaut`);
+      resetBtn.innerHTML = getIconSvg('reset', 10);
       resetBtn.onclick = () => {
         commitUpdate(target, f.key, f.default);
         render();

@@ -10,6 +10,7 @@ import { createConsolePanel } from './ui/panels/console.js';
 import { createProblemsPanel } from './ui/panels/problems.js';
 import { CommandPalette } from './ui/command-palette.js';
 import { openPreferencesModal, getPreferences, applyPreferences } from './ui/preferences.js';
+import { getIconSvg } from './ui/icons.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -78,11 +79,11 @@ centerBody.innerHTML = `
     <div id="pf-center-tabbar" style="display:flex;align-items:center;background:var(--bg-1);border-bottom:1px solid var(--border);flex-shrink:0;padding:2px 6px 0;">
       <nav id="tabs" style="display:flex;align-items:center;flex:1;overflow-x:auto;"></nav>
       <div id="pf-quick-tabs" style="display:flex;align-items:center;gap:4px;margin-left:8px;padding-bottom:2px;">
-        <button class="pf-dock-btn" data-open-kind="map" title="Ouvrir l'éditeur de cartes">🗺️ Carte</button>
-        <button class="pf-dock-btn" data-open-kind="pixel" title="Ouvrir le pixel art">🎨 Sprite</button>
-        <button class="pf-dock-btn" data-open-kind="objects" title="Ouvrir objets & scripts">📜 Objet</button>
-        <button class="pf-dock-btn" data-open-kind="sound" title="Ouvrir les sons">🔊 Son</button>
-        <button class="pf-dock-btn" data-open-kind="library" title="Ouvrir la bibliothèque">📚 Projets</button>
+        <button class="pf-dock-btn" data-open-kind="map" title="Ouvrir l'éditeur de cartes" aria-label="Ouvrir l'éditeur de cartes">${getIconSvg('map', 12)} <span>Carte</span></button>
+        <button class="pf-dock-btn" data-open-kind="pixel" title="Ouvrir le pixel art" aria-label="Ouvrir l'éditeur de sprites">${getIconSvg('palette', 12)} <span>Sprite</span></button>
+        <button class="pf-dock-btn" data-open-kind="objects" title="Ouvrir objets & scripts" aria-label="Ouvrir l'éditeur d'objets et scripts">${getIconSvg('object', 12)} <span>Objet</span></button>
+        <button class="pf-dock-btn" data-open-kind="sound" title="Ouvrir les sons" aria-label="Ouvrir le générateur de son">${getIconSvg('sound', 12)} <span>Son</span></button>
+        <button class="pf-dock-btn" data-open-kind="library" title="Ouvrir la bibliothèque" aria-label="Ouvrir le gestionnaire de projets">${getIconSvg('project', 12)} <span>Projets</span></button>
       </div>
     </div>
     <main id="view" style="flex:1;min-height:0;position:relative;overflow:hidden;"></main>
@@ -91,6 +92,20 @@ centerBody.innerHTML = `
 
 const view = document.getElementById('view');
 const tabsEl = document.getElementById('tabs');
+
+// Suivi des coordonnées du curseur pour la barre d'état (A9)
+view.addEventListener('pointermove', (e) => {
+  const canvas = e.target.closest('canvas');
+  if (canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    dock.setCoords(x, y);
+  }
+});
+view.addEventListener('pointerleave', () => {
+  dock.setCoords(null, null);
+});
 
 // Initialisation du Document Workspace (A2)
 export const workspace = new DocumentWorkspace({
@@ -118,7 +133,7 @@ document.getElementById('pf-quick-tabs')?.addEventListener('click', (e) => {
 // Éléments de la barre supérieure droite (Godot style)
 const topRightEl = document.getElementById('pf-topright');
 topRightEl.innerHTML = `
-  <input id="project-name" class="project-name" spellcheck="false" placeholder="Aucun jeu ouvert" />
+  <input id="project-name" class="project-name" spellcheck="false" placeholder="Aucun jeu ouvert" aria-label="Nom du projet" />
   <button id="theme-toggle" class="theme-btn" title="Changer de thème" aria-label="Changer de thème">☀️</button>
   <button data-action="export" class="primary" style="padding:3px 8px;font-size:12px;">Exporter HTML</button>
   <span id="save-status" style="color:var(--fg-2);min-width:70px;font-size:12px;"></span>
@@ -136,11 +151,11 @@ if (themeBtn) {
   };
 }
 
-// Panneaux par défaut pour les docks latéraux
+// Panneaux par défaut pour les docks latéraux (A1 & A9)
 dock.registerPanel({
   id: 'resources',
   title: 'Ressources',
-  icon: '📁',
+  icon: getIconSvg('folder', 13),
   area: 'left',
   mount: (container) => createResourcesPanel(container, store, workspace),
   unmount: () => {},
@@ -149,7 +164,7 @@ dock.registerPanel({
 dock.registerPanel({
   id: 'scene-tree',
   title: 'Scène',
-  icon: '🌳',
+  icon: getIconSvg('sceneTree', 13),
   area: 'left',
   mount: (container) => createSceneTree(container, store),
   unmount: () => {},
@@ -158,7 +173,7 @@ dock.registerPanel({
 dock.registerPanel({
   id: 'inspector',
   title: 'Inspecteur',
-  icon: '🔍',
+  icon: getIconSvg('search', 13),
   area: 'right',
   mount: (container) => createInspector(container, store),
   unmount: () => {},
@@ -167,7 +182,7 @@ dock.registerPanel({
 dock.registerPanel({
   id: 'console',
   title: 'Console',
-  icon: '💬',
+  icon: getIconSvg('code', 13),
   area: 'bottom',
   mount: (container) => createConsolePanel(container, store, workspace),
   unmount: () => {},
@@ -176,7 +191,7 @@ dock.registerPanel({
 dock.registerPanel({
   id: 'problems',
   title: 'Problèmes',
-  icon: '⚠️',
+  icon: getIconSvg('alert', 13),
   area: 'bottom',
   mount: (container) => createProblemsPanel(container, store, workspace),
   unmount: () => {},
@@ -193,20 +208,29 @@ nameInput.addEventListener('input', () => store.update((p) => { p.name = nameInp
 store.on('load', () => {
   syncName();
   setStatus('');
+  dock.setSyncStatus('Synchronisé (Disque / IndexedDB)');
 });
 store.on('change', (reason) => {
   if (reason === 'rename' && document.activeElement !== nameInput) syncName();
   if (store.currentId) {
     setStatus('…');
+    dock.setSyncStatus('Modifications non enregistrées…');
     if (workspace.activeId) workspace.markDirty(workspace.activeId, true);
   }
 });
-store.on('saving', () => setStatus('Sauvegarde…'));
+store.on('saving', () => {
+  setStatus('Sauvegarde…');
+  dock.setSyncStatus('Sauvegarde en cours…');
+});
 store.on('saved', () => {
   setStatus('Sauvegardé');
+  dock.setSyncStatus('Sauvegardé (Disque / IndexedDB)');
   for (const doc of workspace.docs) workspace.markDirty(doc.id, false);
 });
-store.on('save-error', (e) => setStatus('Erreur de sauvegarde', String(e?.message || e)));
+store.on('save-error', (e) => {
+  setStatus('Erreur de sauvegarde', String(e?.message || e));
+  dock.setSyncStatus('Erreur de synchronisation', true);
+});
 
 // Toast discret
 let toastTimer = null;

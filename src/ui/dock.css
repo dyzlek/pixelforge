@@ -352,3 +352,57 @@
   padding: 0 4px;
   justify-content: center;
 }
+
+/* --- Barre d'état inférieure (Status bar) --- */
+.pf-dock-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  min-height: 24px;
+  background: var(--bg-1);
+  border-top: 1px solid var(--border);
+  padding: 0 var(--space-2);
+  font-size: 11px;
+  color: var(--fg-1);
+  user-select: none;
+  z-index: 50;
+}
+
+.pf-statusbar-left, .pf-statusbar-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pf-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--fg-1);
+}
+
+.pf-status-item.error {
+  color: var(--danger);
+}
+
+.pf-status-item.saving {
+  color: var(--warning);
+}
+
+.pf-kbd-hint {
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-family: var(--font-mono);
+  margin-left: 2px;
+  color: var(--fg-1);
+}
+
+.pf-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
