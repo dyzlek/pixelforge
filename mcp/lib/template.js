@@ -1,6 +1,6 @@
 // Modèle « platformer » : un petit niveau jouable (joueur, pièces, slimes, drapeau), construit avec les mêmes
 // opérations que les outils MCP. Sprites en texte, voir sprites.js.
-import { upsertSprite, upsertObject, upsertMap, paintMap, placeEntities, setSettings } from './ops.js';
+import { upsertSprite, upsertObject, upsertMap, paintMap, placeEntities, setSettings, upsertModel, upsertScene3D, paintGridMap } from './ops.js';
 
 const blank = '.'.repeat(16);
 // centre horizontalement et cale en bas dans une frame 16x16
@@ -158,4 +158,113 @@ export function applyPlatformerTemplate(p) {
   set(ents, 2, 9, 'P'); set(ents, 12, 9, 'E'); set(ents, 24, 9, 'E'); set(ents, 37, 9, 'F');
   for (const [x, y] of [[6, 9], [8, 9], [10, 6], [17, 5], [18, 5], [19, 5], [26, 9], [33, 6], [14, 9]]) set(ents, x, y, 'C');
   placeEntities(p, { map: 'Level 1', mode: 'replace', legend: { P: 'Player', C: 'Coin', E: 'Enemy', F: 'Flag' }, rows: ents.map((r) => r.join('')) });
+}
+
+const S_PLAYER_3D = `
+on('create', () => {
+  game.camera.setMode('third-person');
+  game.camera.follow(self, { distance: 6, height: 3 });
+  game.setText('hud', 'Pieces: ' + game.score, 8, 8);
+});
+on('update', () => {
+  let speed = 0;
+  if (input.isDown('UP') || input.isDown('W')) speed = 6;
+  if (input.isDown('DOWN') || input.isDown('S')) speed = -6;
+  if (input.isDown('LEFT') || input.isDown('A')) self.rotateY(-3);
+  if (input.isDown('RIGHT') || input.isDown('D')) self.rotateY(3);
+  self.moveForward(speed);
+  if ((input.justPressed('SPACE') || input.justPressed('UP')) && self.onGround) {
+    self.jump(12);
+  }
+  if (self.y < -10) {
+    game.restart();
+  }
+});
+`.trim();
+
+const S_COIN_3D = `
+on('update', () => {
+  self.rotateY(4);
+});
+on('overlap', 'Player', () => {
+  game.score += 1;
+  game.setText('hud', 'Pieces: ' + game.score, 8, 8);
+  game.playSound('coin');
+  self.destroy();
+});
+`.trim();
+
+const S_GOAL_3D = `
+on('overlap', 'Player', () => {
+  game.setText('win', 'Niveau termine !', 100, 80);
+  game.playSound('powerup');
+});
+`.trim();
+
+export function applyPlatformer3DTemplate(p) {
+  setSettings(p, { dimension: '3d', width: 320, height: 180, gravity: 800 });
+
+  // Modèles voxel
+  const heroSlices = [
+    ['.88.', '.88.', '.88.', '.88.'],
+    ['.88.', '.88.', '.88.', '.88.'],
+    ['.22.', '.22.', '.22.', '.22.'],
+    ['.22.', '.22.', '.22.', '.22.'],
+    ['.33.', '.30.', '.33.', '.00.'],
+    ['.00.', '.00.', '.00.', '.00.'],
+  ];
+  upsertModel(p, { name: 'Hero', width: 4, height: 6, depth: 4, slices: heroSlices });
+
+  const coinSlices = [
+    ['44', '44'],
+    ['44', '44'],
+  ];
+  upsertModel(p, { name: 'Coin', width: 2, height: 2, depth: 2, slices: coinSlices });
+
+  const goalSlices = [
+    ['66', '66'],
+    ['66', '66'],
+    ['66', '66'],
+    ['66', '66'],
+  ];
+  upsertModel(p, { name: 'Goal', width: 2, height: 4, depth: 2, slices: goalSlices });
+
+  // Objets
+  upsertObject(p, { name: 'Player', model: 'Hero', physics: { enabled: true, gravity: true, collideMap: true }, code: S_PLAYER_3D });
+  upsertObject(p, { name: 'Coin', model: 'Coin', physics: { enabled: true, gravity: false, collideMap: false }, code: S_COIN_3D });
+  upsertObject(p, { name: 'Goal', model: 'Goal', physics: { enabled: true, gravity: false, collideMap: false }, code: S_GOAL_3D });
+
+  // Scène 3D
+  upsertScene3D(p, {
+    name: 'Main 3D',
+    start: true,
+    environment: {
+      skyColor: '#1a1c2c',
+      fog: { enabled: true, color: '#1a1c2c', density: 0.03 },
+      ambientLight: { color: '#ffffff', intensity: 0.6 },
+      directionalLight: { color: '#ffeedd', intensity: 1.0, position: [10, 20, 15] },
+    },
+  });
+
+  // Niveau 0 : sol 14x14
+  const floor = Array.from({ length: 14 }, () => '6'.repeat(14));
+  paintGridMap(p, { scene: 'Main 3D', level: 0, rows: floor });
+
+  // Marches et plateforme surélevée
+  paintGridMap(p, { scene: 'Main 3D', level: 1, rows: ['66', '66'], x: 6, z: 6 });
+  paintGridMap(p, { scene: 'Main 3D', level: 2, rows: ['66', '66'], x: 8, z: 8 });
+  paintGridMap(p, { scene: 'Main 3D', level: 3, rows: ['6666', '6666', '6666', '6666'], x: 9, z: 9 });
+
+  // Entités
+  placeEntities(p, {
+    scene: 'Main 3D',
+    mode: 'replace',
+    entities: [
+      { object: 'Player', x: 2, y: 1, z: 2 },
+      { object: 'Coin', x: 5, y: 1, z: 5 },
+      { object: 'Coin', x: 7, y: 2, z: 7 },
+      { object: 'Coin', x: 9, y: 4, z: 9 },
+      { object: 'Goal', x: 11, y: 4, z: 11 },
+    ],
+  });
 }

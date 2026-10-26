@@ -1,6 +1,6 @@
 // Opérations de haut niveau sur un projet (mutent l'objet projet, lèvent une Error avec un message utile).
 // Utilisées par le serveur MCP et la CLI.
-import { createObject, createMap, createLayer, uid } from '../../src/core/project.js';
+import { createObject, createMap, createLayer, createModel, createScene3D, uid } from '../../src/core/project.js';
 import { textToFrames, framesToText } from './sprites.js';
 import { checkSyntax } from './validate.js';
 import { buildGraphScript } from './graph.js';
@@ -18,6 +18,8 @@ function find(arr, ref, kind) {
 export const findSprite = (p, ref) => find(p.sprites, ref, 'sprite');
 export const findObject = (p, ref) => find(p.objects, ref, 'object');
 export const findMap = (p, ref) => find(p.maps, ref, 'map');
+export const findModel = (p, ref) => find(p.models || [], ref, 'model');
+export const findScene3D = (p, ref) => find(p.scenes3d || [], ref, 'scene3d');
 const findLayer = (m, ref) => find(m.layers, ref, 'layer');
 
 // ---------- résumé ----------
@@ -25,22 +27,33 @@ export function summarize(p) {
   const L = [];
   const s = p.settings;
   L.push(`Game "${p.name}" (id ${p.meta.id})${p.meta.description ? ' - ' + p.meta.description : ''}`);
-  L.push(`Settings: screen ${s.width}x${s.height}, tileSize ${s.tileSize}, gravity ${s.gravity}, pixelZoom ${s.pixelZoom}, background ${s.background}, touchControls ${s.touchControls}, start map "${p.maps.find((m) => m.id === s.startMapId)?.name}"`);
+  const startMap = p.maps?.find((m) => m.id === s.startMapId)?.name || 'none';
+  const startScene = p.scenes3d?.find((sc) => sc.id === s.startScene3DId)?.name || 'none';
+  L.push(`Settings: dimension ${s.dimension || '2d'}, screen ${s.width}x${s.height}, tileSize ${s.tileSize}, gravity ${s.gravity}, pixelZoom ${s.pixelZoom}, background ${s.background}, touchControls ${s.touchControls}, start map "${startMap}"${s.dimension === '3d' ? `, start 3D scene "${startScene}"` : ''}`);
   L.push(`Palette: ${p.palette.map((c, i) => i.toString(16) + '=' + c).join(' ')}`);
-  L.push(`Sprites (${p.sprites.length}):`);
-  for (const sp of p.sprites) L.push(`  - ${sp.name}: ${sp.width}x${sp.height}, ${sp.frames.length} frame(s), anims: ${(sp.animations || []).map((a) => `${a.name}[${a.frames.join(',')}]@${a.fps}${a.loop ? '' : ' once'}`).join(' ') || 'none'}`);
+  L.push(`Sprites (${(p.sprites || []).length}):`);
+  for (const sp of p.sprites || []) L.push(`  - ${sp.name}: ${sp.width}x${sp.height}, ${sp.frames.length} frame(s), anims: ${(sp.animations || []).map((a) => `${a.name}[${a.frames.join(',')}]@${a.fps}${a.loop ? '' : ' once'}`).join(' ') || 'none'}`);
+  L.push(`Models 3D (${(p.models || []).length}):`);
+  for (const m of p.models || []) L.push(`  - ${m.name}: ${m.type || 'voxel'}, ${m.width}x${m.height}x${m.depth}, ${m.type === 'voxel' ? Object.keys(m.voxels || {}).length + ' voxels' : 'gltf'}`);
   L.push(`Objects (${p.objects.length}):`);
   for (const o of p.objects) {
-    const sp = p.sprites.find((x) => x.id === o.spriteId);
+    const sp = (p.sprites || []).find((x) => x.id === o.spriteId);
+    const mod = (p.models || []).find((x) => x.id === o.modelId);
+    const vis = sp ? `sprite ${sp.name}` : mod ? `model ${mod.name}` : 'none';
     const ph = o.physics;
     const flags = ['gravity', 'immovable', 'collideMap', 'collideWorld'].filter((k) => ph[k]).join('+') || 'static';
-    L.push(`  - ${o.name}: sprite ${sp ? sp.name : 'none'}, anim ${o.defaultAnim || '-'}, physics ${ph.enabled ? flags : 'off'}${ph.bounce ? ', bounce ' + ph.bounce : ''}, hitbox ${o.hitbox ? JSON.stringify(o.hitbox) : 'full'}, script ${o.script?.mode || 'code'} ${o.script?.code?.length || 0} chars`);
+    L.push(`  - ${o.name}: ${vis}, anim ${o.defaultAnim || '-'}, physics ${ph.enabled ? flags : 'off'}${ph.bounce ? ', bounce ' + ph.bounce : ''}, hitbox ${o.hitbox ? JSON.stringify(o.hitbox) : 'full'}, script ${o.script?.mode || 'code'} ${o.script?.code?.length || 0} chars`);
   }
   L.push(`Global script: ${p.globalScript?.mode || 'code'}, ${p.globalScript?.code?.length || 0} chars`);
-  L.push(`Maps (${p.maps.length}):`);
-  for (const m of p.maps) {
-    const ts = p.sprites.find((x) => x.id === m.tilesetSpriteId);
+  L.push(`Maps (${(p.maps || []).length}):`);
+  for (const m of p.maps || []) {
+    const ts = (p.sprites || []).find((x) => x.id === m.tilesetSpriteId);
     L.push(`  - ${m.name}: ${m.width}x${m.height} tiles, tileset ${ts ? ts.name : 'none'}, layers: ${m.layers.map((l) => `${l.name}${l.collides ? '(collides)' : ''}${l.oneWay ? '(oneWay)' : ''}${l.depth === 'above' ? '(above)' : ''}${l.scrollFactor !== undefined && l.scrollFactor !== 1 ? `(parallax ${typeof l.scrollFactor === 'object' ? JSON.stringify(l.scrollFactor) : l.scrollFactor})` : ''}`).join(', ')}, ${m.entities.length} entities`);
+  }
+  L.push(`Scenes 3D (${(p.scenes3d || []).length}):`);
+  for (const sc of p.scenes3d || []) {
+    const bCount = Object.keys(sc.gridmap?.blocks || {}).length;
+    L.push(`  - ${sc.name}: ${bCount} blocks, ${sc.entities.length} entities, sky ${sc.environment?.skyColor || '#1a1c2c'}`);
   }
   L.push(`Sounds (${(p.sounds || []).length}): ${(p.sounds || []).map((x) => `${x.name}${x.kind === 'sfx' ? ':' + x.sfx?.preset : ':file'}`).join(', ') || 'none'}`);
   return L.join('\n');
@@ -49,10 +62,11 @@ export function summarize(p) {
 // ---------- paramètres ----------
 export function setSettings(p, a) {
   const s = p.settings, changed = [];
-  for (const k of ['width', 'height', 'pixelZoom', 'tileSize', 'gravity']) if (a[k] !== undefined) { s[k] = a[k]; changed.push(`${k}=${a[k]}`); }
+  for (const k of ['width', 'height', 'pixelZoom', 'tileSize', 'gravity', 'dimension']) if (a[k] !== undefined) { s[k] = a[k]; changed.push(`${k}=${a[k]}`); }
   if (a.background !== undefined) { s.background = a.background; changed.push('background'); }
   if (a.touchControls !== undefined) { s.touchControls = a.touchControls; changed.push('touchControls'); }
   if (a.startMap) { s.startMapId = findMap(p, a.startMap).id; changed.push('startMap'); }
+  if (a.startScene3D) { s.startScene3DId = findScene3D(p, a.startScene3D).id; changed.push('startScene3D'); }
   if (a.name) { p.name = a.name; changed.push('name'); }
   if (a.description !== undefined) { p.meta.description = a.description; changed.push('description'); }
   if (a.author !== undefined) { p.meta.author = a.author; changed.push('author'); }
@@ -121,15 +135,26 @@ export function upsertObject(p, a) {
       if (a.defaultAnim === undefined && !(sp.animations || []).some((x) => x.name === o.defaultAnim)) o.defaultAnim = sp.animations?.[0]?.name ?? null;
     }
   }
+  if (a.model !== undefined) {
+    if (a.model === null || a.model === '') o.modelId = null;
+    else {
+      const mod = findModel(p, a.model);
+      o.modelId = mod.id;
+    }
+  }
   if (a.defaultAnim !== undefined) o.defaultAnim = a.defaultAnim;
+  if (a.physics) o.physics = { ...o.physics, ...a.physics };
+  if (a.hitbox !== undefined) o.hitbox = a.hitbox;
   let scriptNote = '';
   if (a.code !== undefined || a.graph !== undefined) {
     const r = makeScript(a, false, 'Object not saved.');
     o.script = r.script;
     scriptNote = r.note;
   }
-  const sp = p.sprites.find((s) => s.id === o.spriteId);
-  return `${isNew ? 'Created' : 'Updated'} object "${o.name}" (sprite ${sp ? sp.name : 'none'}, anim ${o.defaultAnim || '-'}, physics ${JSON.stringify(o.physics)}, script ${o.script.mode} ${o.script.code.length} chars).${scriptNote}`;
+  const sp = (p.sprites || []).find((s) => s.id === o.spriteId);
+  const mod = (p.models || []).find((m) => m.id === o.modelId);
+  const vis = sp ? `sprite ${sp.name}` : mod ? `model ${mod.name}` : 'none';
+  return `${isNew ? 'Created' : 'Updated'} object "${o.name}" (${vis}, anim ${o.defaultAnim || '-'}, physics ${JSON.stringify(o.physics)}, script ${o.script.mode} ${o.script.code.length} chars).${scriptNote}`;
 }
 
 export function setScript(p, objectRef, a) {
@@ -243,7 +268,157 @@ export function setLayer(p, a) {
   return `${created ? 'Created' : 'Updated'} layer "${l.name}" of "${m.name}": collides=${l.collides}${l.oneWay ? '(oneWay)' : ''}, depth=${l.depth}, visible=${l.visible}.`;
 }
 
+// ---------- modèles 3D ----------
+export function upsertModel(p, a) {
+  p.models ||= [];
+  let m = p.models.find((x) => x.name === a.name);
+  const isNew = !m;
+  if (!m) {
+    m = createModel(a.name, a.width || 8, a.height || 8, a.depth || 8);
+    p.models.push(m);
+  }
+  if (a.width) m.width = a.width;
+  if (a.height) m.height = a.height;
+  if (a.depth) m.depth = a.depth;
+
+  if (a.gltf) {
+    m.type = 'gltf';
+    m.gltfData = a.gltf;
+  } else if (a.slices) {
+    m.type = 'voxel';
+    m.voxels = {};
+    const legend = a.legend || {};
+    for (let y = 0; y < a.slices.length; y++) {
+      const slice = a.slices[y];
+      for (let z = 0; z < slice.length; z++) {
+        const row = slice[z];
+        for (let x = 0; x < row.length; x++) {
+          const ch = row[x];
+          if (ch === '.' || ch === ' ') continue;
+          let val = legend[ch];
+          if (val === undefined) {
+            const idx = parseInt(ch, 16);
+            val = !Number.isNaN(idx) && idx >= 0 && idx < 16 ? idx : ch;
+          }
+          m.voxels[`${x},${y},${z}`] = val;
+        }
+      }
+    }
+  } else if (a.voxels) {
+    m.type = 'voxel';
+    m.voxels = { ...a.voxels };
+  }
+
+  const voxelCount = m.type === 'voxel' ? Object.keys(m.voxels || {}).length : 'gltf';
+  return `${isNew ? 'Created' : 'Updated'} model "${m.name}" (${m.type}, ${m.width}x${m.height}x${m.depth}, ${voxelCount} voxels).`;
+}
+
+export function getModel(p, ref) {
+  const m = findModel(p, ref);
+  if (m.type !== 'voxel') return JSON.stringify(m, null, 2);
+  const voxels = m.voxels || {};
+  const slices = [];
+  for (let y = 0; y < m.height; y++) {
+    const slice = [];
+    for (let z = 0; z < m.depth; z++) {
+      let row = '';
+      for (let x = 0; x < m.width; x++) {
+        const v = voxels[`${x},${y},${z}`];
+        if (v === undefined) row += '.';
+        else if (typeof v === 'number' && v >= 0 && v < 16) row += v.toString(16);
+        else row += '#';
+      }
+      slice.push(row);
+    }
+    slices.push(slice);
+  }
+  return `Model "${m.name}" (${m.width}x${m.height}x${m.depth})\n` + slices.map((s, y) => `--- Y = ${y} ---\n${s.join('\n')}`).join('\n\n');
+}
+
+// ---------- scènes 3D ----------
+export function upsertScene3D(p, a) {
+  p.scenes3d ||= [];
+  let sc = p.scenes3d.find((x) => x.name === a.name);
+  const isNew = !sc;
+  if (!sc) {
+    sc = createScene3D(a.name);
+    p.scenes3d.push(sc);
+    if (a.start || p.scenes3d.length === 1) {
+      p.settings.startScene3DId = sc.id;
+    }
+  }
+  if (a.environment) {
+    sc.environment = { ...sc.environment, ...a.environment };
+  }
+  if (a.start) {
+    p.settings.startScene3DId = sc.id;
+  }
+  return `${isNew ? 'Created' : 'Updated'} 3D scene "${sc.name}".`;
+}
+
+export function paintGridMap(p, a) {
+  const sc = findScene3D(p, a.scene);
+  sc.gridmap ||= { blockSize: 1, blocks: {} };
+  sc.gridmap.blocks ||= {};
+  const y = a.level ?? 0;
+  const x0 = a.x ?? 0;
+  const z0 = a.z ?? 0;
+  const legend = a.legend || {};
+  let count = 0;
+
+  for (let z = 0; z < a.rows.length; z++) {
+    const row = a.rows[z];
+    for (let x = 0; x < row.length; x++) {
+      const ch = row[x];
+      if (ch === ' ') continue;
+      const wx = x0 + x;
+      const wz = z0 + z;
+      const key = `${wx},${y},${wz}`;
+      if (ch === '.') {
+        delete sc.gridmap.blocks[key];
+      } else {
+        let val = legend[ch];
+        if (val === undefined) {
+          const idx = parseInt(ch, 16);
+          val = !Number.isNaN(idx) && idx >= 0 && idx < 16 ? idx : ch;
+        }
+        sc.gridmap.blocks[key] = val;
+        count++;
+      }
+    }
+  }
+  return `Painted ${count} block(s) on level Y=${y} of 3D scene "${sc.name}".`;
+}
+
 export function placeEntities(p, a) {
+  const is3D = a.scene || (p.settings.dimension === '3d' && (p.scenes3d || []).some((s) => s.name === a.map || s.id === a.map));
+  if (is3D) {
+    const sc = findScene3D(p, a.scene || a.map);
+    const mode = a.mode || 'append';
+    const added = [];
+    const make3D = (obj, x, y, z, props) => {
+      const o = findObject(p, obj);
+      added.push({ id: uid('ent'), objectId: o.id, x: Number(x) || 0, y: Number(y) || 0, z: Number(z) || 0, props: props || {} });
+    };
+    for (const e of a.entities || []) make3D(e.object, e.x, e.y, e.z, e.props);
+    if (a.rows) {
+      const legend = a.legend || {};
+      const y = a.level ?? 0;
+      a.rows.forEach((row, z) => {
+        for (let x = 0; x < row.length; x++) {
+          const ch = row[x];
+          if (ch === '.' || ch === ' ') continue;
+          if (!(ch in legend)) throw new Error(`row ${z}, col ${x}: character "${ch}" is not in legend (legend: {"${ch}": "ObjectName"})`);
+          make3D(legend[ch], x, y, z, null);
+        }
+      });
+    }
+    if (mode === 'replace') sc.entities = added; else sc.entities.push(...added);
+    const counts = {};
+    for (const e of added) { const n = p.objects.find((o) => o.id === e.objectId).name; counts[n] = (counts[n] || 0) + 1; }
+    return `${mode === 'replace' ? 'Replaced entities of' : 'Added to'} 3D scene "${sc.name}": ${Object.entries(counts).map(([n, c]) => `${c}x${n}`).join(', ') || 'nothing'}; scene now has ${sc.entities.length} entities.`;
+  }
+
   const m = findMap(p, a.map);
   const mode = a.mode || 'append';
   const added = [];

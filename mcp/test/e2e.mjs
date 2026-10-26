@@ -27,7 +27,12 @@ async function call(name, args = {}, { expectError = false } = {}) {
 try {
   const tools = (await client.listTools()).tools.map((t) => t.name);
   console.log('tools:', tools.join(', '));
-  for (const n of ['pixelforge_guide', 'list_games', 'create_game', 'get_game', 'delete_game', 'duplicate_game', 'set_settings', 'upsert_sprite', 'get_sprite', 'upsert_object', 'set_script', 'get_script', 'list_nodes', 'upsert_map', 'paint_map', 'set_layer', 'place_entities', 'render_map', 'add_sound', 'upsert_song', 'get_song', 'validate_game', 'export_html']) assert.ok(tools.includes(n), 'missing tool ' + n);
+  for (const n of [
+    'pixelforge_guide', 'list_games', 'create_game', 'get_game', 'delete_game', 'duplicate_game', 'set_settings',
+    'upsert_sprite', 'get_sprite', 'upsert_model', 'get_model', 'upsert_object', 'set_script', 'get_script', 'list_nodes',
+    'upsert_map', 'paint_map', 'set_layer', 'upsert_scene3d', 'paint_gridmap', 'place_entities', 'render_map', 'render_scene3d',
+    'add_sound', 'upsert_song', 'get_song', 'validate_game', 'export_html',
+  ]) assert.ok(tools.includes(n), 'missing tool ' + n);
 
   assert.match(await call('pixelforge_guide'), /PixelForge/);
   await call('create_game', { name: 'test-mcp' });
@@ -143,6 +148,26 @@ on('update', () => {
   const html = fs.readFileSync(out, 'utf8');
   assert.ok(html.includes('createGame') && html.includes('"test-mcp"'), 'export contains engine and project');
   console.log('export:', out);
+
+  // --- Scenario 3D ---
+  await call('create_game', { name: 'test-3d', template: 'platformer3d' });
+  const modHero = await call('get_model', { game: 'test-3d', name: 'Hero' });
+  assert.match(modHero, /Model "Hero"/);
+  await call('upsert_model', {
+    game: 'test-3d',
+    name: 'Pillar',
+    width: 2, height: 4, depth: 2,
+    slices: [['66', '66'], ['66', '66'], ['11', '11'], ['11', '11']],
+  });
+  await call('upsert_object', { game: 'test-3d', name: 'PillarObj', model: 'Pillar' });
+  await call('paint_gridmap', { game: 'test-3d', scene: 'Main 3D', level: 0, rows: ['22', '22'], x: 0, z: 0 });
+  const rendered3D = await call('render_scene3d', { game: 'test-3d', scene: 'Main 3D' });
+  assert.match(rendered3D, /Scene 3D "Main 3D"/);
+  const val3D = await call('validate_game', { game: 'test-3d' });
+  assert.match(val3D, /OK: no issues/);
+  const exp3D = await call('export_html', { game: 'test-3d' });
+  assert.match(exp3D, /Exported/);
+  await call('delete_game', { game: 'test-3d', confirm: true });
 
   await call('duplicate_game', { game: 'test-mcp', newName: 'test-mcp copy' });
   await call('delete_game', { game: 'test-mcp copy', confirm: true });

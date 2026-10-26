@@ -44,6 +44,7 @@ export function validateProject(p) {
   const events = knownEvents(), keys = knownKeys();
 
   const spriteById = new Map((p.sprites || []).map((s) => [s.id, s]));
+  const modelById = new Map((p.models || []).map((m) => [m.id, m]));
   const objectNames = p.objects.map((o) => o.name);
   const mapNames = p.maps.map((m) => m.name);
 
@@ -51,9 +52,20 @@ export function validateProject(p) {
     const seen = new Set();
     for (const x of list) { if (seen.has(x.name)) add('error', `${kind} "${x.name}"`, `duplicate ${kind} name (scripts and tools look things up by name)`); seen.add(x.name); }
   };
-  dup(p.sprites, 'sprite'); dup(p.objects, 'object'); dup(p.maps, 'map'); dup(p.sounds || [], 'sound'); dup(p.songs || [], 'song');
+  dup(p.sprites || [], 'sprite'); dup(p.objects, 'object'); dup(p.maps || [], 'map');
+  dup(p.sounds || [], 'sound'); dup(p.songs || [], 'song');
+  dup(p.models || [], 'model'); dup(p.scenes3d || [], 'scene3d');
 
-  if (!p.maps.some((m) => m.id === p.settings.startMapId)) add('error', 'settings', `startMapId "${p.settings.startMapId}" matches no map`);
+  if (p.settings.dimension === '3d') {
+    const startSceneId = p.settings.startScene3DId || p.settings.startMapId;
+    if (!p.scenes3d?.length) {
+      add('error', 'settings', 'dimension is "3d" but project has no 3D scenes in scenes3d');
+    } else if (!p.scenes3d.some((s) => s.id === startSceneId)) {
+      add('error', 'settings', `startScene3DId "${startSceneId}" matches no 3D scene`);
+    }
+  } else {
+    if (!p.maps.some((m) => m.id === p.settings.startMapId)) add('error', 'settings', `startMapId "${p.settings.startMapId}" matches no map`);
+  }
 
   // ----- sprites -----
   for (const s of p.sprites) {
@@ -78,8 +90,10 @@ export function validateProject(p) {
   for (const o of p.objects) {
     const w = `object "${o.name}"`;
     const spr = o.spriteId ? spriteById.get(o.spriteId) : null;
+    const mod = o.modelId ? modelById.get(o.modelId) : null;
     if (o.spriteId && !spr) add('error', w, `spriteId "${o.spriteId}" matches no sprite`);
-    else if (!o.spriteId) add('warning', w, 'no sprite (invisible object)');
+    if (o.modelId && !mod) add('error', w, `modelId "${o.modelId}" matches no 3D model`);
+    else if (!o.spriteId && !o.modelId) add('warning', w, 'no sprite or 3D model (invisible object)');
     if (spr && o.defaultAnim && !(spr.animations || []).some((a) => a.name === o.defaultAnim)) add('warning', w, `defaultAnim "${o.defaultAnim}" is not an animation of sprite "${spr.name}"`);
     if (o.hitbox) {
       const h = o.hitbox;
@@ -193,8 +207,34 @@ export function validateProject(p) {
     }
   }
 
-  const start = p.maps.find((m) => m.id === p.settings.startMapId);
-  if (start && !start.entities?.length) add('warning', `map "${start.name}"`, 'the start map has no entities: nothing will happen when playing');
+  // ----- modèles 3D -----
+  for (const m of p.models || []) {
+    const w = `model "${m.name}"`;
+    if (m.type === 'voxel') {
+      if (!(m.width > 0) || !(m.height > 0) || !(m.depth > 0)) add('error', w, `dimensions must be > 0 (got ${m.width}x${m.height}x${m.depth})`);
+    } else if (m.type === 'gltf') {
+      if (!m.gltfData) add('error', w, 'type is "gltf" but gltfData is missing');
+    }
+  }
+
+  // ----- scènes 3D -----
+  for (const sc of p.scenes3d || []) {
+    const w = `scene3d "${sc.name}"`;
+    (sc.entities || []).forEach((e, i) => {
+      const obj = p.objects.find((o) => o.id === e.objectId);
+      const ew = `${w} entity #${i}${obj ? ` (${obj.name})` : ''}`;
+      if (!obj) { add('error', ew, `objectId "${e.objectId}" matches no object`); return; }
+      if (!Number.isFinite(e.x) || !Number.isFinite(e.y) || !Number.isFinite(e.z)) add('error', ew, 'x, y, z must be valid numbers');
+    });
+  }
+
+  if (p.settings.dimension === '3d') {
+    const startSc = (p.scenes3d || []).find((s) => s.id === (p.settings.startScene3DId || p.settings.startMapId));
+    if (startSc && !startSc.entities?.length) add('warning', `scene3d "${startSc.name}"`, 'the start 3D scene has no entities: nothing will happen when playing');
+  } else {
+    const start = p.maps.find((m) => m.id === p.settings.startMapId);
+    if (start && !start.entities?.length) add('warning', `map "${start.name}"`, 'the start map has no entities: nothing will happen when playing');
+  }
   return issues;
 }
 

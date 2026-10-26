@@ -96,6 +96,37 @@ export function createMap(name = 'Carte', width = 40, height = 12, tileSize = 16
   };
 }
 
+export function createModel(name = 'Modele', width = 8, height = 8, depth = 8) {
+  return {
+    id: uid('model'),
+    name,
+    type: 'voxel',
+    width,
+    height,
+    depth,
+    voxels: {},
+    animations: [],
+  };
+}
+
+export function createScene3D(name = 'Scene 3D') {
+  return {
+    id: uid('scene3d'),
+    name,
+    environment: {
+      skyColor: '#1a1c2c',
+      fog: { enabled: false, color: '#1a1c2c', density: 0.04 },
+      ambientLight: { color: '#ffffff', intensity: 0.6 },
+      directionalLight: { color: '#ffeedd', intensity: 1.0, position: [10, 20, 15] },
+    },
+    gridmap: {
+      blockSize: 1,
+      blocks: {},
+    },
+    entities: [],
+  };
+}
+
 export function createSong(name = 'Musique') {
   const chLead = {
     id: uid('ch'),
@@ -255,7 +286,13 @@ export function normalizeProject(p) {
     }
   }
   p.globalScript = normalizeScript(p.globalScript, true);
-  if (!p.maps.some((m) => m.id === p.settings.startMapId)) p.settings.startMapId = p.maps[0].id;
+  if (p.settings.dimension === '3d') {
+    if (p.scenes3d?.length && !p.scenes3d.some((s) => s.id === p.settings.startScene3DId)) {
+      p.settings.startScene3DId = p.scenes3d[0].id;
+    }
+  } else {
+    if (!p.maps.some((m) => m.id === p.settings.startMapId)) p.settings.startMapId = p.maps[0].id;
+  }
   return p;
 }
 
