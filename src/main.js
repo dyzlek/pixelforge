@@ -293,6 +293,12 @@ window.addEventListener('keydown', (e) => {
   }
   syncName();
 
+  if (typeof window !== 'undefined') {
+    window.__pfStore = store;
+    window.__pfWorkspace = workspace;
+    window.__pfDock = dock;
+  }
+
   if (store.currentId) {
     workspace.loadSavedDocs();
   } else {

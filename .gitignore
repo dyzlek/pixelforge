@@ -1,6 +1,8 @@
 node_modules/
 dist/
 exports/
+test-results/
+playwright-report/
 .claude/settings.local.json
 *.log
 .DS_Store

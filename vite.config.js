@@ -187,6 +187,10 @@ function copyGamesPlugin() {
 export default defineConfig({
   base: process.env.GITHUB_PAGES ? '/pixelforge/' : '/',
   plugins: [gamesPlugin(), copyGamesPlugin()],
+  server: {
+    port: 5173,
+    strictPort: true,
+  },
   build: {
     chunkSizeWarningLimit: 1600,
     rollupOptions: {
