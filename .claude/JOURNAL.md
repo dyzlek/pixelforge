@@ -1,5 +1,16 @@
 # Journal — PixelForge
 
+## 2026-10-26 (43) — [Phase E] E0 : inventaire des API Phaser touchees par Phaser 4 (Issue #65)
+- **Fait** :
+  - Creation de `docs/PHASER4.md` : inventaire exhaustif et analyse d'impact de chaque interface et sous-systeme Phaser utilise dans `src/runtime/engine.js`, `src/runtime/play.js`, `src/runtime/export-template.js` et `src/library/thumbnail.js`.
+  - Matrice d'analyse des ruptures potentielles :
+    - Confirmation de l'absence d'utilisation des API supprimees (`setTintFill`, `Geom.Point`, `Mesh`, `Plane`).
+    - Identification de la deprecation du rendu Canvas et decision de basculer en `Phaser.WEBGL` avec message clair si absent.
+    - Cadrage des Render Nodes et des Filtres pour l'etape E2 (`addFilter`, `clearFilters`).
+    - Planification detaillee des etapes E1 (`phaser@4.2.1`), E2 (filtres & noeuds Blueprints) et E3 (nettoyage).
+- **Verifie** : `npm test`, `npm run check:doc`, `npm run build`, validation de tous les jeux.
+- **Etat** : Branche `feat/phaser-4-inventory`, Closes #65.
+
 ## 2026-10-26 (42) — [Prérequis] P2 : tests Playwright réels sur le jeu 3D et le DAW (Issue #64, B-9, C-23)
 - **Fait** :
   - `vite.config.js` : configuration du port serveur fixe 5173 (`strictPort: true`) pour Playwright.
