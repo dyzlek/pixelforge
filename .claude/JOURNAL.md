@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (9) — P0.5 Intégration continue (CI)
+- **Fait** : ajout du script "test" dans package.json, création de .github/workflows/ci.yml (build, tests, validations des 3 jeux).
+- **Décisions** : workflow standard Ubuntu + Node 20 avec cache npm.
+- **État** : tests et build OK.
+
 ## 2026-10-26 (8) — P0.3 Nettoyer le dépôt
 - **Fait** : suppression du doublon games-src/generate_tetris_blocks.mjs, ajout de .gitattributes (* text=auto eol=lf).
 - **Décisions** : conservation de tetris.mjs unique.
