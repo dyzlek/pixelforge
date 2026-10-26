@@ -6,8 +6,8 @@
 [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![Phaser 3](https://img.shields.io/badge/Phaser-3.90-orange)](https://phaser.io)
 
-> 🎮 **[Essayer la démo en ligne dans votre navigateur](https://dyzlek.github.io/pixelforge/)**  
-> 🌐 Read this in English: **[README.en.md](README.en.md)**
+> **[Essayer la démo en ligne dans votre navigateur](https://dyzlek.github.io/pixelforge/)**  
+> Read this in English: **[README.en.md](README.en.md)**
 
 **PixelForge** est un environnement complet de création de jeux vidéo 2D rétro directement dans le navigateur, propulsé par **Phaser 3**.
 Dessinez vos sprites en pixel art, composez vos cartes en tuiles, programmez vos entités à l'aide de **Blueprints visuels** (graphes de nœuds inspirés d'Unreal Engine) ou directement en JavaScript, testez instantanément et exportez votre jeu en une seule page HTML autonome et partageable.
@@ -16,7 +16,7 @@ Un jeu = **un seul fichier JSON** (`games/<id>.pixelforge.json`). L'éditeur sur
 
 ---
 
-## ⚡ Démarrage rapide en 5 minutes
+## Démarrage rapide en 5 minutes
 
 ### 1. Installation et lancement
 ```bash
@@ -44,7 +44,7 @@ Ouvrez votre navigateur sur **[http://localhost:5173](http://localhost:5173)**.
 
 ---
 
-## 🏗️ Architecture du projet
+## Architecture du projet
 
 ```mermaid
 flowchart TD
@@ -75,16 +75,16 @@ flowchart TD
 
 ---
 
-## ✨ Fonctionnalités détaillées
+## Fonctionnalités détaillées
 
-### 🎨 Éditeur Pixel Art
+### Éditeur Pixel Art
 - Outils complets : crayon, gomme, pot de peinture, pipette, tracé de lignes, rectangles, ellipses, sélection libre et déplacement.
 - Palette Sweetie 16 par défaut (16 couleurs rétro sélectionnées pour un rendu cohérent).
 - Tailles de grille de 8x8 à 256x256 avec aperçu en direct du facteur de zoom.
 - Gestion d'animations multi-images (boucle, cadencement en fps).
 - Création de *tilesets* : chaque image d'un sprite tileset correspond à une tuile utilisable dans les cartes.
 
-### 🗺️ Concepteur de cartes et niveaux
+### Concepteur de cartes et niveaux
 - Outils de dessin de tuiles (pinceau, seau de remplissage, rectangle, pipette, sélection).
 - Calques multiples avec paramètres avancés :
   - Calques de collision solide (`collides: true`).
@@ -93,7 +93,7 @@ flowchart TD
   - Profondeur d'affichage (premier plan devant les entités ou arrière-plan).
 - Prise en charge de cartes multiples par jeu avec téléportations inter-cartes via `game.goToMap(nom)`.
 
-### 🧠 Blueprints : Scripting visuel puissant
+### Blueprints : Scripting visuel puissant
 - **Nœuds et fils typés** :
   - Fils d'exécution blancs définissant l'ordonnancement séquentiel.
   - Fils de données colorés par type : nombres, booléens, chaînes, objets/instances, listes, couleurs.
@@ -107,17 +107,17 @@ flowchart TD
 - **Compilateur sans dépendance DOM** : Les graphes sont compilés en JavaScript vanilla ultra-rapide exécutable dans Phaser.
 - **Bascule instantanée Blueprint / Code** : Visualisez et éditez le code source JavaScript généré à tout moment.
 
-### 🔊 Synthèse sonore & Musique
+### Synthèse sonore & Musique
 - Générateur d'effets sonores intégré basé sur le Web Audio API (saut, tir laser, pièce, explosion, impact, bonus, portail) sans dépendances de fichiers externes.
 - Pistes musicales chiptune prêtes à l'emploi.
 
-### 📦 Export et distribution
+### Export et distribution
 - **Export HTML tout-en-un** : Génère un fichier unique contenant l'intégralité du jeu, les sons et les sprites.
 - **Bibliothèque multi-projets** : Sauvegarde automatique locale (dossier disque en dev, IndexedDB sur le web).
 
 ---
 
-## ⌨️ Raccourcis de l'éditeur Blueprint
+## Raccourcis de l'éditeur Blueprint
 
 | Action | Souris | Clavier (curseur sur le graphe) |
 |---|---|---|
@@ -134,7 +134,7 @@ flowchart TD
 
 ---
 
-## 🤖 Pour les IA : Serveur MCP et CLI
+## Pour les IA : Serveur MCP et CLI
 
 PixelForge a été pensé pour le pilotage autonome par des agents d'intelligence artificielle :
 
@@ -167,7 +167,7 @@ npm run pf -- nodes [mot]               # Recherche dans le catalogue des nœuds
 
 ---
 
-## 🛠️ Commandes de développement et tests
+## Commandes de développement et tests
 
 ```bash
 npm install               # Installation des dépendances
@@ -188,7 +188,7 @@ npm run pf -- validate monde-1-1
 
 ---
 
-## 📂 Structure du dépôt
+## Structure du dépôt
 
 ```text
 index.html, vite.config.js       Page de l'éditeur web et configuration Vite (+ API REST / SSE)
@@ -213,11 +213,11 @@ docs/                            Spécifications techniques : ARCHITECTURE.md, B
 
 ---
 
-## 🗺️ Feuille de route & Contribution
+## Feuille de route & Contribution
 
 Consultez **[ROADMAP.md](ROADMAP.md)** pour découvrir les chantiers en cours et les évolutions futures.  
 Pour contribuer au projet, lisez le guide **[CONTRIBUTING.md](CONTRIBUTING.md)** ainsi que le **[CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)**.
 
-## 📄 Licence
+## Licence
 
 Ce projet est sous licence [MIT](LICENSE).

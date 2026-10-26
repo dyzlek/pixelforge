@@ -3,7 +3,7 @@ import { createSprite, uid, findById } from '../../core/project.js';
 import { line, rect, ellipse, floodFill, hexToRgba, rgbaToHex } from './tools.js';
 
 const TOOLS = [
-  { id: 'pencil', key: 'b', icon: '✎', label: 'Crayon' },
+  { id: 'pencil', key: 'b', icon: '/', label: 'Crayon' },
   { id: 'eraser', key: 'e', icon: '⌫', label: 'Gomme' },
   { id: 'fill', key: 'g', icon: '▨', label: 'Pot de peinture' },
   { id: 'picker', key: 'i', icon: '⌖', label: 'Pipette (ou Alt+clic)' },
@@ -282,8 +282,8 @@ function build(root, store) {
     add: h('button', { title: 'Ajouter une frame vide', onclick: addFrame }, '＋ Frame'),
     dup: h('button', { title: 'Dupliquer la frame', onclick: dupFrame }, 'Dupliquer'),
     del: h('button', { title: 'Supprimer la frame', onclick: delFrame }, 'Supprimer'),
-    left: h('button', { title: 'Déplacer vers la gauche', onclick: () => moveFrame(fi, fi - 1) }, '◀'),
-    right: h('button', { title: 'Déplacer vers la droite', onclick: () => moveFrame(fi, fi + 1) }, '▶'),
+    left: h('button', { title: 'Déplacer vers la gauche', onclick: () => moveFrame(fi, fi - 1) }, '<'),
+    right: h('button', { title: 'Déplacer vers la droite', onclick: () => moveFrame(fi, fi + 1) }, '>'),
   };
   const frameBar = h('div', { class: 'px-framebar' },
     h('div', { class: 'px-frame-actions' },

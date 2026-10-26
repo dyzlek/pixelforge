@@ -7,6 +7,7 @@ import './project-manager.css';
 import { listGames, getGame, saveGame, deleteGame, backendInfo, isValidId } from '../library/storage.js';
 import { createEmptyProject, createMeta, normalizeProject } from '../core/project.js';
 import { createSampleProject } from '../core/sample.js';
+import { getIconSvg } from './icons.js';
 
 const rtf = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' });
 function relativeDate(iso) {
@@ -44,8 +45,8 @@ export function createProjectManager(container, store, onOpenProject = () => {})
             <option value="name">Par nom (A-Z)</option>
           </select>
           <button class="primary" data-act="new-project" style="height:28px;padding:0 12px;font-weight:600;">+ Nouveau projet</button>
-          <button data-act="import-project" style="height:28px;padding:0 10px;">📥 Importer</button>
-          <button data-act="sample-games" style="height:28px;padding:0 10px;">✨ Jeux d'exemple</button>
+          <button data-act="import-project" style="height:28px;padding:0 10px;">${getIconSvg('import', 12)} <span>Importer</span></button>
+          <button data-act="sample-games" style="height:28px;padding:0 10px;">${getIconSvg('sparkles', 12)} <span>Jeux d'exemple</span></button>
           <input type="file" id="pf-pm-file-input" accept=".json,application/json" hidden multiple />
         </div>
       </header>
@@ -112,7 +113,7 @@ export function createProjectManager(container, store, onOpenProject = () => {})
     if (list.length === 0) {
       gridEl.innerHTML = `
         <div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--fg-2);">
-          <div style="font-size: 32px; margin-bottom: 8px;">📁</div>
+          <div style="margin-bottom: 8px; color: var(--fg-2);">${getIconSvg('folder', 32)}</div>
           <div style="font-weight: 600; font-size: 14px; margin-bottom: 4px; color: var(--fg-1);">Aucun projet trouvé</div>
           <p style="margin: 0; font-size: 12px;">Créez un nouveau projet ou chargez les exemples pour démarrer.</p>
         </div>
@@ -125,7 +126,7 @@ export function createProjectManager(container, store, onOpenProject = () => {})
       const isCurrent = store.currentId === g.id;
       card.className = `pf-pm-card${isCurrent ? ' active' : ''}`;
 
-      let thumbHtml = '<div class="pf-pm-thumb-placeholder">🎮</div>';
+      let thumbHtml = `<div class="pf-pm-thumb-placeholder">${getIconSvg('project', 24)}</div>`;
       if (g.thumbnail) {
         thumbHtml = `<img src="${g.thumbnail}" class="pf-pm-thumb" alt="${g.name}" />`;
       }
@@ -146,7 +147,7 @@ export function createProjectManager(container, store, onOpenProject = () => {})
           <button class="primary" data-open="${g.id}">Ouvrir</button>
           <button data-clone="${g.id}" title="Dupliquer le projet">Dupliquer</button>
           <button data-export="${g.id}" title="Télécharger le fichier JSON">Export</button>
-          <button data-del="${g.id}" style="color:var(--danger);margin-left:auto;" title="Supprimer le projet">🗑</button>
+          <button data-del="${g.id}" style="color:var(--danger);margin-left:auto;" title="Supprimer le projet" aria-label="Supprimer le projet">${getIconSvg('trash', 12)}</button>
         </div>
       `;
 
@@ -169,17 +170,17 @@ export function createProjectManager(container, store, onOpenProject = () => {})
           <label style="display:block;margin-bottom:6px;font-size:12px;color:var(--fg-1);">Modèle de départ :</label>
           <div class="pf-pm-template-list">
             <div class="pf-pm-template-card selected" data-template="platformer">
-              <span style="font-size:20px;">🏃</span>
+              <span style="display:flex;align-items:center;justify-content:center;color:var(--accent);">${getIconSvg('play', 22)}</span>
               <strong>Jeu de Plateforme</strong>
               <small style="color:var(--fg-2);">Héros avec course et saut, pièce ramassable et drapeau avec Blueprints.</small>
             </div>
             <div class="pf-pm-template-card" data-template="empty">
-              <span style="font-size:20px;">📄</span>
+              <span style="display:flex;align-items:center;justify-content:center;color:var(--accent);">${getIconSvg('file', 22)}</span>
               <strong>Projet Vide</strong>
               <small style="color:var(--fg-2);">Une carte de départ vierge prête à accueillir vos créations.</small>
             </div>
             <div class="pf-pm-template-card" data-template="topdown">
-              <span style="font-size:20px;">🧭</span>
+              <span style="display:flex;align-items:center;justify-content:center;color:var(--accent);">${getIconSvg('compass', 22)}</span>
               <strong>Vue de Dessus (Top-down)</strong>
               <small style="color:var(--fg-2);">Sans gravité, déplacement 4/8 directions au clavier.</small>
             </div>

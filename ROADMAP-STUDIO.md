@@ -54,7 +54,7 @@ Cible : la disposition de Godot.
 
 ```
 ┌───────────────────────────────────────────────────────────────────────────┐
-│ Menu : Jeu  Édition  Affichage  Outils  Aide        ▶ ⏸ ■   (barre d'outils)│
+│ Menu : Jeu  Édition  Affichage  Outils  Aide        [Play] [Pause] [Stop] (barre d'outils)│
 ├──────────────┬─────────────────────────────────────────────┬──────────────┤
 │ RESSOURCES   │ [Niveau 1 ×] [Player (Blueprint) ×] [Musique ×]│ INSPECTEUR   │
 │ ▸ Scènes     │                                             │ Player       │
@@ -80,7 +80,7 @@ Cible : la disposition de Godot.
   - Disposition : barre de menus + barre d'outils, colonne gauche, centre, colonne droite, panneau bas. Séparateurs déplaçables à la souris (largeurs mini/maxi), panneaux repliables (double-clic sur l'en-tête), chaque colonne pouvant contenir plusieurs panneaux empilés ou en onglets.
   - API : `dock.registerPanel({ id, title, icon, area: 'left'|'right'|'bottom', mount(el, store), unmount() })`.
   - Disposition sauvegardée dans `localStorage` (`pixelforge.layout`), avec un bouton « Réinitialiser la disposition » dans le menu Affichage.
-  - Barre d'outils au centre : ▶ Lancer le jeu (F5), ▶ Lancer la scène courante (F6), ⏸ Pause, ■ Arrêter (F8).
+  - Barre d'outils au centre : Lancer le jeu (F5), Lancer la scène courante (F6), Pause, Arrêter (F8).
   - Menus : Jeu (Nouveau, Ouvrir, Enregistrer sous / Exporter, Réglages du jeu), Édition (Annuler, Rétablir, Préférences), Affichage (panneaux visibles), Outils (Valider le jeu, Compiler les Blueprints), Aide (Aide API, Documentation des nœuds, À propos).
 - **Fini quand** : la coque s'affiche avec des panneaux vides, redimensionnables et repliables, et la disposition survit à un rechargement. Les anciens onglets restent accessibles le temps de A2 à A7.
 
@@ -117,7 +117,7 @@ Cible : la disposition de Godot.
 ### A5. Éditeur de scène façon Godot / GameMaker (remplace l'onglet Cartes)
 - **Fichiers** : `src/editors/map/` (refonte), `src/ui/panels/scene-tree.js` (nouveau).
 - **Comment** :
-  - **Arbre de scène** (panneau gauche, sous Ressources) : calques de tuiles, puis instances groupées par calque d'instances. Visibilité 👁 et verrouillage 🔒 par élément, sélection synchronisée avec la vue.
+  - **Arbre de scène** (panneau gauche, sous Ressources) : calques de tuiles, puis instances groupées par calque d'instances. Visibilité et verrouillage par élément, sélection synchronisée avec la vue.
   - **Calques d'instances** comme GameMaker (« Instance layers ») en plus des calques de tuiles : nouveau champ `map.instanceLayers`, avec une migration qui met les `entities` existantes dans un calque par défaut.
   - Dans la vue : outil Sélection (Q) avec poignées de déplacement, aimantation à la grille (désactivable avec Alt), duplication Ctrl+D, rotation / échelle des instances (nouveaux champs `angle` et `scale` sur les entités, pris en compte par le moteur), règles et guides, zoom à la molette et pan à la molette enfoncée (déjà en partie présents).
   - Outils de tuiles dans une barre à part : pinceau, rectangle, remplissage, pipette ; tampon multi-tuiles (sélection d'un bloc de tuiles dans le tileset).
@@ -192,7 +192,7 @@ Cible : composer une vraie musique chiptune à 4 ou 5 voix en quelques minutes, 
   - Une ligne par canal : nom, instrument, bouton muet / solo, volume, puis 16 (ou 32) cases cliquables. Les temps forts sont colorés différemment.
   - Clic = note à la hauteur par défaut du canal, clic droit = effacer, glisser = peindre plusieurs cases.
   - Pour la batterie (canal `noise` + `drumKit`) : sous-lignes Grosse caisse, Caisse claire, Charleston fermé, Charleston ouvert, Tom, chacune avec ses réglages de bruit et de hauteur.
-  - Barre de transport : ▶ / ■, BPM (glisser pour changer), métronome, boucler le pattern, choisir le pattern.
+  - Barre de transport : Jouer / Arrêter, BPM (glisser pour changer), métronome, boucler le pattern, choisir le pattern.
 - **Fini quand** : on fait un rythme de batterie et une ligne de basse en moins d'une minute, et la lecture est stable à 180 BPM.
 
 ### B3. Piano roll

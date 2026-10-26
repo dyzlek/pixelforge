@@ -362,9 +362,9 @@ export class DockManager {
         id: 'game',
         label: 'Jeu',
         items: [
-          { label: '▶ Lancer le jeu', shortcut: 'F5', action: () => this.triggerPlay() },
-          { label: '▶ Lancer la scène', shortcut: 'F6', action: () => this.triggerPlayCurrent() },
-          { label: '■ Arrêter', shortcut: 'F8', action: () => this.triggerStop() },
+          { label: 'Lancer le jeu', shortcut: 'F5', action: () => this.triggerPlay() },
+          { label: 'Lancer la scène', shortcut: 'F6', action: () => this.triggerPlayCurrent() },
+          { label: 'Arrêter', shortcut: 'F8', action: () => this.triggerStop() },
           { sep: true },
           { label: 'Exporter HTML autonome…', shortcut: '', action: () => this.options.onExport?.() },
           { sep: true },

@@ -168,7 +168,7 @@ export function mount(container, store) {
     for (const s of sounds()) {
       const it = el('div', 'list-item snd-item' + (s.id === selectedId ? ' selected' : ''));
       it.append(el('span', 'snd-name', s.name), el('span', 'snd-kind', s.kind === 'file' ? 'fichier' : 'sfx · ' + ((s.sfx && s.sfx.preset) || '')));
-      const b = el('button', 'snd-mini', '▶');
+      const b = el('button', 'snd-mini', 'Play');
       b.title = 'Écouter';
       b.onclick = (e) => { e.stopPropagation(); play(s); };
       it.appendChild(b);
@@ -239,7 +239,7 @@ export function mount(container, store) {
     const wave = el('canvas', 'snd-wave'); wave.width = 560; wave.height = 90;
     const refreshWave = () => { clearTimeout(waveTimer); waveTimer = setTimeout(() => drawWave(wave, snd), 60); };
 
-    const playBtn = el('button', 'primary snd-play', '▶ Écouter (Espace)');
+    const playBtn = el('button', 'primary snd-play', 'Écouter (Espace)');
     playBtn.onclick = () => play(snd);
 
     if (snd.kind === 'sfx') {
@@ -250,7 +250,7 @@ export function mount(container, store) {
       ps.onchange = () => { upd(() => { sfx.preset = ps.value; }); renderList(); refreshWave(); play(snd); };
       const seedIn = el('input'); seedIn.type = 'number'; seedIn.step = 1; seedIn.value = sfx.seed || 0;
       seedIn.onchange = () => { upd(() => { sfx.seed = Math.trunc(+seedIn.value) || 0; }); refreshWave(); play(snd); };
-      const vary = el('button', null, '🎲 Varier');
+      const vary = el('button', null, 'Varier');
       vary.onclick = () => {
         const s = 1 + Math.floor(Math.random() * 99999);
         upd(() => { sfx.seed = s; }); seedIn.value = s; refreshWave(); play(snd);
@@ -274,7 +274,7 @@ export function mount(container, store) {
           const seed = 1 + Math.floor(Math.random() * 99999);
           const row = el('div', 'snd-var');
           row.append(el('span', 'snd-var-seed', 'seed ' + seed));
-          const pb = el('button', 'snd-mini', '▶');
+          const pb = el('button', 'snd-mini', 'Play');
           pb.title = 'Écouter';
           pb.onclick = () => playSfx({ ...sfx, seed });
           const kb = el('button', 'snd-mini', 'Garder');

@@ -15,9 +15,9 @@ export function mount(container, store) {
   container.innerHTML = `
     <div class="play-root">
       <div class="play-bar">
-        <button class="primary" data-act="replay">↻ Rejouer</button>
+        <button class="primary" data-act="replay">Rejouer</button>
         <label>Carte <select data-role="run-map">${mapOptions(s.startMapId)}</select></label>
-        <button data-act="fullscreen">⛶ Plein écran</button>
+        <button data-act="fullscreen">Plein écran</button>
         <span class="play-sep"></span>
         <label>Largeur <input type="number" data-set="width" min="64" max="1920" step="16" value="${s.width}"></label>
         <label>Hauteur <input type="number" data-set="height" min="64" max="1080" step="9" value="${s.height}"></label>

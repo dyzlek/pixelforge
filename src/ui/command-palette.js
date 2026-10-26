@@ -4,6 +4,7 @@
 
 import './command-palette.css';
 import { shortcuts } from './shortcuts.js';
+import { getIconSvg } from './icons.js';
 
 export class CommandPalette {
   constructor({ store, workspace, dock, onOpenPrefs = () => {} }) {
@@ -90,7 +91,7 @@ export class CommandPalette {
 
   openCommands() {
     const list = shortcuts.getCommands().map((c) => ({
-      icon: '⚙️',
+      icon: getIconSvg('settings', 13),
       category: c.category,
       label: c.label,
       shortcut: c.shortcutText,
@@ -110,7 +111,7 @@ export class CommandPalette {
 
     for (const m of p.maps || []) {
       items.push({
-        icon: '🗺️',
+        icon: getIconSvg('map', 13),
         category: 'Scène',
         label: m.name,
         action: () => this.workspace.open({ kind: 'map', refId: m.id, title: m.name }),
@@ -118,7 +119,7 @@ export class CommandPalette {
     }
     for (const s of p.sprites || []) {
       items.push({
-        icon: '🎨',
+        icon: getIconSvg('palette', 13),
         category: 'Sprite',
         label: s.name,
         action: () => this.workspace.open({ kind: 'pixel', refId: s.id, title: s.name }),
@@ -126,7 +127,7 @@ export class CommandPalette {
     }
     for (const o of p.objects || []) {
       items.push({
-        icon: '👾',
+        icon: getIconSvg('object', 13),
         category: 'Objet',
         label: o.name,
         action: () => this.workspace.open({ kind: 'objects', refId: o.id, title: o.name }),
@@ -134,7 +135,7 @@ export class CommandPalette {
     }
     for (const snd of p.sounds || []) {
       items.push({
-        icon: '🔊',
+        icon: getIconSvg('sound', 13),
         category: 'Son',
         label: snd.name,
         action: () => this.workspace.open({ kind: 'sound', refId: snd.id, title: snd.name }),

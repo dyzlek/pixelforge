@@ -1171,7 +1171,7 @@ function renderLeft() {
       store.update((p) => { p.settings.startMapId = m.id; }, 'map');
       renderLeft();
     },
-  }, m.id === start ? '★' : '☆'),
+  }, m.id === start ? '[Start]' : ''),
   h('span', { class: 'map-name' }, m.name),
   h('span', { class: 'map-dim' }, `${m.width}×${m.height}`)));
   els.left.replaceChildren(
@@ -1179,7 +1179,7 @@ function renderLeft() {
       h('h3', {}, 'Cartes'),
       h('div', { class: 'map-list' }, items),
       S.newForm ? newMapForm() : mapActions(map),
-      h('div', { class: 'map-hint' }, '★ = carte de départ du jeu')),
+      h('div', { class: 'map-hint' }, '[Start] = carte de départ du jeu')),
     h('div', { class: 'map-section' }, h('h3', {}, 'Propriétés'), mapProps(map)),
     layersSection(map));
 }
@@ -1303,7 +1303,7 @@ function renderInstance() {
     });
     vIn.addEventListener('change', () => setProps((p) => { p[k] = parseVal(vIn.value); return p; }));
     return h('div', { class: 'map-prop' }, kIn, vIn,
-      h('button', { class: 'map-mini', title: 'Supprimer la propriété', onclick: () => setProps((p) => { delete p[k]; return p; }) }, '✕'));
+      h('button', { class: 'map-mini', title: 'Supprimer la propriété', onclick: () => setProps((p) => { delete p[k]; return p; }) }, 'x'));
   });
 
   const nkIn = h('input', { type: 'text', class: 'map-pk', placeholder: 'clé' });

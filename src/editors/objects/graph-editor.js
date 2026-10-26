@@ -1849,8 +1849,8 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
       row.appendChild(el('span', 'bp-row-dot fn'));
       const name = el('span', 'bp-row-name', `${d.fields.NAME || '?'}(${(d.extra.params || []).join(', ')})`);
       row.append(name,
-        btn('✎', 'Renommer', (e) => { e.stopPropagation(); renameFunction(d); }, 'bp-mini'),
-        btn('⚙', 'Paramètres', (e) => { e.stopPropagation(); editParams(d); }, 'bp-mini'),
+        btn('Editer', 'Renommer', (e) => { e.stopPropagation(); renameFunction(d); }, 'bp-mini'),
+        btn('Options', 'Paramètres', (e) => { e.stopPropagation(); editParams(d); }, 'bp-mini'),
         btn('×', 'Supprimer', (e) => { e.stopPropagation(); deleteFunction(d); }, 'bp-mini danger'));
       row.onclick = () => focusNode(d.id);
       fns.appendChild(row);
@@ -1873,7 +1873,7 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
       def.oninput = () => { v.default = parseLiteral(def.value); emit({ keepPanel: true }); };
       def.draggable = false;
       row.append(def,
-        btn('✎', 'Renommer', (e) => { e.stopPropagation(); renameVariable(v); }, 'bp-mini'),
+        btn('Editer', 'Renommer', (e) => { e.stopPropagation(); renameVariable(v); }, 'bp-mini'),
         btn('×', 'Supprimer', (e) => { e.stopPropagation(); deleteVariable(v); }, 'bp-mini danger'));
       vars.appendChild(row);
     }

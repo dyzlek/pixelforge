@@ -423,7 +423,7 @@ export function createGame(project, parent, Phaser, opts = {}) {
     // Croix directionnelle : une seule zone, la direction suit le doigt (diagonales possibles)
     const dpad = document.createElement('div');
     dpad.style.cssText = base + 'left:14px;bottom:14px;width:min(34vmin,150px);height:min(34vmin,150px);';
-    dpad.textContent = '✥';
+    dpad.textContent = '+';
     let dpadId = null;
     const dirs = ['LEFT', 'RIGHT', 'UP', 'DOWN'];
     const setDirs = (e) => {

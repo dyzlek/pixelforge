@@ -49,7 +49,7 @@ Noms de broches :
 Règles de liaison (comme Unreal) :
 - une sortie `exec` → **au plus un** fil ; une entrée `exec` peut en recevoir plusieurs ;
 - une entrée de données → **au plus un** fil ; une sortie de données → plusieurs ;
-- types compatibles : identiques, ou l'un des deux est `any`, ou `number`/`boolean`/`color` → `string`, `color` ↔ `string`.
+- types compatibles : identiques, ou l'un des deux est `any`, ou `number`/`boolean`/`color` -> `string`, `color` <-> `string`.
 
 ## Catalogue des nœuds — `src/graph/nodes.js` (sans DOM, sans dépendance : utilisable sous node)
 

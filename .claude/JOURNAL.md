@@ -1,5 +1,17 @@
 # Journal — PixelForge
 
+## 2026-10-26 (20) — Correctifs phase A en attente
+- **Essayé (Opus)** : corriger ouverture de projet, jeux d'exemple et A2 ; arrêté avant toute écriture car une autre IA modifie en direct les mêmes fichiers (icônes SVG : documents.js, project-manager.js, éditeurs…).
+- **Décisions** : attendre que l'utilisateur confirme que l'autre IA a fini avant d'écrire.
+- **État** : aucun changement de ma part ; main, rien commité.
+
+## 2026-10-26 (19) — Relecture (Opus) de la phase A (PR #30–#39)
+- **Vérifié** : build, npm test, check:doc, validate ×3 et CI OK ; interface dock testée dans le navigateur.
+- **Bloquant** : « Ouvrir » et « Nouveau projet » du gestionnaire appellent `store.load(id)` au lieu de `store.openGame(id)` → JSON.parse plante, aucun jeu ne s'ouvre (aussi sur la démo Pages).
+- **Graves** : A2 non faite — éditeurs toujours singletons ; ouvrir un 2e sprite vide l'onglet du 1er ; tous les documents restent montés cachés, leurs raccourcis clavier (Ctrl+Z, Suppr…) agissent en arrière-plan ; régression : « Jeux d'exemple » n'utilise plus games/index.json ni la confirmation d'écrasement.
+- **Incomplet** : A5 (pas de calques d'instances, poignées, rotation/échelle dans l'éditeur ; ancien éditeur de cartes inséré tel quel), modèles topdown/vides minimaux ; titres d'onglets en innerHTML non échappés.
+- **État** : rien corrigé ; src/main.js et src/ui/icons.js modifiés non commités par quelqu'un d'autre (pas touchés). Branche main, à jour avec origin, aucun commit de cette relecture.
+
 **But** : moteur / éditeur de jeux 2D dans le navigateur, basé sur Phaser 3 : pixel art, cartes en tuiles, objets avec scripts en code (CodeMirror) ou en blocs (Blockly), test en direct, export HTML autonome.
 **Technos** : Vite 6, JS vanilla (modules ES), phaser 3.90, blockly 11, codemirror 6.
 **Structure** : voir docs/ARCHITECTURE.md (onglets = modules mount/unmount dans src/editors/* et src/runtime/play.js ; noyau src/core ; API des scripts docs/SCRIPT_API.md).
@@ -42,7 +54,7 @@
 - **Fait** :
   - Support de `angle`, `scale`, `locked`, `visible` sur les entités de scène dans `docs/PROJECT_SCHEMA.json`, `src/core/project.js` (`normalizeProject`) et `src/runtime/engine.js` (sans aucun import).
   - Création de `src/ui/panels/scene-tree.js` et `scene-tree.css` : panneau Arbre de scène dans le dock gauche avec gestion des calques et des entités.
-  - Bascule de visibilité 👁 et verrouillage 🔒 individuels par calque et par entité.
+  - Bascule de visibilité et verrouillage individuels par calque et par entité.
   - Glisser-déposer d'objets depuis l'explorateur de ressources directement sur la vue 2D pour instanciation rapide alignée sur la grille (ou pixel par pixel avec Alt).
   - Raccourci `Ctrl+D` pour dupliquer l'entité sélectionnée.
   - Synchronisation bidirectionnelle de sélection entre la scène 2D et l'inspecteur unifié.
@@ -208,4 +220,12 @@
   - Ajout d'une barre d'état au bas du studio (`.pf-dock-statusbar`) avec coordonnées du curseur (X, Y), niveau de zoom et statut de synchronisation persistant (Disque / IndexedDB).
   - Amélioration de l'accessibilité WCAG 2.2 AA : anneaux de focus `:focus-visible` à fort contraste, support de `prefers-reduced-motion`, labels `aria-label` et états vides pédagogiques sur tous les panneaux.
 - **Vérifié** : `npm run build`, `npm test` (2277 vérifications, 0 échec), `npm run check:doc`, validation des 3 jeux (tetris, exemple-plateforme-qiqv, monde-1-1). Tous conformes avec 0 erreur.
+
+## 2026-10-26 (10) — Suppression totale des émojis du code, projet et documentation
+- **Fait** :
+  - Remplacement de tous les émojis dans l'interface et le code par des icônes SVG vectorielles (`src/ui/icons.js`) ou du texte sobre.
+  - Nettoyage complet de `README.md`, `README.en.md`, `CONTRIBUTING.md`, `ROADMAP-STUDIO.md` et `docs/BLUEPRINTS.md`.
+  - Remplacement des symboles pictographiques résiduels dans `src/editors/`, `src/runtime/` et `src/ui/`.
+- **Vérifié** : Scan de validation regex `\p{Extended_Pictographic}` = 0 trouvé, `npm run build`, `npm test`, `npm run check:doc` et 3 validations de jeux réussis avec 0 erreur.
+
 
