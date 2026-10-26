@@ -12,5 +12,6 @@ export * from './exporter.js';
 export { applyPlatformerTemplate } from './template.js';
 export { textToFrames, framesToText } from './sprites.js';
 export { encodePNG, decodePNG } from './png.js';
+export { parseSongText, songToText } from './song-text.js';
 
 export const readDoc = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8');

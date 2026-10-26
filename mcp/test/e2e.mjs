@@ -27,7 +27,7 @@ async function call(name, args = {}, { expectError = false } = {}) {
 try {
   const tools = (await client.listTools()).tools.map((t) => t.name);
   console.log('tools:', tools.join(', '));
-  for (const n of ['pixelforge_guide', 'list_games', 'create_game', 'get_game', 'delete_game', 'duplicate_game', 'set_settings', 'upsert_sprite', 'get_sprite', 'upsert_object', 'set_script', 'get_script', 'list_nodes', 'upsert_map', 'paint_map', 'set_layer', 'place_entities', 'render_map', 'add_sound', 'validate_game', 'export_html']) assert.ok(tools.includes(n), 'missing tool ' + n);
+  for (const n of ['pixelforge_guide', 'list_games', 'create_game', 'get_game', 'delete_game', 'duplicate_game', 'set_settings', 'upsert_sprite', 'get_sprite', 'upsert_object', 'set_script', 'get_script', 'list_nodes', 'upsert_map', 'paint_map', 'set_layer', 'place_entities', 'render_map', 'add_sound', 'upsert_song', 'get_song', 'validate_game', 'export_html']) assert.ok(tools.includes(n), 'missing tool ' + n);
 
   assert.match(await call('pixelforge_guide'), /PixelForge/);
   await call('create_game', { name: 'test-mcp' });
@@ -103,6 +103,10 @@ on('update', () => {
     '....................', '....................', '....................', '....................', '....................',
     '....................', '....................', '..P.................', '....................', '....................'] });
   await call('add_sound', { game: 'test-mcp', name: 'ding', preset: 'coin', volume: 0.6 });
+  const songAscii = 'BPM 140\nCHANNELS\n  Lead: pulse50\n  Bass: triangle\nPATTERN Main 16\n00 | C4 | C3\n04 | E4 | G3\nPLAYLIST\n  Track0: Main Main';
+  await call('upsert_song', { game: 'test-mcp', name: 'Theme', text: songAscii });
+  const fetchedSong = await call('get_song', { game: 'test-mcp', song: 'Theme' });
+  assert.match(fetchedSong, /Theme/);
   const summary = await call('get_game', { game: 'test-mcp' });
   assert.match(summary, /Player/);
   const v = await call('validate_game', { game: 'test-mcp' });

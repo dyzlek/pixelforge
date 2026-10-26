@@ -1,11 +1,11 @@
 # Catalogue des nœuds Blueprint de PixelForge
 
 > Ce document est généré automatiquement par `node scripts/gen-nodes-doc.mjs`.
-> Total : **161 nœuds** répartis en **18 catégories**.
+> Total : **165 nœuds** répartis en **18 catégories**.
 
 ## Sommaire des catégories
 
-- [Événements (#event)](#event) (13 nœuds)
+- [Événements (#event)](#event) (14 nœuds)
 - [Flux (#flow)](#flow) (9 nœuds)
 - [Fonctions (#func)](#func) (4 nœuds)
 - [Variables (#var)](#var) (3 nœuds)
@@ -15,7 +15,7 @@
 - [Entrée (#input)](#input) (2 nœuds)
 - [Souris (#mouse)](#mouse) (3 nœuds)
 - [Tuiles & rayons (#tile)](#tile) (12 nœuds)
-- [Son (#sound)](#sound) (3 nœuds)
+- [Son (#sound)](#sound) (6 nœuds)
 - [Messages (#msg)](#msg) (3 nœuds)
 - [Jeu (#game)](#game) (24 nœuds)
 - [Caméra & texte (#cam)](#cam) (11 nœuds)
@@ -327,6 +327,26 @@ on('mousedown', 'LEFT', () => {
 
 ```javascript
 on('message', 'porte', (data) => {
+});
+```
+
+### `pf_on_beat` — Au battement (rythme)
+
+**Type de nœud** : Événement  
+**Description** : Déclenché à chaque battement / temps musical de la musique en cours.  
+**Mots-clés de recherche** : `beat rythme bpm pulsation musique`  
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+| `beat` | `number` | temps |
+
+**Exemple de code JavaScript compilé :**
+
+```javascript
+on('beat', (beat) => {
 });
 ```
 
@@ -2289,6 +2309,71 @@ on('create', () => {
 | Broche | Type | Valeur par défaut | Description |
 |---|---|---|---|
 | `exec` | `exec` | — | exec |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_play_song` — Jouer un morceau
+
+**Type de nœud** : Action  
+**Description** : Lance la lecture d'un morceau chiptune avec options de volume et fondu.  
+**Mots-clés de recherche** : `song music chiptune`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `VOL` | `number` | `1` | volume |
+| `LOOP` | `boolean` | `true` | boucle |
+| `FADE_IN` | `number` | `0` | fondu entrant (s) |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `SONG` | `song` | `""` | — |
+
+### `pf_stop_song` — Arrêter le morceau
+
+**Type de nœud** : Action  
+**Description** : Arrête la lecture du morceau actuel avec option de fondu sortant.  
+**Mots-clés de recherche** : `stop song music`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `FADE_OUT` | `number` | `0` | fondu sortant (s) |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_set_song_volume` — Volume du morceau
+
+**Type de nœud** : Action  
+**Description** : Modifie le volume du morceau en cours de lecture.  
+**Mots-clés de recherche** : `volume song music`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `VOL` | `number` | `1` | volume |
 
 **Sorties (broches) :**
 

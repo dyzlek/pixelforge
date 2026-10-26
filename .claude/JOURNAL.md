@@ -1,5 +1,18 @@
 # Journal — PixelForge
 
+## 2026-10-26 (35) — [Phase B] B7 : Integration musicale dans les scripts, Blueprints et MCP
+- **Fait** :
+  - Extension de l'API runtime dans `src/runtime/engine.js` (zero import) : `game.playSong(name, { loop, volume, fadeIn })`, `game.stopSong({ fadeOut })`, `game.setSongVolume(v)` et evenement de rythme `on('beat', fn(beatNumber))`.
+  - Routage dynamique audio dans `src/audio/chip.js` avec node `songGain` sur le morceau actif, fondu entrant (`fadeIn`), fondu sortant (`fadeOut`) et ajustement temps reel du volume (`setVolume`).
+  - Ajout des noeuds Blueprints dans `src/graph/nodes.js` et `src/graph/compile.js` : `pf_play_song`, `pf_stop_song`, `pf_set_song_volume` et evenement `pf_on_beat`. Regeneration automatique de `docs/NODES.md`.
+  - Creation de `mcp/lib/song-text.js` : parseur et generateur de notation tracker ASCII compacte (BPM, CHANNELS, PATTERN, PLAYLIST) sans dependance DOM.
+  - Ajout des outils MCP `upsert_song` et `get_song` dans `mcp/server.js` et `mcp/lib/ops.js`.
+  - Validation statique de `game.playSong` et de l'evenement `beat` dans `mcp/lib/validate.js`.
+  - Documentation de l'API dans `docs/SCRIPT_API.md`.
+  - Tests unitaires et d'integration dans `src/audio/test/chip.test.mjs`, `src/graph/test/graph.test.mjs` et `mcp/test/e2e.mjs`.
+- **Verifie** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **Etat** : Closes #18.
+
 ## 2026-10-26 (34) — [Phase B] B6 : Generateur d'effets sonores avance (sfxr / jsfxr)
 - **Fait** :
   - Implementation de la synthese procedurale sfxr dans `src/audio/chip.js` (`generateSfxr`, `mutateSfxr`, `playSfxr`) sans dependance externe.

@@ -19,6 +19,7 @@ Une erreur dans un script est attrapée et affichée dans la console du jeu (ove
 | `on('overlap', 'NomObjet', (other) => {})` | chevauchement (sans blocage physique) — chaque image tant qu'il dure |
 | `on('keydown', 'SPACE', () => {})` | touche pressée (une fois) |
 | `on('timer', 1000, () => {})` | toutes les N millisecondes |
+| `on('beat', (beat) => {})` | à chaque temps musical (battement) de la musique chiptune en cours |
 | `on('destroy', () => {})` | juste avant la destruction |
 
 Règle physique : deux objets dont l'un a un handler `collide` l'un vers l'autre se bloquent (collider) ;
@@ -49,8 +50,8 @@ Touches : `LEFT RIGHT UP DOWN SPACE ENTER SHIFT Z X C A W S D Q E`.
 
 - `game.vars` — variables globales (objet), conservées entre les cartes
 - `game.score` — raccourci vers `game.vars.score` (initialisé à 0)
-- `game.spawn('NomObjet', x, y)` → instance
-- `game.find('NomObjet')` → première instance ou `null` ; `game.findAll('NomObjet')` → tableau
+- `game.spawn('NomObjet', x, y)` -> instance
+- `game.find('NomObjet')` -> première instance ou `null` ; `game.findAll('NomObjet')` -> tableau
 - `game.goToMap('NomCarte')`, `game.restart()` (recharge la carte courante)
 - `game.setText('id', 'texte', x, y)` — texte HUD fixe à l'écran (créé ou mis à jour par id) ; `game.removeText('id')`
 - `game.camera.follow(self)`, `game.camera.shake(ms = 200, intensité = 0.01)`, `game.camera.flash(ms = 200)`
@@ -199,6 +200,9 @@ on('update', () => {
 | `game.playSound('nom', volume?, pitch?)` | joue un son du projet. `volume` 0–1 (1 par défaut), `pitch` multiplie la fréquence / vitesse (1 par défaut) |
 | `game.playMusic('nom')` | joue en boucle (relancer le même nom ne fait rien) |
 | `game.stopMusic()` | arrête la musique |
+| `game.playSong('nom', { loop?, volume?, fadeIn? })` | joue un morceau chiptune du projet avec options |
+| `game.stopSong({ fadeOut? })` | arrête le morceau chiptune en cours |
+| `game.setSongVolume(v)` | règle le volume du morceau en cours (0 à 1) |
 
 Sons `kind: 'sfx'` : synthétisés par WebAudio, sans fichier. Presets : `jump coin hit powerup explosion laser blip portal`
 (`sfx.seed` varie légèrement le son, `sfx.pitch` et `sfx.volume` sont les réglages de base). Sons `kind: 'file'` : `dataUrl` audio.

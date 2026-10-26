@@ -4,6 +4,7 @@ import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER
 import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../editors/music/pianoroll.js';
 import { encodeWav } from '../wav-encoder.js';
 import { parseMidi, midiToSong } from '../midi-parser.js';
+import { parseSongText, songToText } from '../../../mcp/lib/song-text.js';
 
 function createMockAudioContext() {
   const scheduledValues = [];
@@ -347,5 +348,56 @@ const { mockCtx: sfxCtx } = createMockAudioContext();
 const chipSfx = createChipAudio(sfxCtx);
 const dur = chipSfx.playSfx({ params: orig });
 assert.ok(dur > 0);
+
+// 14. Test de la notation tracker ASCII (parseSongText / songToText)
+const sampleTrackerText = `
+BPM 150
+CHANNELS
+  Lead: pulse25, vol 0.8
+  Bass: triangle, vol 0.9
+  Drums: noise, drumKit
+
+PATTERN Melody 16
+00 | C4 | C3 | kick
+04 | E4 | G3 | snare
+08 | G4 | C3 | kick
+12 | B4 | G3 | snare
+
+PLAYLIST
+  Track0: Melody Melody
+`;
+
+const parsedSong = parseSongText(sampleTrackerText, 'TrackerTune');
+assert.equal(parsedSong.name, 'TrackerTune');
+assert.equal(parsedSong.bpm, 150);
+assert.equal(parsedSong.channels.length, 3);
+assert.equal(parsedSong.channels[0].name, 'Lead');
+assert.equal(parsedSong.channels[0].instrument, 'pulse25');
+assert.equal(parsedSong.channels[2].drumKit, true);
+assert.equal(parsedSong.patterns.length, 1);
+assert.equal(parsedSong.patterns[0].name, 'Melody');
+assert.equal(parsedSong.patterns[0].notes.length, 12);
+assert.equal(parsedSong.playlist.length, 2);
+
+const generatedText = songToText(parsedSong);
+assert.ok(generatedText.includes('BPM 150'));
+assert.ok(generatedText.includes('CHANNELS'));
+assert.ok(generatedText.includes('PATTERN Melody 16'));
+assert.ok(generatedText.includes('PLAYLIST'));
+
+// 15. Test de chip.playSong avec callbacks onBeat et fadeIn/fadeOut
+const { mockCtx: songCtx } = createMockAudioContext();
+const chipSong = createChipAudio(songCtx);
+let beatCount = 0;
+const songCtrl = chipSong.playSong(parsedSong, {
+  fadeIn: 0.5,
+  onBeat: (b) => { beatCount++; }
+});
+assert.ok(songCtrl);
+assert.equal(typeof songCtrl.stop, 'function');
+assert.equal(typeof songCtrl.setVolume, 'function');
+assert.ok(songCtrl.isPlaying());
+songCtrl.setVolume(0.5);
+songCtrl.stop({ fadeOut: 0.1 });
 
 console.log('Tests chip.js reussis avec succes.');

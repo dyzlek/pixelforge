@@ -21,6 +21,7 @@ export function createGame(project, parent, Phaser, opts = {}) {
 
   const gameVars = { score: 0 }; // game.vars : conservées d'une carte à l'autre
   let destroyed = false;
+  let activeScene = null;
 
   const fmt = (a) => {
     if (typeof a === 'string') return a;
@@ -257,13 +258,30 @@ export function createGame(project, parent, Phaser, opts = {}) {
         try { chip = chipFactory(c, master); } catch (e) {}
       }
       if (!chip) return null;
-      const ctrl = chip.playSong(song, opts);
-      music = { name: song.name, stop: () => ctrl.stop() };
+      const combinedOpts = Object.assign({}, opts);
+      const userBeat = opts.onBeat;
+      combinedOpts.onBeat = (b) => {
+        if (userBeat) userBeat(b);
+        if (activeScene && activeScene.dispatchBeat) activeScene.dispatchBeat(b);
+      };
+      const ctrl = chip.playSong(song, combinedOpts);
+      music = { name: song.name, stop: (stopOpts) => ctrl.stop(stopOpts), ctrl };
       return ctrl;
     }
 
-    function stopSong() {
-      stopMusic();
+    function stopSong(opts) {
+      if (music && music.stop) {
+        music.stop(opts);
+        music = null;
+      } else {
+        stopMusic();
+      }
+    }
+
+    function setSongVolume(v) {
+      if (music && music.ctrl && music.ctrl.setVolume) {
+        music.ctrl.setVolume(v);
+      }
     }
 
     function playTune(notesInput, bpm = 140, loop = true, volume = 0.5) {
@@ -310,7 +328,7 @@ export function createGame(project, parent, Phaser, opts = {}) {
       stopMusic();
       if (ctx) { try { ctx.close(); } catch (e) { /* ignore */ } ctx = null; }
     };
-    return { unlock, playSound, playMusic, stopMusic, playSong, stopSong, playTune, setMasterVolume, dispose };
+    return { unlock, playSound, playMusic, stopMusic, playSong, stopSong, setSongVolume, playTune, setMasterVolume, dispose };
   })();
 
   // Débloque l'audio au premier geste
@@ -392,8 +410,6 @@ export function createGame(project, parent, Phaser, opts = {}) {
     touchEl = root;
   }
   setupTouch();
-
-  let activeScene = null;
 
   // ---------- Chargement des images (asynchrone) ----------
   const loadImage = (src) => new Promise((resolve) => {
@@ -637,7 +653,17 @@ export function createGame(project, parent, Phaser, opts = {}) {
 
     // ----- Instances -----
     newHandlers() {
-      return { create: [], update: [], destroy: [], hitTile: [], message: [] };
+      return { create: [], update: [], destroy: [], hitTile: [], message: [], beat: [] };
+    }
+
+    dispatchBeat(beatNumber) {
+      for (const h of [this.global, ...this.insts]) {
+        if (!h || h.dead) continue;
+        for (const e of (h.handlers.beat || []).slice()) {
+          if (h.dead || this.leaving) break;
+          this.call(h, e, 'beat', beatNumber);
+        }
+      }
     }
 
     newHolder(name) {
@@ -824,6 +850,9 @@ export function createGame(project, parent, Phaser, opts = {}) {
         switch (evt) {
           case 'create': case 'update': case 'destroy':
             if (needFn(a)) inst.handlers[evt].push(entry(a));
+            break;
+          case 'beat':
+            if (needFn(a)) inst.handlers.beat.push(entry(a));
             break;
           case 'collide': case 'overlap': case 'overlapStart': case 'overlapEnd':
             if (!selfObj) { warnOnce('Le script global ne peut pas utiliser on(\'' + evt + '\')'); break; }
@@ -1264,7 +1293,8 @@ export function createGame(project, parent, Phaser, opts = {}) {
         playMusic(name) { audio.playMusic(name); },
         stopMusic() { audio.stopMusic(); },
         playSong(name, opts) { return audio.playSong(name, opts); },
-        stopSong() { audio.stopSong(); },
+        stopSong(opts) { audio.stopSong(opts); },
+        setSongVolume(v) { audio.setSongVolume(v); },
         playTune(notes, bpm, loop, volume) { audio.playTune(notes, bpm, loop, volume); },
         stopTune() { audio.stopMusic(); },
         setVolume(v) { audio.setMasterVolume(v); },
