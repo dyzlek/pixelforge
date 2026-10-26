@@ -156,6 +156,8 @@ export class DocumentWorkspace {
         currentName = p.sounds?.find((s) => s.id === doc.refId)?.name;
       } else if ((doc.kind === 'song' || doc.kind === 'music') && doc.refId) {
         currentName = p.songs?.find((s) => s.id === doc.refId)?.name;
+      } else if ((doc.kind === 'model3d' || doc.kind === 'voxel') && doc.refId) {
+        currentName = p.models?.find((m) => m.id === doc.refId)?.name;
       }
       if (currentName && currentName !== doc.title) {
         doc.title = currentName;
@@ -210,6 +212,7 @@ export class DocumentWorkspace {
       else if (kind === 'objects' || kind === 'script') mod = await import('../editors/objects/index.js');
       else if (kind === 'sound') mod = await import('../editors/sound/index.js');
       else if (kind === 'song' || kind === 'music') mod = await import('../editors/music/index.js');
+      else if (kind === 'model3d' || kind === 'voxel') mod = await import('../editors/voxel/index.js');
       else if (kind === 'play') mod = await import('../runtime/play.js');
 
       if (mod) {
@@ -245,8 +248,9 @@ export class DocumentWorkspace {
       if (kind === 'objects' || kind === 'script') return p.objects?.find((o) => o.id === refId)?.name || 'Objet';
       if (kind === 'sound') return p.sounds?.find((s) => s.id === refId)?.name || 'Son';
       if (kind === 'song' || kind === 'music') return p.songs?.find((s) => s.id === refId)?.name || 'Musique';
+      if (kind === 'model3d' || kind === 'voxel') return p.models?.find((m) => m.id === refId)?.name || 'Modèle 3D';
     }
-    const defaults = { map: 'Cartes', pixel: 'Pixel art', objects: 'Objets & code', sound: 'Sons', song: 'Musiques', music: 'Musiques' };
+    const defaults = { map: 'Cartes', pixel: 'Pixel art', objects: 'Objets & code', sound: 'Sons', song: 'Musiques', music: 'Musiques', model3d: 'Modèles 3D', voxel: 'Modèles 3D' };
     return defaults[kind] || kind;
   }
 
