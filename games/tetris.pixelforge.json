@@ -5,9 +5,9 @@
     "id": "tetris",
     "description": "Tetris rétro complet codé à 100% en Blueprints (graphe de nœuds) avec rotation SRS, 7-bag, ghost piece, hold et musique chiptune",
     "author": "",
-    "thumbnail": null,
+    "thumbnail": "data:image/png;base64,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",
     "createdAt": "2026-10-26T00:51:39.618Z",
-    "updatedAt": "2026-10-26T12:55:16.128Z"
+    "updatedAt": "2026-10-26T14:14:45.819Z"
   },
   "settings": {
     "width": 256,
@@ -109,7 +109,7 @@
         "preset": "blip",
         "seed": 0,
         "volume": 0.2,
-        "pitch": 0.9
+        "pitch": 0.69
       }
     },
     {
@@ -187,6 +187,17 @@
         "seed": 0,
         "volume": 0.65,
         "pitch": 1.2
+      }
+    },
+    {
+      "id": "snd_irwpc3s",
+      "name": "jump",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "powerup",
+        "seed": 17216,
+        "volume": 0.65,
+        "pitch": 1.75
       }
     }
   ],
@@ -1733,8 +1744,8 @@
             {
               "id": "n132",
               "type": "var_get",
-              "x": 306,
-              "y": 2267,
+              "x": 112,
+              "y": 2352,
               "fields": {
                 "NAME": "gameOver"
               },
@@ -1744,8 +1755,8 @@
             {
               "id": "n133",
               "type": "fn_call",
-              "x": 762,
-              "y": 2211,
+              "x": 768,
+              "y": 2192,
               "fields": {},
               "values": {},
               "extra": {
