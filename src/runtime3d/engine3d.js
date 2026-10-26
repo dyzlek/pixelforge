@@ -833,6 +833,7 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         camera.position.z += (targetCamZ - camera.position.z) * lerpFactor;
         camera.lookAt(cameraTarget.x, cameraTarget.y + h, cameraTarget.z);
       }
+    }
   }
 
   function loop(now) {

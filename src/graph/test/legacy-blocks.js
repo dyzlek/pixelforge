@@ -920,6 +920,8 @@ export const SELF_BLOCKS = new Set([
   'pf_tint_set', 'pf_tint_none', 'pf_tween_to', 'pf_ray_cast_mouse',
   // v1.2
   'pf_on_overlap_start', 'pf_on_overlap_end', 'pf_self_ref',
+  // 3D
+  'pf_self_set_3d', 'pf_self_get_3d', 'pf_jump_3d', 'pf_move_forward_3d', 'pf_move_right_3d', 'pf_look_at_3d', 'pf_rotate_y_3d', 'pf_camera_follow_3d',
 ]);
 
 /** Désactive (ou réactive) les blocs qui utilisent self selon le type de script. */

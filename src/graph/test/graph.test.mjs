@@ -283,9 +283,9 @@ function synth(type, spec) {
 
 if (BK) {
   // blocs standard / PixelForge « un par un »
-  const STD = new Set(['var_get', 'var_set', 'var_change', 'fn_call', 'fn_call_value', 'fn_return', 'fn_def', 'lists_removeIndex', 'lists_getIndex', 'lists_setIndex', 'math_number_property']);
+  const STD = new Set(['var_get', 'var_set', 'var_change', 'fn_call', 'fn_call_value', 'fn_return', 'fn_def', 'lists_removeIndex', 'lists_getIndex', 'lists_setIndex', 'math_number_property', 'pf_mouse_delta', 'pf_pointer_lock']);
   for (const spec of listSpecs()) {
-    if (spec.type.startsWith('flow_') || STD.has(spec.type)) continue;
+    if (spec.type.startsWith('flow_') || STD.has(spec.type) || (spec.dims && !spec.dims.includes('2d'))) continue;
     synth(spec.type, spec);
   }
   // événements
@@ -626,6 +626,39 @@ const same = (a, b) => norm(a) === norm(b);
   g.link(e, 'then', a, 'exec');
   r = code(g);
   ok(r.errors.length === 0 && r.warnings.length === 1 && r.code.startsWith('var neuve;'), 'variable non déclarée : ' + JSON.stringify(r));
+
+  // (c3-3d) compilation des nœuds 3D
+  const g3 = G();
+  const e3 = g3.add('pf_on_create', 0, 0);
+  const n1 = g3.add('pf_self_set_3d', 100, 0, { fields: { PROP: 'vz' }, values: { VALUE: 12 } });
+  const n2 = g3.add('pf_jump_3d', 200, 0, { values: { FORCE: 15 } });
+  const n3 = g3.add('pf_move_forward_3d', 300, 0, { values: { SPEED: 8 } });
+  const n4 = g3.add('pf_move_right_3d', 400, 0, { values: { SPEED: -4 } });
+  const n5 = g3.add('pf_look_at_3d', 500, 0, { values: { X: 1, Y: 2, Z: 3 } });
+  const n6 = g3.add('pf_rotate_y_3d', 600, 0, { values: { ANGLE: 90 } });
+  const n7 = g3.add('pf_camera_mode_3d', 700, 0, { fields: { MODE: 'third-person' } });
+  const n8 = g3.add('pf_camera_follow_3d', 800, 0, { values: { DIST: 8, HEIGHT: 4 } });
+  const n9 = g3.add('pf_pointer_lock', 900, 0);
+  g3.exec(e3, n1, n2, n3, n4, n5, n6, n7, n8, n9);
+
+  const r3 = code(g3);
+  ok(r3.errors.length === 0, 'noeuds 3D compilent sans erreur');
+  ok(r3.code.includes('self.vz = 12;'), 'self_set_3d vz');
+  ok(r3.code.includes('self.jump(15);'), 'jump_3d force');
+  ok(r3.code.includes('self.moveForward(8);'), 'move_forward_3d');
+  ok(r3.code.includes('self.moveRight(-4);'), 'move_right_3d');
+  ok(r3.code.includes('self.lookAt(1, 2, 3);'), 'look_at_3d');
+  ok(r3.code.includes('self.rotateY(90);'), 'rotate_y_3d');
+  ok(r3.code.includes("game.camera.setMode('third-person');"), 'camera_mode_3d');
+  ok(r3.code.includes('game.camera.follow(self, { distance: 8, height: 4 });'), 'camera_follow_3d');
+  ok(r3.code.includes('input.requestPointerLock();'), 'pointer_lock');
+
+  try {
+    new Function('self', 'game', 'input', 'on', r3.code);
+    checks++;
+  } catch (err) {
+    fail('Syntaxe du code 3D genere invalide : ' + err.message);
+  }
 }
 
 // ---------------------------------------------------------------- (c4) catalogue

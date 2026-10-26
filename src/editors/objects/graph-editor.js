@@ -1303,8 +1303,10 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
 
   function paletteEntries() {
     const out = [];
+    const dim = ctx.getProject?.()?.settings?.dimension || '2d';
     for (const s of listSpecs()) {
       if (ctx.isGlobal && s.selfOnly) continue;
+      if (s.dims && !s.dims.includes(dim)) continue;
       if (s.dynamic === 'call') {
         for (const d of fnDefs()) {
           const name = d.fields.NAME;

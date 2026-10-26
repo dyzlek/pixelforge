@@ -293,6 +293,16 @@ PURE.pf_speed = (c) => (c.f('PROP') === 'dir'
   : ['Math.hypot(self.vx, self.vy)', F]);
 PURE.pf_atan2 = (c) => [`(Math.atan2(${c.v('DY')}, ${c.v('DX')}) * 180 / Math.PI)`, O.ATOMIC];
 PURE.pf_blocked = (c) => [`self.blocked.${c.id('SIDE')}`, O.MEMBER];
+
+// -- Mouvement 3D
+GEN.pf_self_set_3d = (c) => `self.${c.id('PROP')} = ${c.v('VALUE', O.ASSIGNMENT)};\n`;
+PURE.pf_self_get_3d = (c) => [`self.${c.id('PROP')}`, O.MEMBER];
+GEN.pf_jump_3d = (c) => `self.jump(${c.v('FORCE')});\n`;
+GEN.pf_move_forward_3d = (c) => `self.moveForward(${c.v('SPEED')});\n`;
+GEN.pf_move_right_3d = (c) => `self.moveRight(${c.v('SPEED')});\n`;
+GEN.pf_look_at_3d = (c) => `self.lookAt(${c.v('X')}, ${c.v('Y')}, ${c.v('Z')});\n`;
+GEN.pf_rotate_y_3d = (c) => `self.rotateY(${c.v('ANGLE')});\n`;
+PURE.pf_distance_3d = (c) => [`Math.hypot(${c.v('X1')} - ${c.v('X2')}, ${c.v('Y1')} - ${c.v('Y2')}, ${c.v('Z1')} - ${c.v('Z2')})`, F];
 GEN.pf_tween_to = (c) => {
   const parts = [];
   for (const [inp, key] of [['X', 'x'], ['Y', 'y'], ['ALPHA', 'alpha'], ['ANGLE', 'angle'], ['SCALE', 'scale']]) {
@@ -340,6 +350,8 @@ GEN.pf_t_prop_set = (c) => onTarget(c, `_t.props[${q(c.f('KEY'))}] = ${c.v('VALU
 PURE.pf_key_down = (c) => [`input.isDown(${q(c.f('KEY'))})`, F];
 PURE.pf_key_just = (c) => [`input.justPressed(${q(c.f('KEY'))})`, F];
 PURE.pf_mouse_pos = (c) => [`input.${c.id('PROP')}`, O.MEMBER];
+PURE.pf_mouse_delta = (c) => [c.id('AXIS') === 'y' ? '(input.mouseDeltaY || 0)' : '(input.mouseDeltaX || 0)', O.ATOMIC];
+GEN.pf_pointer_lock = () => 'input.requestPointerLock();\n';
 PURE.pf_mouse_down = (c) => [`input.isMouseDown(${q(c.f('BTN'))})`, F];
 PURE.pf_mouse_just = (c) => [`input.mouseJustPressed(${q(c.f('BTN'))})`, F];
 
@@ -412,6 +424,8 @@ GEN.pf_set_text_opts = (c) =>
 GEN.pf_remove_text = (c) => `game.removeText(${q(c.f('ID'))});\n`;
 GEN.pf_cam_follow_self = () => 'game.camera.follow(self);\n';
 GEN.pf_cam_follow = (c) => `{ const _t = ${c.v('TARGET', O.NONE, 'null')}; if (_t) game.camera.follow(_t); }\n`;
+GEN.pf_camera_mode_3d = (c) => `game.camera.setMode(${q(c.f('MODE'))});\n`;
+GEN.pf_camera_follow_3d = (c) => `game.camera.follow(self, { distance: ${c.v('DIST')}, height: ${c.v('HEIGHT')} });\n`;
 GEN.pf_cam_shake = (c) => `game.camera.shake(${c.v('MS', O.NONE, '200')}, ${c.v('POWER', O.NONE, '0.01')});\n`;
 GEN.pf_cam_flash = (c) => `game.camera.flash(${c.v('MS', O.NONE, '200')});\n`;
 GEN.pf_cam_zoom = (c) => `game.camera.setZoom(${c.v('Z', O.NONE, '1')});\n`;
