@@ -1,0 +1,89 @@
+/* ==========================================================================
+   PixelForge Studio — Design Tokens & Thème (Godot 4 style)
+   ========================================================================== */
+
+:root, [data-theme="dark"] {
+  /* Fonds (du plus sombre au plus clair en dark mode) */
+  --bg-0: #141720;            /* Arrière-plan profond / viewport / toile */
+  --bg-1: #202531;            /* Fond principal Godot 4 (topbar, conteneur) */
+  --bg-2: #282e3d;            /* Panneaux latéraux, cartes, barres d'outils */
+  --bg-3: #343b4e;            /* Éléments survolés, sélections secondaires */
+
+  /* Textes */
+  --fg-0: #e8ebf5;            /* Texte principal / blanc cassé */
+  --fg-1: #b0b6cd;            /* Texte secondaire / labels */
+  --fg-2: #777e98;            /* Texte tertiaire / désactivé / raccourcis */
+
+  /* Accents & sémantique */
+  --accent: #478cbf;          /* Bleu Godot 4 principal */
+  --accent-hover: #5b9fd4;    /* Bleu clair au survol */
+  --accent-2: #41a6f6;        /* Accent cyan secondaire */
+  --danger: #ff4d5e;          /* Rouge alerte / suppression */
+  --warning: #ffcd75;         /* Jaune avertissement / sélection */
+  --success: #38b764;         /* Vert succès */
+
+  /* Bordures et ombres */
+  --border: #31374a;          /* Séparateurs et contours discrets */
+  --border-focus: #478cbf;    /* Bordure active / focus clavier */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 28px rgba(0, 0, 0, 0.6);
+
+  /* Rayons */
+  --radius-sm: 3px;
+  --radius-md: 5px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* Espacements */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+
+  /* Typographie */
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+
+  /* Rétrocompatibilité avec les variables historiques */
+  --bg: var(--bg-0);
+  --panel: var(--bg-1);
+  --panel-2: var(--bg-2);
+  --border-color: var(--border);
+  --text: var(--fg-0);
+  --muted: var(--fg-2);
+  --radius: var(--radius-md);
+  --font: var(--font-ui);
+  --mono: var(--font-mono);
+
+  color-scheme: dark;
+}
+
+/* Thème clair alternatif */
+[data-theme="light"] {
+  --bg-0: #e9ecf2;
+  --bg-1: #ffffff;
+  --bg-2: #f2f5f9;
+  --bg-3: #dde2ec;
+
+  --fg-0: #1b1e28;
+  --fg-1: #4c546a;
+  --fg-2: #7a8298;
+
+  --accent: #2e75a8;
+  --accent-hover: #225c86;
+  --accent-2: #2481cc;
+  --danger: #dc3545;
+  --warning: #d9822b;
+  --success: #28a745;
+
+  --border: #ccd2e0;
+  --border-focus: #2e75a8;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+  color-scheme: light;
+}

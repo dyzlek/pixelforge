@@ -2,6 +2,41 @@ import './style.css';
 import { store } from './core/store.js';
 import { exportStandaloneHTML } from './runtime/play.js';
 
+// --- Gestion des thèmes (Design Tokens A0) ---
+const THEME_KEY = 'pixelforge-theme';
+function getTheme() {
+  try {
+    return localStorage.getItem(THEME_KEY) || 'dark';
+  } catch {
+    return 'dark';
+  }
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try {
+    localStorage.setItem(THEME_KEY, theme);
+  } catch {}
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    btn.title = theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre';
+    btn.setAttribute('aria-label', btn.title);
+  }
+}
+
+function initTheme() {
+  const current = getTheme();
+  applyTheme(current);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.onclick = () => {
+      const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+      applyTheme(next);
+    };
+  }
+}
+
 const TABS = [
   { id: 'library', label: 'Bibliothèque', load: () => import('./library/index.js') },
   { id: 'pixel', label: 'Pixel art', load: () => import('./editors/pixel/index.js') },
@@ -124,6 +159,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 (async () => {
+  initTheme();
   try {
     await store.init();
   } catch (e) {

@@ -7,6 +7,19 @@
 
 ---
 
+## 2026-10-26 (19) — [Phase A] A0 : Jetons de design et thème (Design tokens & Theme)
+- **Fait** :
+  - Création de `src/ui/theme.css` avec les jetons Godot 4 complets : tokens de fond (`--bg-0` à `--bg-3`), texte (`--fg-0` à `--fg-2`), accents (`--accent`, `--danger`, `--warning`, `--success`), rayons, espacements, ombres et polices.
+  - Support des thèmes sombre et clair (`[data-theme="light"]`).
+  - Remplacement des couleurs en dur dans les feuilles de styles (`src/style.css`, map, objects, pixel, library).
+  - Bouton de bascule de thème dans la barre supérieure avec persistance dans `localStorage`.
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #1.
+
+## 2026-10-26 (18) — Revue des issues GitHub
+- **Fait** : vérifié les 28 issues (#1–#28, une par tâche de ROADMAP-STUDIO, jalons OK) ; #1 réécrite avec accents + critère tests ; #20 critère « validé par l'humain » ajouté ; issue #29 « À lire d'abord » (règles, décisions D1–D5, dépendances) créée et épinglée.
+- **État** : aucun changement de code ; rien à commiter côté issues.
+
 ## 2026-10-26 (17) — Feuille de route v3 (studio)
 - **Fait** : ROADMAP-STUDIO.md — phase A interface façon Godot/GameMaker (dock, documents, ressources, inspecteur, scène, débogage), phase B studio musical 8-bit façon FL Studio (modèle `songs`, moteur chip partagé sans import, rack, piano roll, playlist, sfxr, API/Blueprints/MCP), phase C 3D (Three.js + Rapier, voxel, gridmap, Blueprints 3D, MCP), phase D transversale, jalons et risques.
 - **Décisions** : rien codé à la demande de l'utilisateur (une autre IA codera) ; décisions D1–D5 laissées à l'utilisateur.
