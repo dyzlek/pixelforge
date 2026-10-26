@@ -1,6 +1,7 @@
 // Gabarit d'export HTML autonome pour les jeux 3D PixelForge.
 // Fonction pure, sans import pour usage navigateur et Node.
-// Three.js est charge depuis un CDN, chip.js et engine3d.js sont inlines.
+// Three.js (0.186.1, identique a l'editeur) est charge en module ES via importmap (decision V3).
+// chip.js et engine3d.js sont inlines.
 
 const escHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -23,22 +24,30 @@ export function buildStandaloneHTML3D(project, engine3dSource, chipSource = '') 
   #errors { position: fixed; left: 0; right: 0; bottom: 0; max-height: 30%; overflow: hidden; padding: 4px 8px;
     font: 12px/1.4 monospace; color: #ff9aa6; background: rgba(0, 0, 0, .7); pointer-events: none; display: none; }
 </style>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.min.js"
+  }
+}
+<\/script>
 </head>
 <body>
 <div id="game"></div>
 <div id="errors"></div>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
-${chip ? `<script>\n${chip}\n<\/script>` : ''}
-<script>
+<script type="module">
+import * as THREE from 'three';
+
+${chip ? chip + '\n' : ''}
 ${engine3d}
-</script>
-<script>
+
 const PROJECT = ${data};
 const errorsEl = document.getElementById('errors');
 const lines = [];
 
 try {
-  createGame3D(PROJECT, document.getElementById('game'), window.THREE, {
+  createGame3D(PROJECT, document.getElementById('game'), THREE, {
+    createChipAudio: typeof createChipAudio !== 'undefined' ? createChipAudio : null,
     onLog(msg, level) {
       if (level !== 'error') { console.log(msg); return; }
       console.error(msg);
@@ -53,7 +62,7 @@ try {
   errorsEl.textContent = 'Erreur 3D : ' + err.message;
   errorsEl.style.display = 'block';
 }
-</script>
+<\/script>
 </body>
 </html>`;
 }

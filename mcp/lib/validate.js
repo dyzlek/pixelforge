@@ -135,11 +135,23 @@ export function validateProject(p) {
     for (const m of src.matchAll(/\bgame\.(spawn|findAll|find)\(\s*(['"`])([^'"`]*)\2/g)) {
       if (!objectNames.includes(m[3])) add('error', where, `game.${m[1]}("${m[3]}"): object does not exist` + nameHint(m[3], objectNames));
     }
-    const destNames = p.settings.dimension === '3d'
-      ? [...mapNames, ...(p.scenes3d || []).map((s) => s.name)]
-      : mapNames;
-    for (const m of src.matchAll(/\bgame\.(?:goToMap|goToScene)\(\s*(['"`])([^'"`]*)\1/g)) {
-      if (!destNames.includes(m[2])) add('error', where, `target "${m[2]}" does not exist` + nameHint(m[2], destNames));
+    const is3D = p.settings.dimension === '3d';
+    const scene3dNames = (p.scenes3d || []).map((s) => s.name);
+    for (const m of src.matchAll(/\bgame\.(?:goToMap|goToScene|goToScene3D)\(\s*(['"`])([^'"`]*)\1/g)) {
+      const target = m[2];
+      if (is3D) {
+        if (mapNames.includes(target)) {
+          add('error', where, `target "${target}" is a 2D map, but game dimension is 3D (3D scenes: ${scene3dNames.join(', ') || 'none'})`);
+        } else if (!scene3dNames.includes(target)) {
+          add('error', where, `target "${target}" does not exist` + nameHint(target, scene3dNames));
+        }
+      } else {
+        if (scene3dNames.includes(target)) {
+          add('error', where, `target "${target}" is a 3D scene, but game dimension is 2D (maps: ${mapNames.join(', ') || 'none'})`);
+        } else if (!mapNames.includes(target)) {
+          add('error', where, `target "${target}" does not exist` + nameHint(target, mapNames));
+        }
+      }
     }
     const sounds = [...(p.sounds || []).map((x) => x.name), 'jump', 'coin', 'hit', 'powerup', 'explosion', 'laser', 'blip', 'portal', 'tetris', 'korobeiniki', 'adventure', 'action'];
     for (const m of src.matchAll(/\bgame\.play(?:Sound|Music)\(\s*(['"`])([^'"`]*)\1/g)) {
@@ -223,17 +235,64 @@ export function validateProject(p) {
   // ----- scènes 3D -----
   for (const sc of p.scenes3d || []) {
     const w = `scene3d "${sc.name}"`;
+    const g = sc.gridmap;
+    if (g && typeof g === 'object') {
+      const blocks = g.blocks && typeof g.blocks === 'object' ? g.blocks : g;
+      for (const [posKey, val] of Object.entries(blocks)) {
+        if (!/^-?\d+,-?\d+,-?\d+$/.test(posKey)) {
+          add('error', `${w} gridmap`, `invalid block position key "${posKey}" (must be "x,y,z" integers)`);
+          continue;
+        }
+        if (val == null) {
+          add('error', `${w} gridmap`, `block at "${posKey}" has null or undefined color`);
+          continue;
+        }
+        const isValidInt = Number.isInteger(val) && val >= 0 && val < 16;
+        const isValidHex = typeof val === 'string' && /^#[0-9a-fA-F]{6}$/.test(val);
+        if (!isValidInt && !isValidHex) {
+          add('error', `${w} gridmap`, `block at "${posKey}" has invalid color "${val}" (must be palette index 0-15 or "#rrggbb" hex)`);
+        }
+      }
+    }
+    const blocks = (g && g.blocks && typeof g.blocks === 'object') ? g.blocks : (g && typeof g === 'object' ? g : {});
     (sc.entities || []).forEach((e, i) => {
       const obj = p.objects.find((o) => o.id === e.objectId);
       const ew = `${w} entity #${i}${obj ? ` (${obj.name})` : ''}`;
       if (!obj) { add('error', ew, `objectId "${e.objectId}" matches no object`); return; }
-      if (!Number.isFinite(e.x) || !Number.isFinite(e.y) || !Number.isFinite(e.z)) add('error', ew, 'x, y, z must be valid numbers');
+      if (!Number.isFinite(e.x) || !Number.isFinite(e.y) || !Number.isFinite(e.z)) {
+        add('error', ew, 'x, y, z must be valid numbers');
+        return;
+      }
+      const hasGravity = obj.physics?.enabled && obj.physics?.gravity;
+      if (hasGravity) {
+        const ex = Math.round(e.x);
+        const ez = Math.round(e.z);
+        const ey = Math.round(e.y - 1);
+        let groundFound = false;
+        for (let checkY = ey; checkY >= ey - 30; checkY--) {
+          if (blocks[`${ex},${checkY},${ez}`] != null) {
+            groundFound = true;
+            break;
+          }
+        }
+        if (!groundFound) {
+          add('warning', ew, `entity has gravity enabled but has no ground block below it at (${ex}, *, ${ez}): it will fall into the void`);
+        }
+      }
     });
   }
 
   if (p.settings.dimension === '3d') {
     const startSc = (p.scenes3d || []).find((s) => s.id === (p.settings.startScene3DId || p.settings.startMapId));
-    if (startSc && !startSc.entities?.length) add('warning', `scene3d "${startSc.name}"`, 'the start 3D scene has no entities: nothing will happen when playing');
+    if (startSc) {
+      const hasPlayer = (startSc.entities || []).some((e) => {
+        const obj = p.objects.find((o) => o.id === e.objectId);
+        return obj && (/^player\b/i.test(obj.name) || /player/i.test(obj.name));
+      });
+      if (!hasPlayer) {
+        add('error', `scene3d "${startSc.name}"`, 'the start 3D scene must contain a player entity (an instance of an object named "Player")');
+      }
+    }
   } else {
     const start = p.maps.find((m) => m.id === p.settings.startMapId);
     if (start && !start.entities?.length) add('warning', `map "${start.name}"`, 'the start map has no entities: nothing will happen when playing');
