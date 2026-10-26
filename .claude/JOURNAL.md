@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (10) — P0.4 Démo en ligne (GitHub Pages)
+- **Fait** : base configurable via GITHUB_PAGES dans vite.config.js, copie de games/ dans dist/games/ avec index.json, bouton "Charger les jeux d'exemple" dans la bibliothèque, création de .github/workflows/pages.yml.
+- **Décisions** : support statique autonome avec fallback propre.
+- **État** : tests et build OK.
+
 ## 2026-10-26 (9) — P0.5 Intégration continue (CI)
 - **Fait** : ajout du script "test" dans package.json, création de .github/workflows/ci.yml (build, tests, validations des 3 jeux).
 - **Décisions** : workflow standard Ubuntu + Node 20 avec cache npm.

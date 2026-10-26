@@ -53,6 +53,7 @@ export function mount(container, store) {
     btn('+ Nouveau jeu', () => run(createGame), 'primary'),
     btn('Importer', () => fileInput.click()),
     btn('Ajouter l\'exemple', () => run(addSample)),
+    btn('Charger les jeux d\'exemple', () => run(loadSampleGames)),
     el('span', 'lib-spacer'),
     backendEl,
     fileInput,
@@ -121,6 +122,36 @@ export function mount(container, store) {
     p.meta.thumbnail = await renderThumbnail(p).catch(() => null);
     await saveGame(p);
     await render();
+  }
+
+  async function loadSampleGames() {
+    const baseUrl = import.meta.env?.BASE_URL || '/';
+    const cleanBase = baseUrl.replace(/\/+$/, '');
+    let loaded = 0;
+    try {
+      const manifestUrl = cleanBase + '/games/index.json';
+      const res = await fetch(manifestUrl);
+      if (res.ok) {
+        const list = await res.json();
+        for (const item of list) {
+          const gameUrl = cleanBase + '/games/' + item.file;
+          const gr = await fetch(gameUrl);
+          if (gr.ok) {
+            const p = normalizeProject(await gr.json());
+            if (!p.meta.thumbnail) p.meta.thumbnail = await renderThumbnail(p).catch(() => null);
+            await saveGame(p);
+            loaded++;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Impossible de charger games/index.json', e);
+    }
+    if (loaded === 0) {
+      await addSample();
+    } else {
+      await render();
+    }
   }
 
   async function duplicateGame(g) {

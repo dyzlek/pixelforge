@@ -165,6 +165,27 @@ function gamesPlugin() {
   };
 }
 
+function copyGamesPlugin() {
+  return {
+    name: 'copy-games-dist',
+    async closeBundle() {
+      const outDir = path.join(ROOT, 'dist', 'games');
+      await fs.promises.mkdir(outDir, { recursive: true });
+      if (!fs.existsSync(GAMES_DIR)) return;
+      const files = (await fs.promises.readdir(GAMES_DIR)).filter((f) => f.endsWith(SUFFIX));
+      const manifest = [];
+      for (const file of files) {
+        await fs.promises.copyFile(path.join(GAMES_DIR, file), path.join(outDir, file));
+        const id = file.slice(0, -SUFFIX.length);
+        manifest.push({ id, file });
+      }
+      await fs.promises.writeFile(path.join(outDir, 'index.json'), JSON.stringify(manifest, null, 2));
+    },
+  };
+}
+
 export default defineConfig({
-  plugins: [gamesPlugin()],
+  base: process.env.GITHUB_PAGES ? '/pixelforge/' : '/',
+  plugins: [gamesPlugin(), copyGamesPlugin()],
 });
+
