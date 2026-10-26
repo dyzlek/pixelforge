@@ -4,7 +4,7 @@
  */
 
 import './resources.css';
-import { createMap, createSprite, createObject, uid } from '../../core/project.js';
+import { createMap, createSprite, createObject, createSong, uid } from '../../core/project.js';
 import { getIconSvg } from '../icons.js';
 
 export function createResourcesPanel(container, store, workspace) {
@@ -69,6 +69,13 @@ export function createResourcesPanel(container, store, workspace) {
         iconName: 'sound',
         kind: 'sound',
         items: p.sounds || [],
+      },
+      {
+        id: 'songs',
+        label: 'Musiques',
+        iconName: 'music',
+        kind: 'song',
+        items: p.songs || [],
       },
     ];
 
@@ -168,7 +175,7 @@ export function createResourcesPanel(container, store, workspace) {
     if (!act) return;
 
     if (act === 'add') {
-      const type = prompt('Type de ressource à créer :\n1 = Scène / Carte\n2 = Sprite\n3 = Objet\n4 = Son', '1');
+      const type = prompt('Type de ressource à créer :\n1 = Scène / Carte\n2 = Sprite\n3 = Objet\n4 = Son\n5 = Musique', '1');
       if (type === '1') {
         const name = prompt('Nom de la carte :', 'Nouvelle carte');
         if (name) {
@@ -205,6 +212,16 @@ export function createResourcesPanel(container, store, workspace) {
             workspace.open({ kind: 'sound', refId: p.sounds[p.sounds.length - 1].id, title: name });
           }, 'sound');
         }
+      } else if (type === '5') {
+        const name = prompt('Nom de la musique :', 'Nouvelle musique');
+        if (name) {
+          store.update((p) => {
+            p.songs = p.songs || [];
+            const sng = createSong(name);
+            p.songs.push(sng);
+            workspace.open({ kind: 'song', refId: sng.id, title: sng.name });
+          }, 'song');
+        }
       }
     } else if (act === 'dup' && selectedItem) {
       store.update((p) => {
@@ -235,6 +252,16 @@ export function createResourcesPanel(container, store, workspace) {
             p.objects.push(copy);
             workspace.open({ kind: 'objects', refId: copy.id, title: copy.name });
           }
+        } else if (selectedItem.kind === 'song') {
+          const src = (p.songs || []).find((s) => s.id === selectedItem.id);
+          if (src) {
+            const copy = structuredClone(src);
+            copy.id = uid('sng');
+            copy.name = src.name + ' (copie)';
+            p.songs = p.songs || [];
+            p.songs.push(copy);
+            workspace.open({ kind: 'song', refId: copy.id, title: copy.name });
+          }
         }
       });
     } else if (act === 'del' && selectedItem) {
@@ -261,6 +288,7 @@ export function createResourcesPanel(container, store, workspace) {
         else if (selectedItem.kind === 'pixel') proj.sprites = proj.sprites.filter((s) => s.id !== selectedItem.id);
         else if (selectedItem.kind === 'objects') proj.objects = proj.objects.filter((o) => o.id !== selectedItem.id);
         else if (selectedItem.kind === 'sound') proj.sounds = proj.sounds.filter((s) => s.id !== selectedItem.id);
+        else if (selectedItem.kind === 'song') proj.songs = (proj.songs || []).filter((s) => s.id !== selectedItem.id);
         selectedItem = null;
       });
     }

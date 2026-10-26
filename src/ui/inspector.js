@@ -54,6 +54,9 @@ export function createInspector(container, store) {
       } else if (sel.type === 'sound') {
         const snd = p.sounds?.find((s) => s.id === sel.id);
         if (snd) return { type: 'sound', data: snd, title: snd.name, subtitle: 'Effet sonore' };
+      } else if (sel.type === 'song') {
+        const sng = p.songs?.find((s) => s.id === sel.id);
+        if (sng) return { type: 'song', data: sng, title: sng.name, subtitle: 'Musique chiptune' };
       } else if (sel.type === 'settings') {
         return { type: 'settings', data: p.settings, title: 'Réglages', subtitle: p.name };
       }

@@ -117,6 +117,22 @@ export const SCHEMAS = {
     ],
   },
 
+  song: {
+    title: 'Musique chiptune',
+    groups: [
+      {
+        id: 'general',
+        label: 'Général',
+        fields: [
+          { key: 'name', label: 'Nom', type: 'string', required: true },
+          { key: 'folder', label: 'Dossier', type: 'string' },
+          { key: 'bpm', label: 'Tempo (BPM)', type: 'number', min: 20, max: 400, step: 1, default: 130 },
+          { key: 'loop.enabled', label: 'Boucler la lecture', type: 'boolean', default: true },
+        ],
+      },
+    ],
+  },
+
   settings: {
     title: 'Réglages du projet',
     groups: [
