@@ -281,6 +281,17 @@
   - Integration de l'onglet [PLAYLIST] dans la barre de transport du studio musical.
 - **Verifie** : `npm run build`, `npm test` (test unitaire de boucle Intro -> Couplet/Refrain avec loopStart), `npm run check:doc`, validation des 3 jeux avec 0 erreur. Zero emoji.
 
+## 2026-10-26 (16) — [Phase B] B5 : Mixeur audio et export WAV / import MIDI (Closes #16)
+- **Fait** :
+  - Creation de l'encodeur WAV pur JavaScript `src/audio/wav-encoder.js` (~50 lignes sans dependance) : generation de fichiers RIFF WAVE PCM 16-bit signes stereo/mono.
+  - Creation du parseur Standard MIDI `src/audio/midi-parser.js` : decodage des fichiers .mid format 0 et 1 (en-tete MThd, morceaux MTrk, tempo, conversion temps ticks en pas doubles croches, extraction de notes et instruments chiptune associes).
+  - Creation de la console de mixage `src/editors/music/mixer.js` : tranche Master, tranches de canaux avec vumetres de volume, faders verticaux, panoramique L/R, Mute et Solo.
+  - Bouton d'export WAV direct : rendu hors-ligne accelere via `OfflineAudioContext`, encodage et declenchement du telechargement du fichier .wav.
+  - Bouton d'import MIDI : chargement de n'importe quel fichier .mid avec conversion instantanee en morceau chiptune exploitable.
+  - Ajout de l'onglet [MIXER] dans la barre de transport du studio musical.
+- **Verifie** : `npm run build`, `npm test` (tests unitaires de l'encodeur WAV et du parseur MIDI integres), `npm run check:doc`, validation des 3 jeux. Zero emoji.
+
+
 
 
 
