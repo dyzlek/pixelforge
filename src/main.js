@@ -1,6 +1,7 @@
 import './style.css';
 import { store } from './core/store.js';
 import { exportStandaloneHTML } from './runtime/play.js';
+import { DockManager } from './ui/dock.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -28,13 +29,6 @@ function applyTheme(theme) {
 function initTheme() {
   const current = getTheme();
   applyTheme(current);
-  const btn = document.getElementById('theme-toggle');
-  if (btn) {
-    btn.onclick = () => {
-      const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-      applyTheme(next);
-    };
-  }
 }
 
 const TABS = [
@@ -46,18 +40,119 @@ const TABS = [
   { id: 'play', label: '▶ Jouer', load: () => import('./runtime/play.js') },
 ];
 
+let previousNonPlayTab = 'pixel';
+let current = null; // { id, module, container }
+let switching = Promise.resolve();
+
+const appEl = document.getElementById('app') || document.body;
+
+// Initialisation du Dock Manager (A1)
+export const dock = new DockManager({
+  onPlay: () => {
+    if (current?.id !== 'play') previousNonPlayTab = current?.id || 'pixel';
+    location.hash = 'play';
+  },
+  onPlayCurrent: () => {
+    if (current?.id !== 'play') previousNonPlayTab = current?.id || 'pixel';
+    location.hash = 'play';
+  },
+  onStop: () => {
+    dock.setPlayingState(false);
+    if (current?.id === 'play') {
+      location.hash = previousNonPlayTab || 'map';
+    }
+  },
+  onExport: () => triggerExport(),
+});
+
+dock.mount(appEl);
+
+// Structure de la zone centrale
+const centerBody = dock.getAreaBody('center');
+centerBody.innerHTML = `
+  <div style="display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;">
+    <div id="pf-center-tabbar" style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg-1);border-bottom:1px solid var(--border);flex-shrink:0;">
+      <nav id="tabs" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></nav>
+    </div>
+    <main id="view" style="flex:1;min-height:0;position:relative;overflow:hidden;"></main>
+  </div>
+`;
+
 const view = document.getElementById('view');
 const tabsEl = document.getElementById('tabs');
+
+// Éléments de la barre supérieure droite (Godot style)
+const topRightEl = document.getElementById('pf-topright');
+topRightEl.innerHTML = `
+  <input id="project-name" class="project-name" spellcheck="false" placeholder="Aucun jeu ouvert" />
+  <button id="theme-toggle" class="theme-btn" title="Changer de thème" aria-label="Changer de thème">☀️</button>
+  <button data-action="export" class="primary" style="padding:3px 8px;font-size:12px;">Exporter HTML</button>
+  <span id="save-status" style="color:var(--fg-2);min-width:70px;font-size:12px;"></span>
+`;
+
 const nameInput = document.getElementById('project-name');
 const statusEl = document.getElementById('save-status');
 
-let current = null; // { id, module, container }
-let switching = Promise.resolve();
+// Bouton de thème
+const themeBtn = document.getElementById('theme-toggle');
+if (themeBtn) {
+  themeBtn.onclick = () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+  };
+}
+
+// Panneaux par défaut pour les docks
+dock.registerPanel({
+  id: 'resources',
+  title: 'Ressources',
+  icon: '📁',
+  area: 'left',
+  mount: (container) => {
+    container.innerHTML = `
+      <div style="padding:10px;font-size:12px;color:var(--fg-1);">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--fg-0);">Explorateur de projet</div>
+        <p style="margin:0;font-size:11px;color:var(--fg-2);">Arborescence des sprites, cartes, objets et sons.</p>
+      </div>
+    `;
+  },
+  unmount: () => {},
+});
+
+dock.registerPanel({
+  id: 'inspector',
+  title: 'Inspecteur',
+  icon: '🔍',
+  area: 'right',
+  mount: (container) => {
+    container.innerHTML = `
+      <div style="padding:10px;font-size:12px;color:var(--fg-1);">
+        <div style="font-weight:600;margin-bottom:6px;color:var(--fg-0);">Propriétés</div>
+        <p style="margin:0;font-size:11px;color:var(--fg-2);">Sélectionnez un élément pour afficher ses options.</p>
+      </div>
+    `;
+  },
+  unmount: () => {},
+});
+
+dock.registerPanel({
+  id: 'console',
+  title: 'Console',
+  icon: '💬',
+  area: 'bottom',
+  mount: (container) => {
+    container.innerHTML = `
+      <div style="padding:8px 12px;font-family:var(--font-mono);font-size:11px;color:var(--fg-1);height:100%;overflow:auto;">
+        <span style="color:var(--accent);">PixelForge Studio v3.0 initialisé.</span>
+      </div>
+    `;
+  },
+  unmount: () => {},
+});
 
 function readHash() {
   const id = location.hash.slice(1);
   if (!TABS.some((t) => t.id === id)) return store.currentId ? 'pixel' : 'library';
-  // Sans jeu ouvert, les onglets d'édition renvoient vers la bibliothèque
   return id !== 'library' && !store.currentId ? 'library' : id;
 }
 
@@ -77,6 +172,8 @@ async function showTab(id, force = false) {
   const module = await tab.load();
   current = { id, module, container };
   module.mount(container, store);
+
+  dock.setPlayingState(id === 'play');
 }
 
 function openTab(id) {
@@ -84,7 +181,6 @@ function openTab(id) {
   return switching;
 }
 
-// Recharge l'onglet courant (après chargement d'un autre projet)
 function remountCurrent() {
   switching = switching.then(() => (current ? showTab(current.id, true) : null)).catch((e) => console.error(e));
 }
@@ -98,7 +194,6 @@ for (const t of TABS) {
 }
 window.addEventListener('hashchange', () => openTab(readHash()));
 
-// Nom du projet et état de sauvegarde
 const syncName = () => {
   nameInput.value = store.currentId ? store.project.name : '';
   nameInput.disabled = !store.currentId;
@@ -145,13 +240,13 @@ function download(filename, content, type) {
 
 const slug = () => (store.project.name || 'jeu').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'jeu';
 
-for (const b of document.querySelectorAll('.menu [data-action]')) {
-  b.onclick = () => {
-    if (b.dataset.action !== 'export') return;
-    if (!store.currentId) { toast('Ouvrez un jeu depuis la bibliothèque pour l\'exporter'); return; }
-    download(slug() + '.html', exportStandaloneHTML(store.project), 'text/html');
-  };
+function triggerExport() {
+  if (!store.currentId) { toast('Ouvrez un jeu depuis la bibliothèque pour l\'exporter'); return; }
+  download(slug() + '.html', exportStandaloneHTML(store.project), 'text/html');
 }
+
+const exportBtn = document.querySelector('[data-action="export"]');
+if (exportBtn) exportBtn.onclick = triggerExport;
 
 // Ctrl+S = sauvegarde immédiate
 window.addEventListener('keydown', (e) => {
