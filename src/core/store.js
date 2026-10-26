@@ -36,7 +36,12 @@ function createStore() {
   const store = {
     project: createEmptyProject(), // projet « brouillon » tant qu'aucun jeu n'est ouvert (jamais sauvegardé)
     currentId: null,
-    ui: { selectedSpriteId: null, selectedMapId: null, selectedObjectId: null },
+    ui: { selectedSpriteId: null, selectedMapId: null, selectedObjectId: null, selection: null },
+
+    setSelection(sel) {
+      this.ui.selection = sel;
+      this.emit('selection', sel);
+    },
 
     on(event, cb) {
       if (!listeners.has(event)) listeners.set(event, new Set());
