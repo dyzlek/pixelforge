@@ -468,4 +468,138 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
   assert.ok(!ctrl.isPlaying());
 }
 
+// 17. Aller-retour texte <-> musique MCP sans perte (Issue #62, point B-8)
+{
+  function canonicalize(song) {
+    const chMap = new Map();
+    const patMap = new Map();
+    song.channels.forEach((ch, i) => chMap.set(ch.id, 'ch_' + i));
+    song.patterns.forEach((pat, i) => patMap.set(pat.id, 'pat_' + i));
+
+    return {
+      name: song.name,
+      bpm: song.bpm,
+      ...(song.swing != null ? { swing: song.swing } : {}),
+      loop: song.loop ? { enabled: song.loop.enabled !== false, start: song.loop.start || 0, ...(song.loop.end != null ? { end: song.loop.end } : {}) } : undefined,
+      channels: song.channels.map((ch, i) => {
+        const copy = {
+          ...ch,
+          id: 'ch_' + i,
+          mute: !!ch.mute,
+          solo: !!ch.solo,
+          drumKit: !!ch.drumKit,
+        };
+        for (const k of Object.keys(copy)) {
+          if (copy[k] === undefined) delete copy[k];
+        }
+        return copy;
+      }),
+      patterns: song.patterns.map((pat, i) => ({
+        name: pat.name,
+        length: pat.length,
+        notes: (pat.notes || [])
+          .map((n) => {
+            const copy = { ...n, ch: chMap.get(n.ch) || n.ch, len: n.len != null ? n.len : 1 };
+            if (n.vel != null && n.vel !== 1) copy.vel = n.vel;
+            else delete copy.vel;
+            for (const k of Object.keys(copy)) {
+              if (copy[k] === undefined) delete copy[k];
+            }
+            return copy;
+          })
+          .sort((a, b) => a.step - b.step || a.ch.localeCompare(b.ch) || a.pitch.localeCompare(b.pitch))
+      })),
+      playlist: (song.playlist || []).map((it) => ({
+        pattern: patMap.get(it.pattern) || it.pattern,
+        track: it.track || 0,
+        start: it.start || 0
+      })).sort((a, b) => (a.track || 0) - (b.track || 0) || a.start - b.start)
+    };
+  }
+
+  // (a) Test sur les 6 morceaux de demonstration
+  for (const preset of SONG_PRESETS) {
+    const original = preset.create();
+    const text = songToText(original);
+    const parsed = parseSongText(text, original.name);
+    assert.deepStrictEqual(canonicalize(parsed), canonicalize(original), 'Aller-retour sans perte sur preset ' + preset.name);
+  }
+
+  // (b) Test sur un morceau complet personnalise
+  const customSong = {
+    name: 'Theme Mystique & Épique',
+    bpm: 145,
+    swing: 0.25,
+    loop: { enabled: true, start: 8, end: 48 },
+    channels: [
+      {
+        id: 'c1',
+        name: 'Synthé Éthéré',
+        instrument: 'pulse25',
+        volume: 0.75,
+        pan: -0.4,
+        env: { a: 0.02, d: 0.2, s: 0.5, r: 0.3 },
+        vibrato: { depth: 0.3, rate: 5 },
+        arp: [0, 4, 7, 12]
+      },
+      {
+        id: 'c2',
+        name: 'Basse Custom Wave',
+        instrument: 'wave',
+        volume: 0.9,
+        pan: 0,
+        mute: true,
+        solo: false,
+        waveTable: [0, 0.5, 1, 0.5, 0, -0.5, -1, -0.5]
+      },
+      {
+        id: 'c3',
+        name: 'Batterie Solo',
+        instrument: 'noise',
+        volume: 0.85,
+        pan: 0.1,
+        drumKit: true,
+        solo: true
+      }
+    ],
+    patterns: [
+      {
+        id: 'pt1',
+        name: 'Pattern Intro 1',
+        length: 16,
+        notes: [
+          { ch: 'c1', step: 0, pitch: 'C4', len: 4, vel: 0.8 },
+          { ch: 'c1', step: 0, pitch: 'G4', len: 4, vel: 0.7 },
+          { ch: 'c2', step: 0, pitch: 'C2', len: 8 },
+          { ch: 'c3', step: 0, pitch: 'kick', len: 1 },
+          { ch: 'c3', step: 0, pitch: 'hat_closed', len: 1, vel: 0.5 },
+          { ch: 'c3', step: 4, pitch: 'snare', len: 1 }
+        ]
+      }
+    ],
+    playlist: [
+      { pattern: 'pt1', track: 0, start: 0 },
+      { pattern: 'pt1', track: 0, start: 24 },
+      { pattern: 'pt1', track: 1, start: 8 }
+    ]
+  };
+
+  const customText = songToText(customSong);
+  const parsedCustom = parseSongText(customText);
+  assert.deepStrictEqual(canonicalize(parsedCustom), canonicalize(customSong), 'Aller-retour sans perte sur morceau personnalise');
+
+  // (c) Retrocompatibilite : textes anciens sans guillemets, sans @, sans loop
+  const legacyText = 'BPM 120\nCHANNELS\n  Lead: pulse50\n  Bass: triangle\nPATTERN Main 16\n00 | C4 | C3\n04 | E4 | G3\nPLAYLIST\n  Track0: Main Main';
+  const parsedLegacy = parseSongText(legacyText, 'Legacy');
+  assert.equal(parsedLegacy.name, 'Legacy');
+  assert.equal(parsedLegacy.bpm, 120);
+  assert.equal(parsedLegacy.channels.length, 2);
+  assert.equal(parsedLegacy.channels[0].name, 'Lead');
+  assert.equal(parsedLegacy.patterns.length, 1);
+  assert.equal(parsedLegacy.patterns[0].notes.length, 4);
+  assert.equal(parsedLegacy.playlist.length, 2);
+  assert.equal(parsedLegacy.playlist[0].start, 0);
+  assert.equal(parsedLegacy.playlist[1].start, 16);
+}
+
 console.log('Tests chip.js reussis avec succes.');

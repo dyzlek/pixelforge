@@ -1,5 +1,17 @@
 # Journal — PixelForge
 
+## 2026-10-26 (40) — [Prérequis] P1a : aller-retour texte ↔ musique du MCP sans perte (Issue #62, B-8)
+- **Fait** :
+  - Mise a niveau de `mcp/lib/song-text.js` pour un aller-retour 100% sans perte (hors ids) :
+    - Noms de patterns et de canaux avec espaces, accents et caracteres speciaux cites ou lus proprement.
+    - Accords / plusieurs notes par pas (`C4+E4`), support de la notation `:len:vel` pour les notes avec velocite personnalisee.
+    - Directives et sous-lignes `LOOP` (on/off start end), `SWING`, `ENV` (ADSR), `VIB` (vibrato depth et rate), `ARP` (arpege), `WAVE` (table donde), `MUTE`, `SOLO`, `PITCH` (defaultPitch) et `SAMPLE` (sampleSoundId).
+    - Playlist : conservation fidele de `start` et des pistes avec notation `Pattern@start`, préservant les trous (gaps) et les chevauchements (overlaps).
+    - Retrocompatibilite totale avec les anciens formats texte du MCP.
+  - Test unitaire d'aller-retour complet dans `src/audio/test/chip.test.mjs` validant les 6 morceaux chiptune de demonstration (`SONG_PRESETS`), un morceau avance complet personnalise et les formats anciens.
+- **Verifie** : `npm test`, `npm run check:doc`, `npm run build`, validation de tous les jeux.
+- **Etat** : Branche `feat/mcp-song-text-roundtrip`, Closes #62.
+
 ## 2026-10-26 (39) — Correctifs phases B et C (Opus, sans délégation à la demande de l'utilisateur)
 - **Fait** : runtime 3D (gridmap `{blockSize, blocks}`, modèles voxel rendus, collisions 3 axes en sous-pas, son, keydown, ambiance par scène, startScene3DId, API étendue, rotateY positif = droite, purge des instances, nettoyage WebGL) ; éditeurs voxel / scène 3D (format unique, couleur 0, dimensions width/height/depth, annuler/rétablir via store.update, pas de modification à l'ouverture, glTF vérifié, fuites) ; RLE durci ; nœuds Blueprint 2D-only + erreur de compilation par dimension (éditeur, MCP, validate) ; chip.js (batterie, solo, boucle loop.start, rendu hors-ligne synchrone, robustesse, purge) ; éditeur musical (nettoyages, undo) ; échappement HTML des noms ; play.js (scène testée, resize 3D). Nouveau test `src/runtime3d/test/sim3d.test.mjs`. correction.md mis à jour (fait / reste).
 - **Essayé** : vérification du mouvement dans le navigateur : impossible, panneau caché (pas de requestAnimationFrame) ; chargement et rendu de Cube Runner vérifiés.
