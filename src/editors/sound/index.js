@@ -1,7 +1,7 @@
 // Onglet « Sons » : liste des sons du projet, éditeur d'effets (presets WebAudio) et import de fichiers audio.
 import './style.css';
 import { uid } from '../../core/project.js';
-import { PRESETS, MASTER_GAIN, synth } from './synth.js';
+import { PRESETS, MASTER_GAIN, createChipAudio } from '../../audio/chip.js';
 
 const PRESET_LABELS = {
   jump: 'Saut', coin: 'Pièce', hit: 'Coup', powerup: 'Bonus', explosion: 'Explosion', laser: 'Laser', blip: 'Bip', portal: 'Portail',
@@ -34,11 +34,20 @@ const getCtx = () => {
   return ctx;
 };
 
+let chip = null;
+const getChip = () => {
+  const c = getCtx();
+  if (!c) return null;
+  if (!chip) chip = createChipAudio(c, master);
+  return chip;
+};
+
 function playSfx(sfx) {
   const c = getCtx();
   if (!c) return;
   if (c.state !== 'running') c.resume();
-  synth(c, master, sfx.preset, sfx.seed, sfx.volume, sfx.pitch);
+  const ch = getChip();
+  if (ch) ch.playSfx(sfx.preset, sfx.seed, sfx.volume, sfx.pitch);
 }
 
 function playFile(snd) {
@@ -54,7 +63,7 @@ function play(snd) {
   else playSfx(snd.sfx);
 }
 
-// ---------- Forme d'onde (rendu hors-ligne, avec les mêmes presets) ----------
+// ---------- Forme d'onde (rendu hors-ligne, avec les memes presets) ----------
 function drawWave(canvas, snd) {
   const g = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
@@ -72,7 +81,8 @@ function drawWave(canvas, snd) {
   m.gain.value = MASTER_GAIN;
   m.connect(off.destination);
   const sfx = snd.sfx;
-  const dur = synth(off, m, sfx.preset, sfx.seed, sfx.volume, sfx.pitch);
+  const offChip = createChipAudio(off, m);
+  const dur = offChip.playSfx(sfx.preset, sfx.seed, sfx.volume, sfx.pitch);
   off.startRendering().then((buf) => {
     if (token !== waveToken || !canvas.isConnected) return;
     const data = buf.getChannelData(0);

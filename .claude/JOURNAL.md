@@ -228,13 +228,26 @@
   - Remplacement des symboles pictographiques résiduels dans `src/editors/`, `src/runtime/` et `src/ui/`.
 - **Vérifié** : Scan de validation regex `\p{Extended_Pictographic}` = 0 trouvé, `npm run build`, `npm test`, `npm run check:doc` et 3 validations de jeux réussis avec 0 erreur.
 
-## 2026-10-26 (11) — [Phase B] B0 : Modèle de données des musiques (Closes #11)
+## 2026-10-26 (11) — [Phase B] B0 : Modele de donnees des musiques (Closes #11)
 - **Fait** :
-  - Définition du modèle de données de chansons multi-voix chiptune (`songs`) dans `src/core/project.js` (`createSong`, `normalizeProject`) : canaux (instruments NES/chiptune, volume, pan, ADSR, vibrato, arpèges, waveTable, sample), patterns (longueur, pas, notes, vélocité) et playlist (arrangement temporel avec boucle).
-  - Mise à jour du schéma JSON formel `docs/PROJECT_SCHEMA.json` avec validation stricte des chansons, canaux, patterns et items de playlist.
-  - Intégration de la validation sémantique dans `mcp/lib/validate.js` (détection des noms en double, canaux inconnus dans les patterns, patterns orphelins dans la playlist).
-  - Ajout de la catégorie Musiques dans l'explorateur de ressources Studio, l'inspecteur unifié et la palette de commandes.
-- **Vérifié** : `npm run build`, `npm test` (2277 vérifications, 0 échec), `npm run check:doc`, 3x `validate`, rétrocompatibilité vérifiée sur les anciens projets sans musiques.
+  - Definition du modele de donnees de chansons multi-voix chiptune (`songs`) dans `src/core/project.js` (`createSong`, `normalizeProject`) : canaux (instruments NES/chiptune, volume, pan, ADSR, vibrato, arpeges, waveTable, sample), patterns (longueur, pas, notes, velocite) et playlist (arrangement temporel avec boucle).
+  - Mise a jour du schema JSON formel `docs/PROJECT_SCHEMA.json` avec validation stricte des chansons, canaux, patterns et items de playlist.
+  - Integration de la validation semantique dans `mcp/lib/validate.js` (detection des noms en double, canaux inconnus dans les patterns, patterns orphelins dans la playlist).
+  - Ajout de la categorie Musiques dans l'explorateur de ressources Studio, l'inspecteur unifie et la palette de commandes.
+- **Verifie** : `npm run build`, `npm test` (2277 verifications, 0 echec), `npm run check:doc`, 3x `validate`, retrocompatibilite verifiee sur les anciens projets sans musiques.
+
+## 2026-10-26 (12) — [Phase B] B1 : Moteur audio chiptune partage (Closes #12)
+- **Fait** :
+  - Creation de `src/audio/chip.js` sans aucun import : formes d'ondes NES authentiques (rapports cycliques 12.5%, 25%, 50% via `PeriodicWave`, triangle, saw, table d'ondes 32 echantillons `wave`, bruit blanc et bruit metallique LFSR 15-bit).
+  - Enveloppes ADSR de gain par note, vibrato par LFO, arpegiateur 60 Hz pas-a-pas.
+  - Planificateur Web Audio a anticipation (Two Clocks pattern : `setInterval` 25 ms planifiant les 100 ms suivantes) assurant un tempo parfaitement stable.
+  - Rendu hors-ligne `renderOffline(song, durationSeconds)` via `OfflineAudioContext`.
+  - Suppression totale de la duplication `src/editors/sound/synth.js` ; l'editeur de sons utilise desormais `createChipAudio`.
+  - Integration propre dans `src/runtime/engine.js` (zero import preserve) via `opts.createChipAudio` ou `globalThis.createChipAudio`, avec compatibilite totale pour `CHIPTUNE_PRESETS` (`tetris`, etc.).
+  - Support de l'export autonome HTML (`src/runtime/export-template.js`, `mcp/lib/exporter.js`) par inlining ordonne de `chip.js` avant `engine.js`.
+  - Ajout de la suite de tests unitaires `src/audio/test/chip.test.mjs` integree a `npm test`.
+- **Verifie** : `npm run build`, `npm test` (avec tests chip.js et e2e export_html), `npm run check:doc`, validation des 3 jeux (tetris, exemple-plateforme-qiqv, monde-1-1). Zero emoji, zero import dans `chip.js` et `engine.js`.
+
 
 
 

@@ -155,7 +155,7 @@ Priorités : **P0** = bloquant pour un dépôt public, **P1** = rend l'outil vra
 - Types JSDoc sur `src/graph/*` et `src/core/*` + `// @ts-check`, vérifiés par `tsc --noEmit` dans la CI (sans convertir en TypeScript).
 - Tests de l'éditeur de graphe (Playwright) : créer un nœud, relier, compiler, vérifier le code.
 - Découpage du bundle (Phaser en import dynamique, chargé seulement dans l'onglet Jouer) pour supprimer l'avertissement « chunk > 500 kB ».
-- `src/editors/sound/synth.js` duplique la synthèse de `engine.js` : garder une seule source (le moteur expose la fonction, l'éditeur de sons l'utilise).
+- Synthese audio unifiee dans `src/audio/chip.js` sans duplication entre runtime et editeur (`synth.js` supprime).
 
 ---
 

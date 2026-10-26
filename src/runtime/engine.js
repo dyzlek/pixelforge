@@ -105,17 +105,9 @@ export function createGame(project, parent, Phaser, opts = {}) {
     };
     CHIPTUNE_PRESETS.korobeiniki = CHIPTUNE_PRESETS.tetris;
 
-    const noteFreq = (str) => {
-      const m = /^([A-G])([#b]?)([0-8])$/i.exec(String(str || '').trim());
-      if (!m) return 0;
-      const notes = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
-      let semi = notes[m[1].toUpperCase()] + (m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0);
-      const octave = parseInt(m[3], 10);
-      const midi = (octave + 1) * 12 + semi;
-      return 440 * Math.pow(2, (midi - 69) / 12);
-    };
-    let ctx = null, master = null, noiseBuf = null, music = null, pendingMusic = null;
+    let ctx = null, master = null, chip = null, music = null, pendingMusic = null;
     const buffers = {};
+    const chipFactory = opts.createChipAudio || (typeof createChipAudio === 'function' ? createChipAudio : (typeof globalThis !== 'undefined' && globalThis.createChipAudio ? globalThis.createChipAudio : null));
 
     const getCtx = () => {
       if (ctx) return ctx;
@@ -126,90 +118,26 @@ export function createGame(project, parent, Phaser, opts = {}) {
         master = ctx.createGain();
         master.gain.value = 0.6;
         master.connect(ctx.destination);
+        if (chipFactory) chip = chipFactory(ctx, master);
       } catch (e) { ctx = null; }
       return ctx;
     };
     const running = () => !!ctx && ctx.state === 'running';
 
-    // Appelé au premier geste de l'utilisateur (les navigateurs interdisent le son avant)
+    // Appele au premier geste de l'utilisateur (les navigateurs interdisent le son avant)
     const unlock = () => {
       const c = getCtx();
       if (!c) return;
-      if (c.state !== 'running') { try { c.resume(); } catch (e) { /* ignoré */ } }
+      if (c.state !== 'running') { try { c.resume(); } catch (e) { /* ignore */ } }
+      if (!chip && chipFactory && master) {
+        try { chip = chipFactory(c, master); } catch (e) {}
+      }
       if (pendingMusic) { const n = pendingMusic; pendingMusic = null; playMusic(n); }
     };
 
-    const rng = (seed) => { // mulberry32
-      let a = (seed | 0) + 0x6d2b79f5;
-      return () => {
-        a = (a + 0x6d2b79f5) | 0;
-        let t = Math.imul(a ^ (a >>> 15), 1 | a);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-      };
-    };
-
-    // Une note : oscillateur avec glissando f0 -> f1 et enveloppe décroissante
-    const tone = (type, f0, f1, t, dur, vol, dest) => {
-      const o = ctx.createOscillator(), g = ctx.createGain();
-      o.type = type;
-      o.frequency.setValueAtTime(Math.max(1, f0), t);
-      if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(Math.max(1, f1), t + dur);
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g);
-      g.connect(dest);
-      o.start(t);
-      o.stop(t + dur + 0.03);
-    };
-    const noise = (t, dur, vol, c0, c1, dest) => {
-      if (!noiseBuf) {
-        noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-        const d = noiseBuf.getChannelData(0);
-        for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-      }
-      const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
-      s.buffer = noiseBuf;
-      s.loop = true;
-      f.type = 'lowpass';
-      f.frequency.setValueAtTime(c0, t);
-      f.frequency.exponentialRampToValueAtTime(Math.max(20, c1), t + dur);
-      g.gain.setValueAtTime(vol, t);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      s.connect(f);
-      f.connect(g);
-      g.connect(dest);
-      s.start(t);
-      s.stop(t + dur + 0.03);
-    };
-
-    // Joue un preset ; renvoie sa durée en secondes (0 si impossible)
-    const synth = (preset, seed, volume, pitch) => {
-      const c = getCtx();
-      if (!c) return 0;
-      if (c.state !== 'running') { try { c.resume(); } catch (e) { /* ignoré */ } return 0; }
-      const r = rng(seed || 0);
-      const vary = seed ? 1 + (r() - 0.5) * 0.2 : 1;
-      const k = (num(pitch) && pitch > 0 ? pitch : 1) * vary;
-      const v = Math.max(0, Math.min(1, volume));
-      const t = c.currentTime + 0.005;
-      const T = (type, f0, f1, at, dur, vol) => tone(type, f0 * k, f1 * k, t + at, dur, vol * v, master);
-      switch (preset) {
-        case 'jump': T('square', 220, 560, 0, 0.18, 0.3); return 0.2;
-        case 'coin': T('square', 988, 988, 0, 0.07, 0.25); T('square', 1319, 1319, 0.07, 0.25, 0.25); return 0.35;
-        case 'hit': T('sawtooth', 220, 50, 0, 0.2, 0.35); noise(t, 0.12, 0.3 * v, 3000, 300, master); return 0.25;
-        case 'powerup': [392, 523, 659, 784, 1047].forEach((f, i) => T('square', f, f, i * 0.07, 0.09, 0.22)); return 0.5;
-        case 'explosion': noise(t, 0.7, 0.8 * v, 2400, 80, master); T('sawtooth', 90, 30, 0, 0.5, 0.3); return 0.75;
-        case 'laser': T('sawtooth', 1400, 180, 0, 0.22, 0.25); return 0.25;
-        case 'blip': T('square', 660, 660, 0, 0.06, 0.25); return 0.08;
-        case 'portal':
-          T('sine', 180, 900, 0, 0.45, 0.35); T('triangle', 185, 930, 0, 0.45, 0.2); T('sine', 900, 400, 0.4, 0.2, 0.2);
-          return 0.65;
-        default: return 0;
-      }
-    };
-
     const findSound = (name) => soundList.find((s) => s.name === name || s.id === name) || null;
+    const findSong = (name) => (project.songs || []).find((s) => s.name === name || s.id === name) || null;
+
     const loadBuffer = (snd) => {
       if (!buffers[snd.id]) {
         buffers[snd.id] = fetch(snd.dataUrl).then((r) => r.arrayBuffer()).then((b) => getCtx().decodeAudioData(b)).catch(() => {
@@ -234,45 +162,9 @@ export function createGame(project, parent, Phaser, opts = {}) {
       });
     };
 
-    const playChiptuneTrack = (track, volume = 0.5, onDone) => {
-      const c = getCtx();
-      if (!c || c.state !== 'running') return null;
-      const bpm = track.bpm || 140;
-      const beatSec = 60 / (bpm * 2);
-      const startTime = c.currentTime + 0.02;
-      let curr = startTime;
-      const oscs = [];
-      const notes = track.notes || [];
-      const durs = track.durations || [];
-      for (let i = 0; i < notes.length; i++) {
-        const f = typeof notes[i] === 'number' ? notes[i] : noteFreq(notes[i]);
-        const dur = (durs[i] || 1) * beatSec;
-        if (f > 20) {
-          const o = c.createOscillator(), g = c.createGain();
-          o.type = track.type || 'square';
-          o.frequency.setValueAtTime(f, curr);
-          g.gain.setValueAtTime(Math.max(0, volume) * 0.35, curr);
-          g.gain.exponentialRampToValueAtTime(0.0001, curr + dur * 0.88);
-          o.connect(g);
-          g.connect(master);
-          o.start(curr);
-          o.stop(curr + dur);
-          oscs.push(o);
-        }
-        curr += dur;
-      }
-      const totalDur = curr - startTime;
-      const timer = setTimeout(() => { if (onDone) onDone(); }, totalDur * 1000);
-      return {
-        stop() {
-          clearTimeout(timer);
-          for (const o of oscs) { try { o.stop(); } catch (e) {} }
-        },
-        duration: totalDur
-      };
-    };
-
     const resolve = (name) => {
+      const sng = findSong(name);
+      if (sng) return { song: sng };
       const snd = findSound(name);
       if (snd) return { snd, preset: snd.kind === 'file' ? null : (snd.sfx && snd.sfx.preset) || 'blip' };
       if (CHIPTUNE_PRESETS[name]) return { snd: null, chiptune: CHIPTUNE_PRESETS[name] };
@@ -288,16 +180,22 @@ export function createGame(project, parent, Phaser, opts = {}) {
         const pit = num(pitch) !== null ? pitch : 1;
         const c = getCtx();
         if (!c) return;
-        if (c.state !== 'running') { try { c.resume(); } catch (e) { /* ignoré */ } return; }
-        if (r.snd && r.snd.kind === 'file') playBuffer(r.snd, vol * (num(r.snd.volume) !== null ? r.snd.volume : 1), pit);
-        else if (r.snd) synth(r.preset, r.snd.sfx.seed, (num(r.snd.sfx.volume) !== null ? r.snd.sfx.volume : 0.5) * vol, (r.snd.sfx.pitch || 1) * pit);
-        else synth(r.preset, 0, 0.5 * vol, pit);
+        if (c.state !== 'running') { try { c.resume(); } catch (e) { /* ignore */ } return; }
+        if (!chip && chipFactory && master) {
+          try { chip = chipFactory(c, master); } catch (e) {}
+        }
+        if (r.snd && r.snd.kind === 'file') {
+          playBuffer(r.snd, vol * (num(r.snd.volume) !== null ? r.snd.volume : 1), pit);
+        } else if (chip) {
+          if (r.snd) chip.playSfx(r.preset, r.snd.sfx.seed, (num(r.snd.sfx.volume) !== null ? r.snd.sfx.volume : 0.5) * vol, (r.snd.sfx.pitch || 1) * pit);
+          else chip.playSfx(r.preset, 0, 0.5 * vol, pit);
+        }
       } catch (e) { log('game.playSound : ' + errMsg(e), 'error'); }
     }
 
     function stopMusic() {
       pendingMusic = null;
-      if (music) { try { music.stop(); } catch (e) { /* ignoré */ } music = null; }
+      if (music) { try { music.stop(); } catch (e) { /* ignore */ } music = null; }
     }
 
     function playMusic(name) {
@@ -308,32 +206,57 @@ export function createGame(project, parent, Phaser, opts = {}) {
         if (!r) { warnOnce('game.playMusic : son inconnu « ' + name + ' »'); return; }
         stopMusic();
         const c = getCtx();
-        if (!c || c.state !== 'running') { pendingMusic = name; if (c) { try { c.resume(); } catch (e) { /* ignoré */ } } return; }
+        if (!c || c.state !== 'running') { pendingMusic = name; if (c) { try { c.resume(); } catch (e) { /* ignore */ } } return; }
+        if (!chip && chipFactory && master) {
+          try { chip = chipFactory(c, master); } catch (e) {}
+        }
         const m = { name, src: null, timer: null, activeTrack: null, stopped: false };
         m.stop = () => {
           m.stopped = true;
           if (m.timer) clearInterval(m.timer);
-          if (m.activeTrack) m.activeTrack.stop();
-          if (m.src) { try { m.src.stop(); } catch (e) { /* ignoré */ } }
+          if (m.activeTrack) { try { m.activeTrack.stop(); } catch (e) {} }
+          if (m.src) { try { m.src.stop(); } catch (e) { /* ignore */ } }
         };
         music = m;
-        if (r.chiptune) {
+        if (r.song && chip) {
+          m.activeTrack = chip.playSong(r.song, { loop: true, volume: 0.5 });
+        } else if (r.chiptune && chip) {
           const loop = () => {
             if (m.stopped) return;
-            m.activeTrack = playChiptuneTrack(r.chiptune, 0.5, () => {
+            m.activeTrack = chip.playChiptuneTrack(r.chiptune, 0.5, () => {
               if (!m.stopped) loop();
             });
           };
           loop();
         } else if (r.snd && r.snd.kind === 'file') {
           playBuffer(r.snd, 0.6 * (num(r.snd.volume) !== null ? r.snd.volume : 1), 1, true, (src) => { if (m.stopped) src.stop(); else m.src = src; });
-        } else {
+        } else if (chip) {
           const sx = r.snd ? r.snd.sfx : { seed: 0, volume: 0.5, pitch: 1 };
-          const once = () => synth(r.preset, sx.seed, (num(sx.volume) !== null ? sx.volume : 0.5) * 0.6, sx.pitch || 1);
+          const once = () => chip.playSfx(r.preset, sx.seed, (num(sx.volume) !== null ? sx.volume : 0.5) * 0.6, sx.pitch || 1);
           const dur = Math.max(0.2, once() || 0.5);
           m.timer = setInterval(once, dur * 1000);
         }
       } catch (e) { log('game.playMusic : ' + errMsg(e), 'error'); }
+    }
+
+    function playSong(songOrName, opts = {}) {
+      const song = typeof songOrName === 'string' ? findSong(songOrName) : songOrName;
+      if (!song) { warnOnce('game.playSong : morceau inconnu « ' + songOrName + ' »'); return null; }
+      stopMusic();
+      const c = getCtx();
+      if (!c) return null;
+      if (c.state !== 'running') { try { c.resume(); } catch (e) {} }
+      if (!chip && chipFactory && master) {
+        try { chip = chipFactory(c, master); } catch (e) {}
+      }
+      if (!chip) return null;
+      const ctrl = chip.playSong(song, opts);
+      music = { name: song.name, stop: () => ctrl.stop() };
+      return ctrl;
+    }
+
+    function stopSong() {
+      stopMusic();
     }
 
     function playTune(notesInput, bpm = 140, loop = true, volume = 0.5) {
@@ -341,6 +264,9 @@ export function createGame(project, parent, Phaser, opts = {}) {
       const c = getCtx();
       if (!c) return;
       if (c.state !== 'running') { try { c.resume(); } catch (e) {} }
+      if (!chip && chipFactory && master) {
+        try { chip = chipFactory(c, master); } catch (e) {}
+      }
       const notes = Array.isArray(notesInput) ? notesInput : String(notesInput).split(/[\s,]+/);
       const parsedNotes = [];
       const parsedDurs = [];
@@ -354,16 +280,18 @@ export function createGame(project, parent, Phaser, opts = {}) {
       const m = { name: 'custom_tune', activeTrack: null, stopped: false };
       m.stop = () => {
         m.stopped = true;
-        if (m.activeTrack) m.activeTrack.stop();
+        if (m.activeTrack) { try { m.activeTrack.stop(); } catch (e) {} }
       };
       music = m;
-      const startLoop = () => {
-        if (m.stopped) return;
-        m.activeTrack = playChiptuneTrack(track, volume, () => {
-          if (loop && !m.stopped) startLoop();
-        });
-      };
-      startLoop();
+      if (chip) {
+        const startLoop = () => {
+          if (m.stopped) return;
+          m.activeTrack = chip.playChiptuneTrack(track, volume, () => {
+            if (loop && !m.stopped) startLoop();
+          });
+        };
+        startLoop();
+      }
     }
 
     function setMasterVolume(v) {
@@ -373,9 +301,9 @@ export function createGame(project, parent, Phaser, opts = {}) {
 
     const dispose = () => {
       stopMusic();
-      if (ctx) { try { ctx.close(); } catch (e) { /* ignoré */ } ctx = null; }
+      if (ctx) { try { ctx.close(); } catch (e) { /* ignore */ } ctx = null; }
     };
-    return { unlock, playSound, playMusic, stopMusic, playTune, setMasterVolume, dispose };
+    return { unlock, playSound, playMusic, stopMusic, playSong, stopSong, playTune, setMasterVolume, dispose };
   })();
 
   // Débloque l'audio au premier geste
@@ -1328,6 +1256,8 @@ export function createGame(project, parent, Phaser, opts = {}) {
         playSound(name, volume, pitch) { audio.playSound(name, volume, pitch); },
         playMusic(name) { audio.playMusic(name); },
         stopMusic() { audio.stopMusic(); },
+        playSong(name, opts) { return audio.playSong(name, opts); },
+        stopSong() { audio.stopSong(); },
         playTune(notes, bpm, loop, volume) { audio.playTune(notes, bpm, loop, volume); },
         stopTune() { audio.stopMusic(); },
         setVolume(v) { audio.setMasterVolume(v); },
