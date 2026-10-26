@@ -1,8 +1,8 @@
 {
   "name": "pixelforge",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Éditeur de jeux 2D dans le navigateur avec moteur Phaser 3, pixel art, cartes en tuiles et scripts visuels Blueprint",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -10,9 +10,27 @@
     "mcp": "node mcp/server.js",
     "pf": "node mcp/cli.js"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "game-engine",
+    "pixel-art",
+    "phaser",
+    "blueprint",
+    "visual-scripting",
+    "mcp"
+  ],
+  "author": "Dylan Belledent",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dyzlek/pixelforge.git"
+  },
+  "homepage": "https://github.com/dyzlek/pixelforge#readme",
+  "bugs": {
+    "url": "https://github.com/dyzlek/pixelforge/issues"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "@codemirror/lang-javascript": "^6.2.2",
     "@codemirror/theme-one-dark": "^6.1.2",

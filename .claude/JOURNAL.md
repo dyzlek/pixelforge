@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (7) — P0.2 Compléter package.json
+- **Fait** : description, author, repository, homepage, bugs, keywords, engines, private: true, suppression de main.
+- **Décisions** : métadonnées alignées avec le dépôt GitHub dyzlek/pixelforge.
+- **État** : tests et build OK.
+
 ## 2026-10-26 (6) — P0.1 Licence MIT
 - **Fait** : création de LICENSE (MIT 2026, Dylan Belledent), mise à jour de package.json et README.md.
 - **Décisions** : licence MIT choisie par l'utilisateur.
