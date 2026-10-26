@@ -4,8 +4,9 @@
 - **Fait** : `ROADMAP-V4.md` : prérequis (PR #61, restes de correction.md, tests Playwright), décisions V1-V7, phases E (Phaser 4.2.1), F (vrai éditeur 3D : rendu partagé, hiérarchie, gizmos, glTF, Rapier, préfabriqués), G (DAW : synthés, sampler, effets, multipiste, MIDI, automation), H (IA qui crée les ressources via les ops MCP partagées, génère, teste et corrige), jalons, risques.
 - **Essayé** : vérification de Phaser 4 (npm : 4.2.1 stable) et du guide de migration ; engine.js n'utilise aucune API supprimée.
 - **Refusé ou retiré** : —
-- **Décisions** : aucune prise ; les questions V1-V7 attendent l'humain.
-- **État** : fichier écrit sur la branche fix/phases-b-c-relecture, non commité.
+- **Fait (suite)** : issues GitHub #62 à #95 (P1a, P1b, P2, E0-E3, F0-F10, G0-G8, H1-H7), labels phase-e/f/g/h, jalons v4.1 à v5.0, issue épinglée #96 (règles, décisions, dépendances) ; numéros reportés dans ROADMAP-V4.md.
+- **Décisions** : V1-V7 validées par l'humain (toutes les recommandations).
+- **État** : branche docs/roadmap-v4 empilée sur fix/phases-b-c-relecture (PR #61 à fusionner d'abord).
 
 ## 2026-10-26 (39) — Correctifs phases B et C (Opus, sans délégation à la demande de l'utilisateur)
 - **Fait** : runtime 3D (gridmap `{blockSize, blocks}`, modèles voxel rendus, collisions 3 axes en sous-pas, son, keydown, ambiance par scène, startScene3DId, API étendue, rotateY positif = droite, purge des instances, nettoyage WebGL) ; éditeurs voxel / scène 3D (format unique, couleur 0, dimensions width/height/depth, annuler/rétablir via store.update, pas de modification à l'ouverture, glTF vérifié, fuites) ; RLE durci ; nœuds Blueprint 2D-only + erreur de compilation par dimension (éditeur, MCP, validate) ; chip.js (batterie, solo, boucle loop.start, rendu hors-ligne synchrone, robustesse, purge) ; éditeur musical (nettoyages, undo) ; échappement HTML des noms ; play.js (scène testée, resize 3D). Nouveau test `src/runtime3d/test/sim3d.test.mjs`. correction.md mis à jour (fait / reste).
