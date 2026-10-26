@@ -77,11 +77,11 @@ export function describeIssue(graph, issue) {
 
 // Vérifie, normalise et compile un graphe. Lève une Error (toutes les erreurs listées) si le graphe est invalide.
 // → { graph, code, warnings: string[] }
-export function buildGraphScript(graph, isGlobal = false) {
+export function buildGraphScript(graph, isGlobal = false, dimension = null) {
   const problems = checkGraph(graph);
   if (problems.length) throw new Error('invalid graph:\n- ' + problems.join('\n- '));
   const g = normalizeGraph(graph);
-  const r = compileGraph(g, { isGlobal });
+  const r = compileGraph(g, { isGlobal, dimension });
   if (r.errors.length) throw new Error('graph does not compile:\n- ' + r.errors.map((e) => describeIssue(g, e)).join('\n- '));
   return { graph: g, code: r.code, warnings: r.warnings.map((w) => describeIssue(g, w)) };
 }
@@ -123,7 +123,7 @@ export function recompileGraphs(p) {
     const problems = checkGraph(script.graph);
     if (problems.length) { errors.push(...problems.map((m) => `${where}: ${m}`)); continue; }
     const g = normalizeGraph(script.graph);
-    const r = compileGraph(g, { isGlobal });
+    const r = compileGraph(g, { isGlobal, dimension: p.settings?.dimension || '2d' });
     if (r.errors.length) { errors.push(...r.errors.map((e) => `${where}: ${describeIssue(g, e)}`)); continue; }
     if (r.code !== script.code || JSON.stringify(g) !== JSON.stringify(script.graph)) changed.push(where);
     script.graph = g;

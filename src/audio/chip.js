@@ -28,6 +28,22 @@ export function noteFreq(val) {
   return 440 * Math.pow(2, (midi - 69) / 12);
 }
 
+// Piece de batterie d'une note de canal « drumKit » : nom explicite, sinon classe de hauteur
+// (convention General MIDI : C = kick, D/D#/E = snare, F#/G# = charleston ferme, A# = ouvert, autres = tom).
+export function drumPiece(pitch) {
+  const name = String(pitch || '').toLowerCase();
+  if (name === 'kick' || name === 'snare' || name === 'hat_closed' || name === 'hat_open' || name === 'tom') return name;
+  if (name === 'hat') return 'hat_closed';
+  const f = noteFreq(pitch);
+  if (!(f > 0)) return 'kick';
+  const pc = ((Math.round(69 + 12 * Math.log2(f / 440)) % 12) + 12) % 12;
+  if (pc === 0 || pc === 11) return 'kick';
+  if (pc === 2 || pc === 3 || pc === 4) return 'snare';
+  if (pc === 6 || pc === 8) return 'hat_closed';
+  if (pc === 10) return 'hat_open';
+  return 'tom';
+}
+
 // Generateur pseudo-aleatoire mulberry32 pour les variations de sons
 const rng = (seed) => {
   let a = (seed | 0) + 0x6d2b79f5;
@@ -464,6 +480,7 @@ export function createChipAudio(ctx, destination) {
     const vibrato = opts.vibrato || null;
     const arp = Array.isArray(opts.arp) && opts.arp.length > 0 ? opts.arp : null;
 
+    if (!Number.isFinite(baseFreq) || !Number.isFinite(vol) || !Number.isFinite(time)) return null;
     if (inst !== 'noise' && baseFreq <= 0) return null;
 
     // Chaine de gain et panoramique
@@ -479,11 +496,12 @@ export function createChipAudio(ctx, destination) {
       noteGain.connect(noteDest);
     }
 
-    // Automatisation ADSR
-    const a = Math.max(0.001, env.a);
-    const d = Math.max(0.001, env.d);
-    const s = Math.max(0.0001, Math.min(1, env.s));
-    const r = Math.max(0.001, env.r);
+    // Automatisation ADSR (valeurs non numeriques -> valeurs par defaut)
+    const envNum = (v, dflt) => (Number.isFinite(v) ? v : dflt);
+    const a = Math.max(0.001, envNum(env.a, 0.005));
+    const d = Math.max(0.001, envNum(env.d, 0.08));
+    const s = Math.max(0.0001, Math.min(1, envNum(env.s, 0.6)));
+    const r = Math.max(0.001, envNum(env.r, 0.05));
 
     noteGain.gain.setValueAtTime(0.0001, time);
     noteGain.gain.linearRampToValueAtTime(vol * 0.5, time + a);
@@ -496,16 +514,16 @@ export function createChipAudio(ctx, destination) {
 
     // Batterie NES speciale
     if (inst === 'noise' && opts.drumKit) {
-      const isKick = baseFreq < 150 || rawPitch === 'C3' || rawPitch === 'kick';
-      const isSnare = (baseFreq >= 150 && baseFreq < 300) || rawPitch === 'D3' || rawPitch === 'snare';
-      const isHatOpen = baseFreq > 600 || rawPitch === 'A#3' || rawPitch === 'hat_open';
+      const piece = drumPiece(rawPitch);
+      const isSnare = piece === 'snare';
+      const isHatOpen = piece === 'hat_open';
 
-      if (isKick) {
-        // Kick : onde triangulaire descendante
+      if (piece === 'kick' || piece === 'tom') {
+        // Kick / tom : onde triangulaire descendante (le tom part plus haut)
         const kickOsc = ctx.createOscillator();
         kickOsc.type = 'triangle';
-        kickOsc.frequency.setValueAtTime(130, time);
-        kickOsc.frequency.exponentialRampToValueAtTime(35, time + Math.min(0.12, duration));
+        kickOsc.frequency.setValueAtTime(piece === 'tom' ? 220 : 130, time);
+        kickOsc.frequency.exponentialRampToValueAtTime(piece === 'tom' ? 80 : 35, time + Math.min(0.12, duration));
         kickOsc.connect(noteGain);
         kickOsc.start(time);
         kickOsc.stop(stopTime);
@@ -625,16 +643,22 @@ export function createChipAudio(ctx, destination) {
     stopSong();
 
     if (!song) return null;
-    const bpm = Math.max(20, Math.min(300, song.bpm || 140));
-    const stepsPerBeat = Math.max(1, song.stepsPerBeat || 4);
-    const loop = options.loop != null ? !!options.loop : (song.loop !== false);
+    const bpm = Math.max(20, Math.min(300, Number(song.bpm) || 140));
+    const stepsPerBeat = Math.max(1, Math.floor(Number(song.stepsPerBeat) || 4));
+    // Boucle : song.loop = { enabled, start } (format du projet) ; anciens formats : booleen et song.loopStart.
+    // La boucle repart de loop.start et se termine a la fin de l'arrangement.
+    const loopCfg = song.loop && typeof song.loop === 'object' ? song.loop : null;
+    const loop = options.loop != null ? !!options.loop : (loopCfg ? loopCfg.enabled !== false : song.loop !== false);
+    const loopStartRaw = loopCfg && Number.isInteger(loopCfg.start) ? loopCfg.start : song.loopStart;
     const masterVol = options.volume != null ? options.volume : 1;
-    const swing = Math.max(0, Math.min(0.5, song.swing || 0));
+    const swing = Math.max(0, Math.min(0.5, Number(song.swing) || 0));
     const secondsPerBeat = 60 / bpm;
     const baseStepSec = secondsPerBeat / stepsPerBeat;
 
     const channelsById = {};
     (song.channels || []).forEach((c) => { channelsById[c.id] = c; });
+    // Solo : si au moins un canal est en solo, seuls les canaux en solo jouent
+    const anySolo = (song.channels || []).some((c) => c.solo);
 
     const patternsById = {};
     (song.patterns || []).forEach((p) => { patternsById[p.id] = p; });
@@ -657,7 +681,9 @@ export function createChipAudio(ctx, destination) {
       if (startStep + pLen > maxStep && (!song.loopEnd || song.loopEnd <= 0)) maxStep = startStep + pLen;
 
       (pat.notes || []).forEach((note) => {
-        const step = startStep + (note.step || 0);
+        const noteStep = Math.round(Number(note.step) || 0);
+        if (noteStep < 0 || noteStep >= pLen) return;
+        const step = startStep + noteStep;
         if (!eventsByStep[step]) eventsByStep[step] = [];
         eventsByStep[step].push({
           ch: note.ch,
@@ -694,36 +720,49 @@ export function createChipAudio(ctx, destination) {
       return (s % 2 === 0) ? baseStepSec * (1 + swing) : baseStepSec * (1 - swing);
     }
 
+    const loopStartStep = Number.isInteger(loopStartRaw) && loopStartRaw >= 0 && loopStartRaw < maxStep ? loopStartRaw : 0;
+
     function scheduleAhead() {
       if (stopped) return;
-      while (nextStepTime < ctx.currentTime + LOOKAHEAD_SEC) {
+      // Retour d'un onglet en arriere-plan (timers bridés) : on reprend maintenant au lieu de rejouer les pas manques d'un coup
+      if (!options.offline && nextStepTime < ctx.currentTime - 0.05) nextStepTime = ctx.currentTime + 0.02;
+      // Les notes terminees ne sont plus gardees (sinon la liste grandit sans fin en boucle)
+      for (let k = activeNotes.length - 1; k >= 0; k--) {
+        if (activeNotes[k].end < ctx.currentTime) activeNotes.splice(k, 1);
+      }
+      // Hors-ligne (export WAV) : tout le morceau est planifie d'un coup, sans minuterie
+      const horizon = options.offline ? Infinity : ctx.currentTime + LOOKAHEAD_SEC;
+      while (nextStepTime < horizon) {
         const notesAtStep = eventsByStep[currentStep];
         if (notesAtStep && notesAtStep.length > 0) {
           notesAtStep.forEach((n) => {
             const ch = channelsById[n.ch] || { instrument: 'pulse50', volume: 0.8 };
-            if (ch.mute) return;
-            const dur = (n.len || 1) * baseStepSec;
-            const handle = scheduleNote({
-              time: nextStepTime,
-              duration: dur,
-              instrument: ch.instrument,
-              pitch: n.pitch,
-              vel: n.vel,
-              volume: ch.volume != null ? ch.volume : 0.8,
-              pan: ch.pan || 0,
-              env: ch.env,
-              vibrato: ch.vibrato,
-              arp: ch.arp,
-              drumKit: ch.drumKit,
-              waveTable: ch.waveTable,
-              destination: songGain
-            });
-            if (handle) activeNotes.push(handle);
+            if (ch.mute || (anySolo && !ch.solo)) return;
+            const dur = (Number(n.len) || 1) * baseStepSec;
+            // Une note invalide ne doit pas bloquer le planificateur : elle est ignoree
+            try {
+              const handle = scheduleNote({
+                time: nextStepTime,
+                duration: dur,
+                instrument: ch.instrument,
+                pitch: n.pitch,
+                vel: n.vel,
+                volume: ch.volume != null ? ch.volume : 0.8,
+                pan: ch.pan || 0,
+                env: ch.env,
+                vibrato: ch.vibrato,
+                arp: ch.arp,
+                drumKit: ch.drumKit,
+                waveTable: ch.waveTable,
+                destination: songGain
+              });
+              if (handle) activeNotes.push({ stop: handle.stop, end: nextStepTime + dur + 1 });
+            } catch (e) { /* note ignoree */ }
           });
         }
 
         if (options.onBeat && currentStep % stepsPerBeat === 0) {
-          options.onBeat(Math.floor(currentStep / stepsPerBeat));
+          try { options.onBeat(Math.floor(currentStep / stepsPerBeat)); } catch (e) { /* erreur du script : la musique continue */ }
         }
 
         const durThisStep = stepDuration(currentStep);
@@ -732,22 +771,27 @@ export function createChipAudio(ctx, destination) {
 
         if (currentStep >= maxStep) {
           if (loop) {
-            currentStep = (typeof song.loopStart === 'number' && song.loopStart >= 0 && song.loopStart < maxStep) ? song.loopStart : 0;
+            currentStep = loopStartStep;
           } else {
             stopped = true;
             clearInterval(timerId);
             timerId = null;
-            if (options.onEnd) {
-              const delayToEnd = Math.max(0, (nextStepTime - ctx.currentTime) * 1000);
-              setTimeout(() => { if (!activeSong || activeSong.controller !== controller) return; options.onEnd(); }, delayToEnd);
-            }
+            // Fin naturelle : liberer la chaine audio une fois les dernieres notes jouees
+            const delayToEnd = Math.max(0, (nextStepTime - ctx.currentTime) * 1000);
+            setTimeout(() => {
+              const current = activeSong && activeSong.controller === controller;
+              setTimeout(() => { try { songGain.disconnect(); } catch (e) {} }, 1500);
+              if (current) activeSong = null;
+              if (current && options.onEnd) options.onEnd();
+            }, delayToEnd);
             break;
           }
         }
       }
     }
 
-    timerId = setInterval(scheduleAhead, SCHEDULE_INTERVAL_MS);
+    if (options.offline && loop) throw new Error('playSong : le rendu hors-ligne exige loop: false');
+    if (!options.offline) timerId = setInterval(scheduleAhead, SCHEDULE_INTERVAL_MS);
     scheduleAhead();
 
     const controller = {
@@ -822,8 +866,12 @@ export function createChipAudio(ctx, destination) {
     const calcDur = durationSeconds || (totalSteps * baseStepSec + 1.0);
     const sampleRate = 44100;
     const offCtx = new OfflineCtx(2, Math.ceil(sampleRate * calcDur), sampleRate);
-    const offChip = createChipAudio(offCtx, offCtx.destination);
-    offChip.playSong(song, { loop: false, volume: 1 });
+    // Meme gain maitre que l'editeur et le jeu : le WAV sonne comme l'apercu
+    const offMaster = offCtx.createGain();
+    offMaster.gain.value = MASTER_GAIN;
+    offMaster.connect(offCtx.destination);
+    const offChip = createChipAudio(offCtx, offMaster);
+    offChip.playSong(song, { loop: false, volume: 1, offline: true });
     return offCtx.startRendering();
   }
 

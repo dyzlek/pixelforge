@@ -247,6 +247,7 @@ export function normalizeProject(p) {
       arp: Array.isArray(ch.arp) ? ch.arp : [],
       waveTable: Array.isArray(ch.waveTable) ? ch.waveTable : null,
       sampleSoundId: ch.sampleSoundId || null,
+      ...(ch.defaultPitch ? { defaultPitch: ch.defaultPitch } : {}),
     }));
     song.patterns = (song.patterns || []).map((pat) => ({
       id: pat.id || uid('pat'),
@@ -255,14 +256,31 @@ export function normalizeProject(p) {
       notes: Array.isArray(pat.notes) ? pat.notes : [],
     }));
     song.playlist = Array.isArray(song.playlist) ? song.playlist : [];
+    // Boucle au format { enabled, start, end } ; anciens formats : booleen et loopStart a la racine.
+    // La lecture boucle de loop.start a la fin de l'arrangement.
     if (!song.loop || typeof song.loop !== 'object') {
-      song.loop = { enabled: true, start: 0, end: 16 };
+      song.loop = { enabled: song.loop !== false, start: 0, end: 16 };
+    }
+    if (Number.isInteger(song.loopStart)) {
+      song.loop = { ...song.loop, start: song.loopStart };
+      delete song.loopStart;
     }
     return song;
   });
   p.models = Array.isArray(p.models) ? p.models.map((m) => ({ folder: '', ...m })) : [];
   p.materials = Array.isArray(p.materials) ? p.materials : [];
   p.scenes3d = Array.isArray(p.scenes3d) ? p.scenes3d.map((s) => ({ folder: '', gridmap: {}, entities: [], ...s })) : [];
+  // Gridmap au format unique { blockSize, blocks } (l'ancien editeur ecrivait une map plate "x,y,z" -> couleur)
+  for (const sc of p.scenes3d || []) {
+    const g = sc.gridmap;
+    if (!g || typeof g !== 'object') sc.gridmap = { blockSize: 1, blocks: {} };
+    else if (!g.blocks && !g.blocksRLE) {
+      const blocks = {};
+      for (const [k, v] of Object.entries(g)) if (/^-?\d+,-?\d+,-?\d+$/.test(k)) blocks[k] = v;
+      sc.gridmap = { blockSize: typeof g.blockSize === 'number' ? g.blockSize : 1, blocks };
+    }
+    if (!Array.isArray(sc.entities)) sc.entities = [];
+  }
   unpackProjectVoxels(p);
   p.environment = { ...base.environment, ...(p.environment || {}) };
   p.objects = (p.objects || []).map((o) => {

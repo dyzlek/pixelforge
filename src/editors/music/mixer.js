@@ -3,6 +3,8 @@ import { getIconSvg } from '../../ui/icons.js';
 import { audioBufferToWavBlob } from '../../audio/wav-encoder.js';
 import { midiToSong } from '../../audio/midi-parser.js';
 
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 export function renderMixer(container, opts) {
   const {
     song,
@@ -143,7 +145,7 @@ export function renderMixer(container, opts) {
     // En-tete : Nom + Instrument
     const head = document.createElement('div');
     head.className = 'pf-strip-head';
-    head.innerHTML = `<span class="pf-strip-name" title="${ch.name}">${ch.name || 'Canal'}</span><span class="pf-channel-inst">${ch.instrument}</span>`;
+    head.innerHTML = `<span class="pf-strip-name" title="${esc(ch.name)}">${esc(ch.name || 'Canal')}</span><span class="pf-channel-inst">${esc(ch.instrument)}</span>`;
     strip.appendChild(head);
 
     // Boutons Mute et Solo

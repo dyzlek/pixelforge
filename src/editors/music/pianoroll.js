@@ -49,6 +49,8 @@ export function isBlackKey(midi) {
   return semi === 1 || semi === 3 || semi === 6 || semi === 8 || semi === 10;
 }
 
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 export function renderPianoRoll(container, opts) {
   const {
     song,
@@ -89,7 +91,7 @@ export function renderPianoRoll(container, opts) {
   // Info canal
   const channelBadge = document.createElement('div');
   channelBadge.className = 'pf-pianoroll-channel-info';
-  channelBadge.innerHTML = `<strong>${channel?.name || 'Canal'}</strong> <span class="pf-channel-inst">${channel?.instrument || 'pulse50'}</span>`;
+  channelBadge.innerHTML = `<strong>${esc(channel?.name || 'Canal')}</strong> <span class="pf-channel-inst">${esc(channel?.instrument || 'pulse50')}</span>`;
   toolbar.appendChild(channelBadge);
 
   const sep1 = document.createElement('div');

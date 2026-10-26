@@ -257,6 +257,7 @@
         },
         "loop": {
           "type": "object",
+          "description": "Boucle de lecture : repart de start (en pas) a la fin de l'arrangement. end est conserve mais n'est pas utilise par le moteur.",
           "properties": {
             "enabled": { "type": "boolean", "default": true },
             "start": { "type": "integer", "minimum": 0, "default": 0 },
@@ -370,7 +371,14 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "folder": { "type": "string", "default": "" },
-        "gridmap": { "type": "object" },
+        "gridmap": {
+          "type": "object",
+          "description": "Blocs de la scene. Cle 'x,y,z' (entiers) = cube centre sur (x, y, z) ; valeur = index de palette ou '#rrggbb'.",
+          "properties": {
+            "blockSize": { "type": "number", "default": 1 },
+            "blocks": { "type": "object", "additionalProperties": { "type": ["integer", "string"] } }
+          }
+        },
         "entities": {
           "type": "array",
           "items": {

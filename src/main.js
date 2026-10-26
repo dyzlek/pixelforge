@@ -72,6 +72,9 @@ export const dock = new DockManager({
 
 dock.mount(appEl);
 
+// Bouton « Tester la scene » des editeurs (la scene a lancer est dans store.ui)
+window.addEventListener('pixelforge:play', () => dock.triggerPlayCurrent());
+
 // Structure de la zone centrale
 const centerBody = dock.getAreaBody('center');
 centerBody.innerHTML = `

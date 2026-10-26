@@ -110,7 +110,7 @@ export function validateProject(p) {
       const g = script.graph;
       for (const m of checkGraph(g)) add('error', where, 'graph: ' + m);
       let r = null;
-      try { r = compileGraph(g, { isGlobal }); } catch (e) { add('error', where, 'graph compilation failed: ' + e.message); }
+      try { r = compileGraph(g, { isGlobal, dimension: p.settings?.dimension || '2d' }); } catch (e) { add('error', where, 'graph compilation failed: ' + e.message); }
       if (r) {
         for (const e of r.errors) add('error', where, 'graph: ' + describeIssue(g, e));
         for (const w2 of r.warnings) add('warning', where, 'graph: ' + describeIssue(g, w2));

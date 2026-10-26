@@ -92,8 +92,6 @@ export function renderChannelRack(container, opts) {
 
   const stopPainting = () => { isPainting = false; };
   window.addEventListener('mouseup', stopPainting);
-  container.cleanups = container.cleanups || [];
-  container.cleanups.push(() => window.removeEventListener('mouseup', stopPainting));
 
   // 2. Lignes de chaque canal
   (song.channels || []).forEach((ch) => {
@@ -303,4 +301,5 @@ export function renderChannelRack(container, opts) {
   rack.appendChild(addBar);
 
   container.appendChild(rack);
+  return () => window.removeEventListener('mouseup', stopPainting);
 }

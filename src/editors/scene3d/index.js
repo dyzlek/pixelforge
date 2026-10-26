@@ -8,31 +8,23 @@ import { GridMap3D } from './gridmap.js';
 import { getIconSvg } from '../../ui/icons.js';
 import './scene3d.css';
 
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
 export function mount(container, store, { refId } = {}) {
-  let sceneData = (store.project?.scenes3d || []).find((s) => s.id === refId);
+  const findScene = () => (store.project?.scenes3d || []).find((s) => s.id === refId) || null;
+  let sceneData = findScene();
   if (!sceneData) {
-    sceneData = {
-      id: refId || 'scene3d_default',
-      name: 'Niveau 3D 1',
-      folder: '',
-      gridmap: {},
-      entities: [],
-    };
-    if (!store.project.scenes3d) store.project.scenes3d = [];
-    store.project.scenes3d.push(sceneData);
+    container.className = 'pf-scene3d-editor';
+    container.textContent = 'Scene 3D introuvable (supprimee ?).';
+    return { dispose() {}, onShow() {}, onHide() {} };
   }
 
-  const grid = new GridMap3D(sceneData.gridmap);
-
-  // Sol par defaut si la grille est vierge
-  if (grid.blocks.size === 0) {
-    grid.fillBox(-8, 0, -8, 8, 0, 8, '#29366f');
-    sceneData.gridmap = grid.toJSON();
-  }
+  let grid = new GridMap3D(sceneData.gridmap);
 
   let activeTool = 'block'; // 'block' | 'erase' | 'entity' | 'select'
   let activeLevel = 0; // Etage Y
-  let activeColor = '#3b5dc9';
+  let activeColor = 9; // index de palette (meme format que paint_gridmap)
+  let isActive = true;
   let selectedObjectId = store.project?.objects?.[0]?.id || null;
   let selectedEntityId = null;
   let isDisposed = false;
@@ -75,14 +67,14 @@ export function mount(container, store, { refId } = {}) {
         <div class="pf-scene3d-card">
           <div class="pf-scene3d-card-title">Objet a poser</div>
           <select id="pf-s3d-obj-select" class="pf-insp-input" style="width:100%;font-size:11px;">
-            ${(store.project?.objects || []).map((o) => `<option value="${o.id}">${o.name}</option>`).join('')}
+            ${(store.project?.objects || []).map((o) => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')}
           </select>
         </div>
 
         <div class="pf-scene3d-card">
           <div class="pf-scene3d-card-title">Couleur du bloc</div>
           <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;">
-            ${palette.map((hex) => `<div class="pf-s3d-color-swatch" data-color="${hex}" style="background:${hex};aspect-ratio:1;border-radius:3px;cursor:pointer;border:1px solid rgba(0,0,0,0.4);"></div>`).join('')}
+            ${palette.map((hex, i) => `<button type="button" class="pf-s3d-color-swatch" data-index="${i}" title="Couleur ${i} (${esc(hex)})" aria-label="Couleur ${i}" aria-pressed="${i === activeColor}" style="background:${esc(hex)};aspect-ratio:1;border-radius:3px;cursor:pointer;border:1px solid rgba(0,0,0,0.4);padding:0;${i === activeColor ? 'outline:2px solid #ffffff;' : ''}"></button>`).join('')}
           </div>
         </div>
 
@@ -121,9 +113,13 @@ export function mount(container, store, { refId } = {}) {
   // Palette de couleur de bloc
   container.querySelectorAll('.pf-s3d-color-swatch').forEach((swatch) => {
     swatch.onclick = () => {
-      activeColor = swatch.dataset.color;
-      container.querySelectorAll('.pf-s3d-color-swatch').forEach((s) => (s.style.outline = 'none'));
+      activeColor = Number(swatch.dataset.index);
+      container.querySelectorAll('.pf-s3d-color-swatch').forEach((s) => {
+        s.style.outline = 'none';
+        s.setAttribute('aria-pressed', 'false');
+      });
       swatch.style.outline = '2px solid #ffffff';
+      swatch.setAttribute('aria-pressed', 'true');
     };
   });
 
@@ -132,24 +128,82 @@ export function mount(container, store, { refId } = {}) {
     selectedObjectId = objSelect.value;
   };
 
+  // Lance le jeu sur cette scene (sans changer la scene de depart du projet)
   const playBtn = container.querySelector('#pf-s3d-play-btn');
   playBtn.onclick = () => {
-    store.project.settings.startMapId = sceneData.id;
+    store.ui.playScene3DId = sceneData.id;
     window.dispatchEvent(new CustomEvent('pixelforge:play'));
   };
 
-  function notifyChange() {
-    sceneData.gridmap = grid.toJSON();
+  // Toute modification passe par store.update : une entree d'annulation, prise AVANT le changement.
+  // La grille locale est recopiee dans le projet ; mutate(scene) modifie les entites.
+  function commit(mutate) {
+    store.update((p) => {
+      const sc = (p.scenes3d || []).find((s) => s.id === refId);
+      if (!sc) return;
+      if (mutate) mutate(sc);
+      sc.gridmap = grid.toProjectJSON(sc.gridmap);
+      sceneData = sc;
+    }, 'scene3d');
     container.querySelector('#pf-s3d-stats').textContent = `${grid.blocks.size} blocs`;
-    store.emit('change', 'scene3d');
   }
+
+  // Annuler / retablir / rechargement : le projet est remplace, on relit la scene
+  const offLoad = store.on('load', () => {
+    const sc = findScene();
+    if (!sc) return;
+    sceneData = sc;
+    grid = new GridMap3D(sc.gridmap);
+    if (selectedEntityId && !(sc.entities || []).some((e) => e.id === selectedEntityId)) selectedEntityId = null;
+    if (blockGroup) {
+      rebuildBlocks();
+      rebuildEntities();
+    }
+    updateSelectionUI();
+  });
 
   // --- Initialisation Three.js Viewport ---
   const viewportContainer = container.querySelector('#pf-s3d-viewport');
   let scene, camera, renderer, ThreeLib;
   let gridHelper;
   let blockGroup, entityGroup;
+  let ro = null;
+  let renderLoop = null;
   const cubeGeo = { geo: null };
+  const materialCache = new Map(); // couleur -> materiau (blocs et entites), libere au dispose
+  const disposables = []; // geometries / materiaux crees une fois
+
+  function getMaterial(color) {
+    if (!materialCache.has(color)) {
+      materialCache.set(color, new ThreeLib.MeshLambertMaterial({ color, flatShading: true }));
+    }
+    return materialCache.get(color);
+  }
+
+  // Couleur d'un bloc : index de palette ou '#rrggbb'
+  function blockColor(v) {
+    if (typeof v === 'number' && Number.isFinite(v)) return palette[((v % palette.length) + palette.length) % palette.length];
+    if (typeof v === 'string' && v.charAt(0) === '#') return v;
+    if (typeof v === 'string' && /^[0-9a-f]$/i.test(v)) return palette[parseInt(v, 16) % palette.length];
+    return palette[6];
+  }
+
+  // Raccourcis clavier de l'onglet (actifs seulement quand il est visible ; F6 est gere par le dock)
+  function onKeyDown(e) {
+    if (isDisposed || !isActive) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+    if (e.key === 'PageUp') {
+      e.preventDefault();
+      setLevel(activeLevel + 1);
+    } else if (e.key === 'PageDown') {
+      e.preventDefault();
+      setLevel(activeLevel - 1);
+    } else if (e.key === 'Delete' && selectedEntityId) {
+      deleteSelectedEntity();
+    }
+  }
+  window.addEventListener('keydown', onKeyDown);
 
   async function initThree() {
     ThreeLib = await import('three');
@@ -193,6 +247,8 @@ export function mount(container, store, { refId } = {}) {
     // Curseur de survol
     const cursorGeo = new ThreeLib.BoxGeometry(1.02, 1.02, 1.02);
     const cursorMat = new ThreeLib.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.7 });
+    selWireMat = new ThreeLib.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
+    disposables.push(cubeGeo.geo, cursorGeo, cursorMat, selWireMat, gridHelper.geometry, gridHelper.material);
     const cursorBox = new ThreeLib.Mesh(cursorGeo, cursorMat);
     cursorBox.visible = false;
     scene.add(cursorBox);
@@ -262,22 +318,7 @@ export function mount(container, store, { refId } = {}) {
       updateCamera();
     };
 
-    // Raccourcis clavier locaux
-    window.addEventListener('keydown', (e) => {
-      if (isDisposed) return;
-      if (e.key === 'PageUp') {
-        setLevel(activeLevel + 1);
-      } else if (e.key === 'PageDown') {
-        setLevel(activeLevel - 1);
-      } else if (e.key === 'F6') {
-        e.preventDefault();
-        playBtn.click();
-      } else if (e.key === 'Delete' && selectedEntityId) {
-        deleteSelectedEntity();
-      }
-    });
-
-    const ro = new ResizeObserver(() => {
+    ro = new ResizeObserver(() => {
       if (isDisposed) return;
       const w = viewportContainer.clientWidth || 400;
       const h = viewportContainer.clientHeight || 300;
@@ -287,27 +328,26 @@ export function mount(container, store, { refId } = {}) {
     });
     ro.observe(viewportContainer);
 
-    function loop() {
-      if (isDisposed) return;
+    // Rendu seulement quand l'onglet est visible
+    renderLoop = function loop() {
+      animId = null;
+      if (isDisposed || !isActive) return;
       animId = requestAnimationFrame(loop);
       renderer.render(scene, camera);
-    }
-    loop();
+    };
+    renderLoop();
   }
+
+  let selWireMat = null;
 
   function rebuildBlocks() {
     while (blockGroup.children.length > 0) {
       blockGroup.remove(blockGroup.children[0]);
     }
 
-    const materialCache = new Map();
-    for (const [key, colorHex] of grid.blocks.entries()) {
+    for (const [key, value] of grid.blocks.entries()) {
       const { x, y, z } = GridMap3D.parseKey(key);
-      const color = typeof colorHex === 'string' ? colorHex : palette[0];
-      if (!materialCache.has(color)) {
-        materialCache.set(color, new ThreeLib.MeshLambertMaterial({ color, flatShading: true }));
-      }
-      const mesh = new ThreeLib.Mesh(cubeGeo.geo, materialCache.get(color));
+      const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(blockColor(value)));
       mesh.position.set(x, y, z);
       mesh.userData = { blockKey: key, x, y, z };
       blockGroup.add(mesh);
@@ -324,18 +364,14 @@ export function mount(container, store, { refId } = {}) {
     (sceneData.entities || []).forEach((ent) => {
       const objDef = (store.project?.objects || []).find((o) => o.id === ent.objectId);
       const color = objDef?.color || '#ffcd75';
-      const mat = new ThreeLib.MeshLambertMaterial({ color, flatShading: true });
-      const mesh = new ThreeLib.Mesh(cubeGeo.geo, mat);
+      const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(color));
       mesh.position.set(ent.x, ent.y, ent.z);
       mesh.scale.set(0.9, 0.9, 0.9);
       mesh.userData = { entityId: ent.id, ent };
 
       // Marqueur de sélection
       if (ent.id === selectedEntityId) {
-        const selWire = new ThreeLib.Mesh(
-          cubeGeo.geo,
-          new ThreeLib.MeshBasicMaterial({ color: 0xffffff, wireframe: true })
-        );
+        const selWire = new ThreeLib.Mesh(cubeGeo.geo, selWireMat);
         selWire.scale.set(1.05, 1.05, 1.05);
         mesh.add(selWire);
       }
@@ -419,18 +455,20 @@ export function mount(container, store, { refId } = {}) {
       }
       grid.setBlock(bx, by, bz, activeColor);
       rebuildBlocks();
-      notifyChange();
+      commit();
     } else if (activeTool === 'erase') {
       if (hitBlock) {
         const key = hitBlock.object.userData?.blockKey;
         if (key) {
           grid.blocks.delete(key);
           rebuildBlocks();
-          notifyChange();
+          commit();
         }
       }
     } else if (activeTool === 'entity') {
-      let ex = 0, ey = activeLevel + 0.5, ez = 0;
+      if (!selectedObjectId) return;
+      // Entites centrees dans la case (meme convention que les blocs et le runtime)
+      let ex = 0, ey = activeLevel, ez = 0;
       if (hitBlock) {
         const norm = hitBlock.face?.normal || new ThreeLib.Vector3(0, 1, 0);
         ex = hitBlock.object.position.x + norm.x;
@@ -438,7 +476,7 @@ export function mount(container, store, { refId } = {}) {
         ez = hitBlock.object.position.z + norm.z;
       } else if (hitGrid) {
         ex = Math.round(hitGrid.x);
-        ey = activeLevel + 0.5;
+        ey = activeLevel;
         ez = Math.round(hitGrid.z);
       }
 
@@ -451,11 +489,13 @@ export function mount(container, store, { refId } = {}) {
         rotationY: 0,
         props: {},
       };
-      sceneData.entities.push(newEnt);
+      commit((sc) => {
+        if (!Array.isArray(sc.entities)) sc.entities = [];
+        sc.entities.push(newEnt);
+      });
       selectedEntityId = newEnt.id;
       updateSelectionUI();
       rebuildEntities();
-      notifyChange();
     }
   }
 
@@ -472,24 +512,25 @@ export function mount(container, store, { refId } = {}) {
     }
 
     const obj = (store.project?.objects || []).find((o) => o.id === ent.objectId);
+    const num = (v) => (Number.isFinite(v) ? v.toFixed(1) : '?');
     details.innerHTML = `
-      <div><strong>${obj?.name || 'Entité'}</strong></div>
-      <div>Position : (${ent.x.toFixed(1)}, ${ent.y.toFixed(1)}, ${ent.z.toFixed(1)})</div>
+      <div><strong>${esc(obj?.name || 'Entité')}</strong></div>
+      <div>Position : (${num(ent.x)}, ${num(ent.y)}, ${num(ent.z)})</div>
     `;
     delBtn.style.display = 'block';
-    delBtn.onclick = () => deleteSelectedEntity();
   }
+  container.querySelector('#pf-s3d-delete-ent').onclick = () => deleteSelectedEntity();
 
   function deleteSelectedEntity() {
     if (!selectedEntityId) return;
-    const idx = sceneData.entities.findIndex((i) => i.id === selectedEntityId);
-    if (idx !== -1) {
-      sceneData.entities.splice(idx, 1);
-      selectedEntityId = null;
-      updateSelectionUI();
-      rebuildEntities();
-      notifyChange();
-    }
+    const id = selectedEntityId;
+    if (!(sceneData.entities || []).some((i) => i.id === id)) return;
+    commit((sc) => {
+      sc.entities = (sc.entities || []).filter((i) => i.id !== id);
+    });
+    selectedEntityId = null;
+    updateSelectionUI();
+    rebuildEntities();
   }
 
   initThree();
@@ -497,10 +538,29 @@ export function mount(container, store, { refId } = {}) {
   return {
     dispose() {
       isDisposed = true;
+      isActive = false;
       if (animId) cancelAnimationFrame(animId);
-      renderer?.dispose();
+      animId = null;
+      window.removeEventListener('keydown', onKeyDown);
+      offLoad();
+      ro?.disconnect();
+      materialCache.forEach((m) => m.dispose());
+      materialCache.clear();
+      disposables.forEach((d) => d?.dispose?.());
+      if (renderer) {
+        renderer.dispose();
+        renderer.forceContextLoss?.();
+        renderer.domElement.remove();
+      }
     },
-    onShow() {},
-    onHide() {},
+    onShow() {
+      isActive = true;
+      if (renderLoop && !animId) renderLoop();
+    },
+    onHide() {
+      isActive = false;
+      if (animId) cancelAnimationFrame(animId);
+      animId = null;
+    },
   };
 }

@@ -275,9 +275,9 @@ pu('pf_mouse_pos', 'Position souris', 'mouse', 'number', 'Position de la souris 
 pu('pf_mouse_down', 'Bouton souris maintenu ?', 'mouse', 'boolean', 'Vrai tant que le bouton de la souris est maintenu.', { fields: [dd('BTN', 'bouton', MOUSE_BTNS)] });
 pu('pf_mouse_just', 'Bouton souris pressé ?', 'mouse', 'boolean', 'Vrai seulement l\'image où le bouton est pressé.', { fields: [dd('BTN', 'bouton', MOUSE_BTNS)] });
 pu('pf_mouse_delta', 'Déplacement souris (Delta)', 'mouse', 'number', 'Déplacement de la souris depuis la dernière image (utile pour la vue FPS).',
-  { fields: [dd('AXIS', 'axe', [['horizontal (X)', 'x'], ['vertical (Y)', 'y']], 'x')], dims: ['2d', '3d'], keywords: 'souris delta mouse pointer fps' });
+  { fields: [dd('AXIS', 'axe', [['horizontal (X)', 'x'], ['vertical (Y)', 'y']], 'x')], dims: ['3d'], keywords: 'souris delta mouse pointer fps' });
 ex('pf_pointer_lock', 'Verrouiller le curseur', 'mouse', 'Verrouille le curseur de la souris pour le contrôle FPS subjectif.',
-  { dims: ['2d', '3d'], keywords: 'souris pointer lock verrouiller fps' });
+  { dims: ['3d'], keywords: 'souris pointer lock verrouiller fps' });
 
 // Tuiles & rayons --------------------------------------------------------------
 const layerField = () => fdyn('LAYER', 'calque', 'layer');
@@ -440,6 +440,17 @@ ex('lists_setIndex', 'Modifier la liste', 'list', 'Remplace un élément de la l
 
 // Nœuds interdits dans le script global (self = null)
 // (liste reprise de SELF_BLOCKS dans src/graph/test/legacy-blocks.js : le drapeau `selfOnly` est posé ci-dessus)
+
+// Nœuds réservés aux jeux 2D : ils appellent une API absente de src/runtime3d/engine3d.js
+// (tuiles, souris à l'écran, angles 2D, tweens, teintes, caméra Phaser...).
+const ONLY_2D = [
+  'pf_on_hit_tile', 'pf_on_click', 'pf_on_mousedown', 'pf_move_towards', 'pf_flip', 'pf_set_vel_angle',
+  'pf_angle_to_obj', 'pf_angle_to_point', 'pf_angle_to_mouse', 'pf_blocked', 'pf_tween_to', 'pf_alpha',
+  'pf_tint_set', 'pf_tint_none', 'pf_mouse_pos', 'pf_mouse_down', 'pf_mouse_just', 'pf_get_tile', 'pf_set_tile',
+  'pf_is_solid_at', 'pf_tile_size', 'pf_to_tile', 'pf_raycast', 'pf_ray_cast', 'pf_ray_cast_mouse', 'pf_particles',
+  'pf_game_info', 'pf_cam_shake', 'pf_cam_flash', 'pf_cam_zoom', 'pf_cam_deadzone', 'pf_cam_offset', 'pf_cam_pos',
+];
+for (const t of ONLY_2D) SPECS.get(t).dims = ['2d'];
 
 // ---------------------------------------------------------------- API
 

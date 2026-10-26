@@ -35,14 +35,21 @@ export function mount(container, store, { refId = null } = {}) {
   let active = false;
   container.innerHTML = '';
 
-  const songs = () => store.project.songs || (store.project.songs = []);
+  const songs = () => store.project.songs || [];
   let song = (refId && songs().find((s) => s.id === refId)) || songs()[0];
 
   if (!song) {
-    song = createSong('Musique 1');
-    songs().push(song);
-    store.update((p) => { p.songs = songs(); }, 'song:create');
+    const created = createSong('Musique 1');
+    store.update((p) => {
+      p.songs = p.songs || [];
+      p.songs.push(created);
+    }, 'song:create');
+    song = created;
   }
+  // Le morceau est relu dans store.project par son id a chaque rendu (le projet est remplace par annuler / retablir)
+  let songId = song.id;
+  const resolveSong = () => songs().find((s) => s.id === songId) || null;
+  let viewCleanup = null;
 
   let activePatternId = song.patterns?.[0]?.id || null;
   let selectedChannelId = song.channels?.[0]?.id || null;
@@ -407,11 +414,14 @@ export function mount(container, store, { refId = null } = {}) {
 
   // Rendu du Channel Rack, Piano Roll, Playlist ou Mixeur
   function render() {
+    song = resolveSong() || song;
+    if (viewCleanup) { try { viewCleanup(); } catch (e) { console.error(e); } }
+    viewCleanup = null;
     updateLenSelectValue();
     refreshPatternSelect();
 
     if (activeView === 'mixer') {
-      renderMixer(mainArea, {
+      viewCleanup = renderMixer(mainArea, {
         song,
         chip: getSharedChip(),
         onChannelChange(chId, patch) {
@@ -428,6 +438,7 @@ export function mount(container, store, { refId = null } = {}) {
             p.songs.push(importedSong);
           }, 'song:import_midi');
           song = importedSong;
+          songId = importedSong.id;
           activePatternId = importedSong.patterns?.[0]?.id || null;
           selectedChannelId = importedSong.channels?.[0]?.id || null;
           render();
@@ -437,16 +448,18 @@ export function mount(container, store, { refId = null } = {}) {
     }
 
     if (activeView === 'playlist') {
-      renderPlaylist(mainArea, {
-        song,
+      // Copie de travail : la playlist la modifie, puis onPlaylistChange l'ecrit dans le projet via store.update
+      const viewSong = structuredClone(song);
+      viewCleanup = renderPlaylist(mainArea, {
+        song: viewSong,
         activePatternId,
         currentStep,
         onPlaylistChange() {
           store.update((p) => {
             const cur = (p.songs || []).find((s) => s.id === song.id);
             if (cur) {
-              cur.playlist = song.playlist;
-              cur.loopStart = song.loopStart;
+              cur.playlist = structuredClone(viewSong.playlist || []);
+              cur.loop = { ...(cur.loop || {}), ...(viewSong.loop || {}) };
             }
           }, 'song:playlist');
         },
@@ -468,8 +481,9 @@ export function mount(container, store, { refId = null } = {}) {
     }
 
     if (activeView === 'pianoroll') {
-      renderPianoRoll(mainArea, {
-        song,
+      const viewSong = structuredClone(song);
+      viewCleanup = renderPianoRoll(mainArea, {
+        song: viewSong,
         activePatternId,
         selectedChannelId,
         chip: getSharedChip(),
@@ -477,7 +491,7 @@ export function mount(container, store, { refId = null } = {}) {
         onNotesChange() {
           store.update((p) => {
             const cur = (p.songs || []).find((s) => s.id === song.id);
-            if (cur) cur.patterns = song.patterns;
+            if (cur) cur.patterns = structuredClone(viewSong.patterns || []);
           }, 'song:notes');
         },
         onChannelChange(chId, patch) {
@@ -492,7 +506,7 @@ export function mount(container, store, { refId = null } = {}) {
       return;
     }
 
-    renderChannelRack(mainArea, {
+    viewCleanup = renderChannelRack(mainArea, {
       song,
       activePatternId,
       currentStep,
@@ -610,7 +624,8 @@ export function mount(container, store, { refId = null } = {}) {
   // Raccourcis clavier (Espace pour Play/Stop)
   const handleKeyDown = (e) => {
     if (!active) return;
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+    // Espace sur un bouton focalise : on laisse le bouton reagir (pas de double action)
+    if (['INPUT', 'SELECT', 'TEXTAREA', 'BUTTON'].includes(e.target.tagName)) return;
     if (e.code === 'Space') {
       e.preventDefault();
       if (isPlaying) stopPlayback();
@@ -623,6 +638,13 @@ export function mount(container, store, { refId = null } = {}) {
   window.addEventListener('keydown', handleKeyDown);
   cleanups.push(() => window.removeEventListener('keydown', handleKeyDown));
 
+  // Annuler / retablir / rechargement : relire le morceau et redessiner
+  cleanups.push(store.on('load', () => {
+    if (!resolveSong()) return;
+    if (isPlaying) stopPlayback();
+    render();
+  }));
+
   render();
 
   return {
@@ -630,7 +652,8 @@ export function mount(container, store, { refId = null } = {}) {
       active = false;
       stopPlayback();
       for (const fn of cleanups) fn();
-      if (mainArea.cleanups) for (const fn of mainArea.cleanups) fn();
+      if (viewCleanup) viewCleanup();
+      viewCleanup = null;
     },
     onShow() { active = true; store.ui.selectedSongId = song.id; },
     onHide() { active = false; stopPlayback(); },

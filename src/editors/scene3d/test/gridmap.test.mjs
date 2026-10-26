@@ -46,4 +46,13 @@ const json = grid.toJSON();
 assert.strictEqual(json['0,0,0'], '#ff0000');
 assert.strictEqual(json['0,1,0'], undefined);
 
+// 6. Format du projet { blockSize, blocks }, couleur 0 valide, cles invalides ignorees
+const wrapped = new GridMap3D({ blockSize: 1, blocks: { '1,0,2': 0, '2,0,2': 6, 'a,b,c': 3 }, extra: 'garde' });
+assert.strictEqual(wrapped.blocks.size, 2, 'blockSize et cles invalides ne sont pas des blocs');
+assert.strictEqual(wrapped.getBlock(1, 0, 2), 0, 'la couleur 0 est un bloc');
+const out = wrapped.toProjectJSON({ blockSize: 1, blocks: {}, extra: 'garde' });
+assert.deepStrictEqual(out, { blockSize: 1, blocks: { '1,0,2': 0, '2,0,2': 6 }, extra: 'garde' });
+// Ancien format plat accepte
+assert.strictEqual(new GridMap3D({ '0,0,0': '#ffffff' }).blocks.size, 1);
+
 console.log('Tous les tests GridMap 3D sont valides !');

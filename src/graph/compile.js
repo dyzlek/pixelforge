@@ -648,9 +648,10 @@ const sortPos = (a, b) => (Number(a.y) || 0) - (Number(b.y) || 0) || (Number(a.x
 const MAX_STATEMENTS = 20000;
 
 class Compiler {
-  constructor(graph, isGlobal) {
+  constructor(graph, isGlobal, dimension) {
     this.graph = graph;
     this.isGlobal = isGlobal;
+    this.dimension = dimension;
     this.nodes = new Map();
     for (const n of graph.nodes || []) if (n && n.id != null) this.nodes.set(n.id, n);
     this.inLinks = new Map(); // `${to}\0${toPin}` -> lien
@@ -939,6 +940,9 @@ class Compiler {
       const spec = getSpec(n.type);
       if (!spec) { this.err(n.id, 'Type de nœud inconnu : ' + n.type); continue; }
       if (this.isGlobal && spec.selfOnly) this.err(n.id, `« ${spec.title} » utilise l'objet (self), indisponible dans le script global.`);
+      if (this.dimension && spec.dims && !spec.dims.includes(this.dimension)) {
+        this.err(n.id, `« ${spec.title} » n'existe pas dans un jeu ${this.dimension.toUpperCase()}.`);
+      }
     }
     for (const v of graph.variables || []) {
       if (!v || !v.name) continue;
@@ -980,11 +984,12 @@ class Compiler {
 
 /**
  * Compile un graphe en JavaScript (corps de new Function('self','game','input','on', code)).
+ * dimension ('2d' | '3d', optionnel) : refuse les nœuds qui n'existent pas dans ce type de jeu.
  * → { code, errors: [{ nodeId, message }], warnings: [{ nodeId, message }] }
  */
-export function compileGraph(graph, { isGlobal = false } = {}) {
+export function compileGraph(graph, { isGlobal = false, dimension = null } = {}) {
   try {
-    return new Compiler(graph || {}, isGlobal).run();
+    return new Compiler(graph || {}, isGlobal, dimension).run();
   } catch (e) {
     return { code: '', errors: [{ nodeId: null, message: 'Erreur de compilation : ' + (e && e.message ? e.message : e) }], warnings: [] };
   }
