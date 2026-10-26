@@ -117,6 +117,11 @@ sounds: [{ id, name,
            sfx: { preset: 'jump'|'coin'|'hit'|'powerup'|'explosion'|'laser'|'blip'|'portal',
                   seed: 0, volume: 0.5, pitch: 1 },   // son synthétisé (WebAudio), si kind = 'sfx'
            dataUrl: 'data:audio/…' }],                 // fichier importé, si kind = 'file'
+songs: [{ id, name, bpm: 130,                          // musiques chiptune multi-voix (FL Studio / tracker)
+          channels: [{ id, name, instrument: 'pulse50', volume: 0.8, pan: 0, mute: false, solo: false, env: { a, d, s, r } }],
+          patterns: [{ id, name, length: 16, notes: [{ ch, step, len, pitch, vel }] }],
+          playlist: [{ pattern: '<id>', track: 0, start: 0 }],
+          loop: { enabled: true, start: 0, end: 16 } }],
 maps[].layers[].depth: 'below' | 'above',             // 'above' = dessiné devant les entités
 maps[].entities[].props: { clé: valeur }              // propriétés propres à l'instance → self.props
 ```

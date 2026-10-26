@@ -96,6 +96,66 @@ export function createMap(name = 'Carte', width = 40, height = 12, tileSize = 16
   };
 }
 
+export function createSong(name = 'Musique') {
+  const chLead = {
+    id: uid('ch'),
+    name: 'Lead',
+    instrument: 'pulse50',
+    volume: 0.8,
+    pan: 0,
+    mute: false,
+    solo: false,
+    drumKit: false,
+    env: { a: 0.005, d: 0.1, s: 0.6, r: 0.08 },
+    vibrato: { depth: 0, rate: 6 },
+    arp: [],
+  };
+  const chBass = {
+    id: uid('ch'),
+    name: 'Basse',
+    instrument: 'triangle',
+    volume: 0.8,
+    pan: 0,
+    mute: false,
+    solo: false,
+    drumKit: false,
+    env: { a: 0.01, d: 0.15, s: 0.7, r: 0.1 },
+    vibrato: { depth: 0, rate: 6 },
+    arp: [],
+  };
+  const chDrums = {
+    id: uid('ch'),
+    name: 'Batterie',
+    instrument: 'noise',
+    drumKit: true,
+    volume: 0.7,
+    pan: 0,
+    mute: false,
+    solo: false,
+    env: { a: 0.001, d: 0.08, s: 0, r: 0.05 },
+    vibrato: { depth: 0, rate: 6 },
+    arp: [],
+  };
+
+  const pattern = {
+    id: uid('pat'),
+    name: 'Pattern 1',
+    length: 16,
+    notes: [],
+  };
+
+  return {
+    id: uid('sng'),
+    name,
+    folder: '',
+    bpm: 130,
+    channels: [chLead, chBass, chDrums],
+    patterns: [pattern],
+    playlist: [{ pattern: pattern.id, track: 0, start: 0 }],
+    loop: { enabled: true, start: 0, end: 16 },
+  };
+}
+
 export function createEmptyProject(name = 'Mon jeu') {
   const map = createMap('Niveau 1');
   return {
@@ -106,6 +166,7 @@ export function createEmptyProject(name = 'Mon jeu') {
     palette: [...DEFAULT_PALETTE],
     sprites: [],
     sounds: [],
+    songs: [],
     objects: [],
     maps: [map],
     globalScript: emptyScript(),
@@ -121,6 +182,43 @@ export function normalizeProject(p) {
   p.meta = { ...base.meta, ...(p.meta || {}) };
   p.sprites = (p.sprites || []).map((s) => ({ folder: '', ...s }));
   p.sounds = (p.sounds || []).map((s) => ({ folder: '', ...s }));
+  p.songs = (p.songs || []).map((s) => {
+    const song = {
+      folder: '',
+      bpm: 130,
+      channels: [],
+      patterns: [],
+      playlist: [],
+      loop: { enabled: true, start: 0, end: 16 },
+      ...s,
+    };
+    song.channels = (song.channels || []).map((ch) => ({
+      id: ch.id || uid('ch'),
+      name: ch.name || 'Canal',
+      instrument: ch.instrument || 'pulse50',
+      volume: typeof ch.volume === 'number' ? ch.volume : 0.8,
+      pan: typeof ch.pan === 'number' ? ch.pan : 0,
+      mute: !!ch.mute,
+      solo: !!ch.solo,
+      drumKit: !!ch.drumKit,
+      env: { a: 0.005, d: 0.1, s: 0.6, r: 0.08, ...(ch.env || {}) },
+      vibrato: { depth: 0, rate: 6, ...(ch.vibrato || {}) },
+      arp: Array.isArray(ch.arp) ? ch.arp : [],
+      waveTable: Array.isArray(ch.waveTable) ? ch.waveTable : null,
+      sampleSoundId: ch.sampleSoundId || null,
+    }));
+    song.patterns = (song.patterns || []).map((pat) => ({
+      id: pat.id || uid('pat'),
+      name: pat.name || 'Pattern',
+      length: typeof pat.length === 'number' ? pat.length : 16,
+      notes: Array.isArray(pat.notes) ? pat.notes : [],
+    }));
+    song.playlist = Array.isArray(song.playlist) ? song.playlist : [];
+    if (!song.loop || typeof song.loop !== 'object') {
+      song.loop = { enabled: true, start: 0, end: 16 };
+    }
+    return song;
+  });
   p.objects = (p.objects || []).map((o) => {
     const obj = { folder: '', exportedProps: [], ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };
     obj.script = normalizeScript(o.script, false);

@@ -51,7 +51,7 @@ export function validateProject(p) {
     const seen = new Set();
     for (const x of list) { if (seen.has(x.name)) add('error', `${kind} "${x.name}"`, `duplicate ${kind} name (scripts and tools look things up by name)`); seen.add(x.name); }
   };
-  dup(p.sprites, 'sprite'); dup(p.objects, 'object'); dup(p.maps, 'map'); dup(p.sounds || [], 'sound');
+  dup(p.sprites, 'sprite'); dup(p.objects, 'object'); dup(p.maps, 'map'); dup(p.sounds || [], 'sound'); dup(p.songs || [], 'song');
 
   if (!p.maps.some((m) => m.id === p.settings.startMapId)) add('error', 'settings', `startMapId "${p.settings.startMapId}" matches no map`);
 
@@ -163,6 +163,32 @@ export function validateProject(p) {
       else if (e.x < 0 || e.y < 0 || e.x >= m.width * m.tileSize || e.y >= m.height * m.tileSize) add('warning', ew, `at (${e.x},${e.y}) is outside the ${m.width * m.tileSize}x${m.height * m.tileSize}px map`);
     });
   }
+
+  // ----- chansons -----
+  const VALID_INSTRUMENTS = new Set(['pulse12', 'pulse25', 'pulse50', 'triangle', 'saw', 'noise', 'wave', 'sample']);
+  for (const song of p.songs || []) {
+    const sw = `song "${song.name}"`;
+    if (!song.channels?.length) add('warning', sw, 'no channels');
+    const chIds = new Set();
+    for (const ch of song.channels || []) {
+      chIds.add(ch.id);
+      if (!VALID_INSTRUMENTS.has(ch.instrument)) add('error', `${sw} channel "${ch.name}"`, `unknown instrument "${ch.instrument}"`);
+      if (ch.instrument === 'sample' && ch.sampleSoundId && !(p.sounds || []).some((s) => s.id === ch.sampleSoundId)) {
+        add('error', `${sw} channel "${ch.name}"`, `sampleSoundId "${ch.sampleSoundId}" matches no sound`);
+      }
+    }
+    const patIds = new Set();
+    for (const pat of song.patterns || []) {
+      patIds.add(pat.id);
+      for (const n of pat.notes || []) {
+        if (!chIds.has(n.ch)) add('error', `${sw} pattern "${pat.name}"`, `note references unknown channel id "${n.ch}"`);
+      }
+    }
+    for (const pl of song.playlist || []) {
+      if (!patIds.has(pl.pattern)) add('error', sw, `playlist references unknown pattern id "${pl.pattern}"`);
+    }
+  }
+
   const start = p.maps.find((m) => m.id === p.settings.startMapId);
   if (start && !start.entities?.length) add('warning', `map "${start.name}"`, 'the start map has no entities: nothing will happen when playing');
   return issues;

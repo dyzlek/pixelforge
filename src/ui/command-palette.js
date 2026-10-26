@@ -141,6 +141,14 @@ export class CommandPalette {
         action: () => this.workspace.open({ kind: 'sound', refId: snd.id, title: snd.name }),
       });
     }
+    for (const sng of p.songs || []) {
+      items.push({
+        icon: getIconSvg('music', 13),
+        category: 'Musique',
+        label: sng.name,
+        action: () => this.workspace.open({ kind: 'song', refId: sng.id, title: sng.name }),
+      });
+    }
 
     this.showModal({
       placeholder: 'Ouvrir une ressource…',

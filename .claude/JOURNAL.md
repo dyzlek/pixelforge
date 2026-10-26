@@ -228,4 +228,13 @@
   - Remplacement des symboles pictographiques résiduels dans `src/editors/`, `src/runtime/` et `src/ui/`.
 - **Vérifié** : Scan de validation regex `\p{Extended_Pictographic}` = 0 trouvé, `npm run build`, `npm test`, `npm run check:doc` et 3 validations de jeux réussis avec 0 erreur.
 
+## 2026-10-26 (11) — [Phase B] B0 : Modèle de données des musiques (Closes #11)
+- **Fait** :
+  - Définition du modèle de données de chansons multi-voix chiptune (`songs`) dans `src/core/project.js` (`createSong`, `normalizeProject`) : canaux (instruments NES/chiptune, volume, pan, ADSR, vibrato, arpèges, waveTable, sample), patterns (longueur, pas, notes, vélocité) et playlist (arrangement temporel avec boucle).
+  - Mise à jour du schéma JSON formel `docs/PROJECT_SCHEMA.json` avec validation stricte des chansons, canaux, patterns et items de playlist.
+  - Intégration de la validation sémantique dans `mcp/lib/validate.js` (détection des noms en double, canaux inconnus dans les patterns, patterns orphelins dans la playlist).
+  - Ajout de la catégorie Musiques dans l'explorateur de ressources Studio, l'inspecteur unifié et la palette de commandes.
+- **Vérifié** : `npm run build`, `npm test` (2277 vérifications, 0 échec), `npm run check:doc`, 3x `validate`, rétrocompatibilité vérifiée sur les anciens projets sans musiques.
+
+
 
