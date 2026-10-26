@@ -105,6 +105,9 @@ Ordre d'affichage : calques `below` < entités < calques `above` < particules < 
 | `self.blocked` | `{ left, right, up, down }` : bloqué par un mur / le sol / une autre instance qui collide (lecture) |
 | `self.depth` | ordre d'affichage (nombre, lecture/écriture) |
 | `self.tint` | teinte `'#rrggbb'` ; `null` pour l'enlever |
+| `self.setTintMode('multiply'|'fill'|'add'|'screen'|'overlay')` | mode de fusion de teinte Phaser 4 (remplace setTintFill) |
+| `self.addFilter('glow'|'blur'|'pixelate'|'crt'|'vignette'|'shadow', opts?)` | applique un filtre visuel Phaser 4 (`opts: { color, outerStrength, amount, radius... }`) |
+| `self.clearFilters()` | retire tous les filtres actifs de l'instance |
 | `self.scale` | échelle (1 = normal) |
 | `self.tweenTo({x?, y?, alpha?, angle?, scale?}, ms)` | anime ces valeurs en `ms` millisecondes (x, y = haut-gauche). Pour déplacer un objet à gravité, faire d'abord `self.setGravity(false)` |
 | `self.centerX`, `self.centerY` | centre de l'instance (lecture) |
@@ -229,6 +232,8 @@ Les navigateurs interdisent le son avant un premier geste (clic, touche, toucher
 | `game.camera.setBounds(x, y, w, h)` | restreint les déplacements de la caméra à cette boîte |
 | `game.camera.setLerp(lx, ly)` | règle la fluidité du suivi caméra |
 | `game.camera.setZoom(z)` | zoom de la caméra (1 = normal) |
+| `game.camera.addFilter('crt'|'vignette'|'blur'|'pixelate'|'glow', opts?)` | applique un filtre visuel plein écran sur la caméra (Phaser 4) |
+| `game.camera.clearFilters()` | retire tous les filtres actifs de la caméra |
 | `game.camera.x`, `game.camera.y` | coin haut-gauche de la vue dans le monde (lecture) |
 | `game.setText(id, texte, x, y, options?)` | `options = { color: '#rrggbb', size: 1, align: 'left', 'center' ou 'right', world: false }` ; avec `world: true`, le texte est ancré dans le monde et défile avec la caméra |
 | `game.setWorldText(id, texte, x, y, options?)` | raccourci pour placer un texte dans l'espace du monde (ex. dégâts flottants, dialogues) |

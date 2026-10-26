@@ -1,7 +1,7 @@
 # Catalogue des nœuds Blueprint de PixelForge
 
 > Ce document est généré automatiquement par `node scripts/gen-nodes-doc.mjs`.
-> Total : **177 nœuds** répartis en **18 catégories**.
+> Total : **182 nœuds** répartis en **18 catégories**.
 
 ## Sommaire des catégories
 
@@ -10,7 +10,7 @@
 - [Fonctions (#func)](#func) (4 nœuds)
 - [Variables (#var)](#var) (3 nœuds)
 - [Mouvement (#move)](#move) (24 nœuds)
-- [Apparence (#look)](#look) (7 nœuds)
+- [Apparence (#look)](#look) (10 nœuds)
 - [Objet (#self)](#self) (23 nœuds)
 - [Entrée (#input)](#input) (2 nœuds)
 - [Souris (#mouse)](#mouse) (5 nœuds)
@@ -18,7 +18,7 @@
 - [Son (#sound)](#sound) (6 nœuds)
 - [Messages (#msg)](#msg) (3 nœuds)
 - [Jeu (#game)](#game) (24 nœuds)
-- [Caméra & texte (#cam)](#cam) (13 nœuds)
+- [Caméra & texte (#cam)](#cam) (15 nœuds)
 - [Logique (#logic)](#logic) (6 nœuds)
 - [Maths (#math)](#math) (11 nœuds)
 - [Texte (#text)](#text) (4 nœuds)
@@ -1374,6 +1374,74 @@ on('create', () => {
 | Broche | Type | Description |
 |---|---|---|
 | `then` | `exec` | then |
+
+### `pf_filter_add` — Ajouter un filtre
+
+**Type de nœud** : Action  
+**Description** : Applique un filtre visuel (lueur, flou, pixellisation, ombre) sur cet objet (Phaser 4).  
+**Mots-clés de recherche** : `filtre fx glow lueur flou blur pixelate`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `COLOR` | `color` | `"#ffffff"` | couleur |
+| `INTENSITY` | `number` | `2` | intensité |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `FILTER` | `dropdown` | `"glow"` | `glow`, `blur`, `pixelate`, `vignette`, `shadow` |
+
+### `pf_filter_clear` — Enlever les filtres
+
+**Type de nœud** : Action  
+**Description** : Enlève tous les filtres visuels appliqués sur cet objet.  
+**Mots-clés de recherche** : `filtre clear`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_tint_mode` — Mode de teinte
+
+**Type de nœud** : Action  
+**Description** : Définit le mode de fusion de teinte (Phaser 4 : multiply, fill, add, screen, overlay).  
+**Mots-clés de recherche** : `tint mode fusion`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `MODE` | `dropdown` | `"multiply"` | `multiply`, `fill`, `add`, `screen`, `overlay` |
 
 ### `pf_colour` — Couleur
 
@@ -3443,6 +3511,49 @@ on('create', () => {
 | `exec` | `exec` | — | exec |
 | `X` | `number` | `0` | x |
 | `Y` | `number` | `0` | y |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_cam_filter` — Caméra : filtre
+
+**Type de nœud** : Action  
+**Description** : Applique un filtre visuel plein écran sur la caméra (CRT, vignette, flou, pixellisation).  
+**Mots-clés de recherche** : `camera filtre crt postfx vignette flou`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `INTENSITY` | `number` | `1.5` | intensité |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `FILTER` | `dropdown` | `"crt"` | `crt`, `vignette`, `blur`, `pixelate` |
+
+### `pf_cam_clear_filters` — Caméra : enlever les filtres
+
+**Type de nœud** : Action  
+**Description** : Enlève tous les filtres plein écran de la caméra.  
+**Mots-clés de recherche** : `camera clear filtre`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
 
 **Sorties (broches) :**
 

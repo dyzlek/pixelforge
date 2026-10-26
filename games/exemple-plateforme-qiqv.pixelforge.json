@@ -7,7 +7,7 @@
     "author": "",
     "thumbnail": "data:image/png;base64,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",
     "createdAt": "2026-10-25T23:47:32.155Z",
-    "updatedAt": "2026-10-26T12:55:16.104Z"
+    "updatedAt": "2026-10-26T21:44:07.121Z"
   },
   "settings": {
     "width": 320,
@@ -17,7 +17,8 @@
     "background": "#41a6f6",
     "startMapId": "map_h6qyrfs",
     "gravity": 800,
-    "touchControls": true
+    "touchControls": true,
+    "dimension": "2d"
   },
   "palette": [
     "#1a1c2c",
@@ -39,6 +40,7 @@
   ],
   "sprites": [
     {
+      "folder": "",
       "id": "spr_d6w36pn",
       "name": "Tileset",
       "width": 16,
@@ -63,6 +65,7 @@
       ]
     },
     {
+      "folder": "",
       "id": "spr_m42f0xa",
       "name": "Player",
       "width": 16,
@@ -99,6 +102,7 @@
       ]
     },
     {
+      "folder": "",
       "id": "spr_czgrbrx",
       "name": "Coin",
       "width": 16,
@@ -124,6 +128,7 @@
       ]
     },
     {
+      "folder": "",
       "id": "spr_rka0lzh",
       "name": "Slime",
       "width": 16,
@@ -145,6 +150,7 @@
       ]
     },
     {
+      "folder": "",
       "id": "spr_8tns4jt",
       "name": "Flag",
       "width": 16,
@@ -167,6 +173,8 @@
   "sounds": [],
   "objects": [
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_4u8q7hc",
       "name": "Player",
       "spriteId": "spr_m42f0xa",
@@ -187,10 +195,12 @@
       },
       "script": {
         "mode": "code",
-        "code": "// Le joueur : il se déplace, saute, change d'animation, et la caméra le suit.\nconst SPEED = 90;   // vitesse de marche (pixels par seconde)\nconst JUMP = 290;   // force du saut\n\non('create', () => {\n  game.camera.follow(self);\n});\n\non('update', (dt) => {\n  // 1. Aller à gauche / à droite (flèches, ou Q / D, ou A)\n  self.vx = 0;\n  if (input.isDown('LEFT') || input.isDown('Q') || input.isDown('A')) {\n    self.vx = -SPEED;\n    self.flipX = true;      // le sprite regarde vers la gauche\n  }\n  if (input.isDown('RIGHT') || input.isDown('D')) {\n    self.vx = SPEED;\n    self.flipX = false;\n  }\n\n  // 2. Sauter : self.jump() ne fait rien si on n'est pas posé sur le sol\n  if (input.justPressed('SPACE') || input.justPressed('UP') || input.justPressed('Z') || input.justPressed('W')) {\n    self.jump(JUMP);\n  }\n\n  // 3. Animation : course si on bouge, repos sinon\n  self.play(self.vx !== 0 ? 'run' : 'idle');\n\n  // 4. Tombé dans un trou ? On recommence le niveau.\n  if (self.y > game.mapHeight + 32) {\n    game.score = 0;\n    game.restart();\n  }\n});\n"
+        "code": "// Le joueur : il se déplace, saute, change d'animation, et la caméra le suit.\nconst SPEED = 90;   // vitesse de marche (pixels par seconde)\nconst JUMP = 290;   // force du saut\n\non('create', () => {\n  game.camera.follow(self);\n  game.camera.addFilter('crt');\n});\n\non('update', (dt) => {\n  // 1. Aller à gauche / à droite (flèches, ou Q / D, ou A)\n  self.vx = 0;\n  if (input.isDown('LEFT') || input.isDown('Q') || input.isDown('A')) {\n    self.vx = -SPEED;\n    self.flipX = true;      // le sprite regarde vers la gauche\n  }\n  if (input.isDown('RIGHT') || input.isDown('D')) {\n    self.vx = SPEED;\n    self.flipX = false;\n  }\n\n  // 2. Sauter : self.jump() ne fait rien si on n'est pas posé sur le sol\n  if (input.justPressed('SPACE') || input.justPressed('UP') || input.justPressed('Z') || input.justPressed('W')) {\n    self.jump(JUMP);\n  }\n\n  // 3. Animation : course si on bouge, repos sinon\n  self.play(self.vx !== 0 ? 'run' : 'idle');\n\n  // 4. Tombé dans un trou ? On recommence le niveau.\n  if (self.y > game.mapHeight + 32) {\n    game.score = 0;\n    game.restart();\n  }\n});\n"
       }
     },
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_wwu0ej2",
       "name": "Coin",
       "spriteId": "spr_czgrbrx",
@@ -211,7 +221,7 @@
       },
       "script": {
         "mode": "graph",
-        "code": "on('overlap', 'Player', (other) => {\n  self.destroy();\n  game.score += 1;\n  game.setText('score', 'Pièces : ' + String(game.score), 4, 4);\n});\n",
+        "code": "on('overlap', 'Player', (other) => {\n  self.destroy();\n  game.score += 1;\n  game.setText('score', 'Pièces : ' + String(game.score), 4, 4);\n});\non('create', () => {\n  self.addFilter('glow', { color: '#ffcd75', outerStrength: 3, amount: 3 });\n});\n",
         "graph": {
           "version": 1,
           "nodes": [
@@ -281,6 +291,29 @@
               "fields": {},
               "values": {},
               "extra": {}
+            },
+            {
+              "id": "n7",
+              "type": "pf_on_create",
+              "x": 70,
+              "y": 280,
+              "fields": {},
+              "values": {},
+              "extra": {}
+            },
+            {
+              "id": "n8",
+              "type": "pf_filter_add",
+              "x": 306,
+              "y": 280,
+              "fields": {
+                "FILTER": "glow"
+              },
+              "values": {
+                "COLOR": "#ffcd75",
+                "INTENSITY": 3
+              },
+              "extra": {}
             }
           ],
           "links": [
@@ -318,6 +351,13 @@
               "fromPin": "then",
               "to": "n2",
               "toPin": "exec"
+            },
+            {
+              "id": "l6",
+              "from": "n7",
+              "fromPin": "then",
+              "to": "n8",
+              "toPin": "exec"
             }
           ],
           "variables": [],
@@ -326,6 +366,8 @@
       }
     },
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_7sbgx8c",
       "name": "Enemy",
       "spriteId": "spr_rka0lzh",
@@ -350,6 +392,8 @@
       }
     },
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_t70n7kh",
       "name": "Flag",
       "spriteId": "spr_8tns4jt",
@@ -2312,125 +2356,219 @@
           "objectId": "obj_4u8q7hc",
           "x": 32,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_mbwghky",
           "objectId": "obj_wwu0ej2",
           "x": 96,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_3ya5gr4",
           "objectId": "obj_wwu0ej2",
           "x": 112,
           "y": 128,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_ou46mux",
           "objectId": "obj_wwu0ej2",
           "x": 128,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_0tfwhzk",
           "objectId": "obj_wwu0ej2",
           "x": 192,
           "y": 112,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_z8gerxt",
           "objectId": "obj_wwu0ej2",
           "x": 368,
           "y": 112,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_rx52mq6",
           "objectId": "obj_wwu0ej2",
           "x": 416,
           "y": 80,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_5hunw6l",
           "objectId": "obj_wwu0ej2",
           "x": 432,
           "y": 80,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_839j1f8",
           "objectId": "obj_wwu0ej2",
           "x": 448,
           "y": 80,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_rrioh3c",
           "objectId": "obj_wwu0ej2",
           "x": 624,
           "y": 112,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_5pn8l3z",
           "objectId": "obj_wwu0ej2",
           "x": 720,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_4wgpewu",
           "objectId": "obj_wwu0ej2",
           "x": 800,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_0ik3b2v",
           "objectId": "obj_wwu0ej2",
           "x": 864,
           "y": 112,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_hkwg5cb",
           "objectId": "obj_7sbgx8c",
           "x": 224,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_lcrcucl",
           "objectId": "obj_7sbgx8c",
           "x": 432,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_4xw55c0",
           "objectId": "obj_7sbgx8c",
           "x": 688,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         },
         {
           "id": "ent_62vz6tj",
           "objectId": "obj_t70n7kh",
           "x": 896,
           "y": 144,
-          "props": {}
+          "props": {},
+          "angle": 0,
+          "scale": 1,
+          "locked": false,
+          "visible": true
         }
-      ]
+      ],
+      "folder": ""
     }
   ],
   "globalScript": {
     "mode": "code",
     "code": "// Script global : lancé une fois au début de chaque niveau (self vaut null ici).\nlet elapsed = 0;\n\non('create', () => {\n  // game.vars est partagé par tous les scripts : on y range une fonction pratique pour afficher le score.\n  game.vars.showScore = () => game.setText('score', 'Pièces : ' + game.score, 4, 4);\n  game.vars.showScore();\n  game.setText('help', 'Flèches ou Q/D : bouger   Espace : sauter', 4, game.height - 16);\n});\n\n// L'aide disparaît au bout de 6 secondes\non('update', (dt) => {\n  elapsed += dt;\n  if (elapsed > 6) game.removeText('help');\n});\n"
+  },
+  "songs": [],
+  "models": [],
+  "materials": [],
+  "scenes3d": [],
+  "environment": {
+    "skyColor": "#1a1c2c",
+    "fog": {
+      "enabled": false,
+      "color": "#1a1c2c",
+      "density": 0.04
+    },
+    "ambientLight": {
+      "color": "#ffffff",
+      "intensity": 0.6
+    },
+    "directionalLight": {
+      "color": "#ffeedd",
+      "intensity": 1,
+      "position": [
+        10,
+        20,
+        15
+      ]
+    }
   }
 }

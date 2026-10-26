@@ -228,6 +228,15 @@ ex('pf_visible', 'Afficher / cacher', 'look', 'Affiche ou cache l\'objet.', { fi
 ex('pf_alpha', 'Opacité', 'look', 'Opacité de l\'objet (0 à 1).', { inputs: [num('VALUE', 'opacité', 1)], selfOnly: true, keywords: 'alpha' });
 ex('pf_tint_set', 'Teinter', 'look', 'Teinte l\'objet avec une couleur.', { inputs: [col('COLOR', 'couleur', '#ff8040')], selfOnly: true, keywords: 'tint couleur' });
 ex('pf_tint_none', 'Enlever la teinte', 'look', 'Enlève la teinte.', { selfOnly: true });
+ex('pf_filter_add', 'Ajouter un filtre', 'look', 'Applique un filtre visuel (lueur, flou, pixellisation, ombre) sur cet objet (Phaser 4).',
+  { fields: [dd('FILTER', 'filtre', [['lueur', 'glow'], ['flou', 'blur'], ['pixellisation', 'pixelate'], ['vignette', 'vignette'], ['ombre', 'shadow']], 'glow')],
+    inputs: [col('COLOR', 'couleur', '#ffffff', { optional: true }), num('INTENSITY', 'intensité', 2, { optional: true })],
+    selfOnly: true, dims: ['2d'], keywords: 'filtre fx glow lueur flou blur pixelate' });
+ex('pf_filter_clear', 'Enlever les filtres', 'look', 'Enlève tous les filtres visuels appliqués sur cet objet.',
+  { selfOnly: true, dims: ['2d'], keywords: 'filtre clear' });
+ex('pf_tint_mode', 'Mode de teinte', 'look', 'Définit le mode de fusion de teinte (Phaser 4 : multiply, fill, add, screen, overlay).',
+  { fields: [dd('MODE', 'mode', [['multiplier', 'multiply'], ['remplir', 'fill'], ['addition', 'add'], ['écran', 'screen'], ['incrustation', 'overlay']], 'multiply')],
+    selfOnly: true, dims: ['2d'], keywords: 'tint mode fusion' });
 pu('pf_colour', 'Couleur', 'look', 'color', 'Une couleur (clique pour choisir). Texte « #rrggbb ».', { fields: [fdyn('COL', 'couleur', 'color', '#ff8040')] });
 
 // Objet ----------------------------------------------------------------------
@@ -374,6 +383,12 @@ ex('pf_cam_zoom', 'Caméra : zoom', 'cam', 'Zoom de la caméra (1 = normal).', {
 ex('pf_cam_deadzone', 'Caméra : zone morte', 'cam', 'Zone morte au centre de l\'écran (px) : la caméra ne bouge que si la cible en sort.',
   { inputs: [num('W', 'largeur', 40), num('H', 'hauteur', 30)], keywords: 'camera deadzone' });
 ex('pf_cam_offset', 'Caméra : décalage', 'cam', 'Décalage de la caméra par rapport à la cible suivie (px).', { inputs: [num('X', 'x', 0), num('Y', 'y', 0)], keywords: 'camera offset' });
+ex('pf_cam_filter', 'Caméra : filtre', 'cam', 'Applique un filtre visuel plein écran sur la caméra (CRT, vignette, flou, pixellisation).',
+  { fields: [dd('FILTER', 'filtre', [['CRT / écran rétro', 'crt'], ['vignette', 'vignette'], ['flou', 'blur'], ['pixellisation', 'pixelate']], 'crt')],
+    inputs: [num('INTENSITY', 'intensité', 1.5, { optional: true })],
+    dims: ['2d'], keywords: 'camera filtre crt postfx vignette flou' });
+ex('pf_cam_clear_filters', 'Caméra : enlever les filtres', 'cam', 'Enlève tous les filtres plein écran de la caméra.',
+  { dims: ['2d'], keywords: 'camera clear filtre' });
 pu('pf_cam_pos', 'Position caméra', 'cam', 'number', 'Coin haut-gauche de la vue dans le monde.', { fields: [dd('PROP', 'valeur', [['x', 'x'], ['y', 'y']])], keywords: 'camera' });
 ex('pf_camera_mode_3d', 'Mode caméra 3D', 'cam', 'Définit le type de caméra 3D active (3e personne, 1re personne / FPS, dessus, isométrique, 2.5D).',
   { fields: [dd('MODE', 'mode', CAM_3D_MODES, 'third-person')], dims: ['3d'], keywords: '3d camera mode fps vue' });
