@@ -135,8 +135,11 @@ export function validateProject(p) {
     for (const m of src.matchAll(/\bgame\.(spawn|findAll|find)\(\s*(['"`])([^'"`]*)\2/g)) {
       if (!objectNames.includes(m[3])) add('error', where, `game.${m[1]}("${m[3]}"): object does not exist` + nameHint(m[3], objectNames));
     }
-    for (const m of src.matchAll(/\bgame\.goToMap\(\s*(['"`])([^'"`]*)\1/g)) {
-      if (!mapNames.includes(m[2])) add('error', where, `game.goToMap("${m[2]}"): map does not exist` + nameHint(m[2], mapNames));
+    const destNames = p.settings.dimension === '3d'
+      ? [...mapNames, ...(p.scenes3d || []).map((s) => s.name)]
+      : mapNames;
+    for (const m of src.matchAll(/\bgame\.(?:goToMap|goToScene)\(\s*(['"`])([^'"`]*)\1/g)) {
+      if (!destNames.includes(m[2])) add('error', where, `target "${m[2]}" does not exist` + nameHint(m[2], destNames));
     }
     const sounds = [...(p.sounds || []).map((x) => x.name), 'jump', 'coin', 'hit', 'powerup', 'explosion', 'laser', 'blip', 'portal', 'tetris', 'korobeiniki', 'adventure', 'action'];
     for (const m of src.matchAll(/\bgame\.play(?:Sound|Music)\(\s*(['"`])([^'"`]*)\1/g)) {

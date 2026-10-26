@@ -36,4 +36,6 @@ jobs:
           npm run pf -- validate tetris
           npm run pf -- validate exemple-plateforme-qiqv
           npm run pf -- validate monde-1-1
+          npm run pf -- validate cube-runner
+          npm run pf -- validate donjon-3d
 
