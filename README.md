@@ -128,4 +128,5 @@ Documentation : [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (architecture et st
 
 ## Licence
 
-ISC (telle que déclarée dans `package.json`).
+[MIT](LICENSE).
+
