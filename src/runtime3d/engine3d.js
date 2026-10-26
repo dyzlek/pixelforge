@@ -769,9 +769,31 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         const h = cameraFollowOpts.height || 3;
         const rad = (cameraTarget.rotationY * Math.PI) / 180;
 
-        const targetCamX = cameraTarget.x + Math.sin(rad) * dist;
-        const targetCamY = cameraTarget.y + h;
-        const targetCamZ = cameraTarget.z + Math.cos(rad) * dist;
+        let targetCamX = cameraTarget.x + Math.sin(rad) * dist;
+        let targetCamY = cameraTarget.y + h;
+        let targetCamZ = cameraTarget.z + Math.cos(rad) * dist;
+
+        // Anti-occlusion murale : tester si un bloc solide est entre la cible et la camera
+        const fromX = cameraTarget.x;
+        const fromY = cameraTarget.y + 0.8;
+        const fromZ = cameraTarget.z;
+        const dx = targetCamX - fromX;
+        const dy = targetCamY - fromY;
+        const dz = targetCamZ - fromZ;
+        const totalDist = Math.hypot(dx, dy, dz);
+        const steps = Math.ceil(totalDist * 6);
+        for (let s = 1; s <= steps; s++) {
+          const testX = Math.floor(fromX + (dx * s) / steps);
+          const testY = Math.floor(fromY + (dy * s) / steps);
+          const testZ = Math.floor(fromZ + (dz * s) / steps);
+          if (solidBlocks.has(`${testX},${testY},${testZ}`)) {
+            const safeFraction = Math.max(0.3, (s - 1.2) / steps);
+            targetCamX = fromX + dx * safeFraction;
+            targetCamY = fromY + dy * safeFraction;
+            targetCamZ = fromZ + dz * safeFraction;
+            break;
+          }
+        }
 
         const lerpFactor = cameraFollowOpts.lerp || 0.1;
         camera.position.x += (targetCamX - camera.position.x) * lerpFactor;
@@ -789,8 +811,28 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       } else if (cameraMode === 'top-down') {
         camera.position.set(cameraTarget.x, cameraTarget.y + 12, cameraTarget.z + 4);
         camera.lookAt(cameraTarget.x, cameraTarget.y, cameraTarget.z);
+      } else if (cameraMode === 'isometric') {
+        const isoDist = (cameraFollowOpts.distance || 6) * 1.5;
+        const targetCamX = cameraTarget.x + isoDist;
+        const targetCamY = cameraTarget.y + isoDist * 0.9;
+        const targetCamZ = cameraTarget.z + isoDist;
+        const lerpFactor = cameraFollowOpts.lerp || 0.1;
+        camera.position.x += (targetCamX - camera.position.x) * lerpFactor;
+        camera.position.y += (targetCamY - camera.position.y) * lerpFactor;
+        camera.position.z += (targetCamZ - camera.position.z) * lerpFactor;
+        camera.lookAt(cameraTarget.x, cameraTarget.y + 0.5, cameraTarget.z);
+      } else if (cameraMode === 'side-scroll') {
+        const dist = cameraFollowOpts.distance || 8;
+        const h = cameraFollowOpts.height || 2;
+        const targetCamX = cameraTarget.x;
+        const targetCamY = cameraTarget.y + h;
+        const targetCamZ = cameraTarget.z + dist;
+        const lerpFactor = cameraFollowOpts.lerp || 0.1;
+        camera.position.x += (targetCamX - camera.position.x) * lerpFactor;
+        camera.position.y += (targetCamY - camera.position.y) * lerpFactor;
+        camera.position.z += (targetCamZ - camera.position.z) * lerpFactor;
+        camera.lookAt(cameraTarget.x, cameraTarget.y + h, cameraTarget.z);
       }
-    }
   }
 
   function loop(now) {

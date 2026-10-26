@@ -149,4 +149,30 @@ export const SCHEMAS = {
       },
     ],
   },
+
+  environment: {
+    title: 'Environnement 3D',
+    groups: [
+      {
+        id: 'sky',
+        label: 'Ciel et Ambiance',
+        fields: [
+          { key: 'environment.skyColor', label: 'Couleur du ciel', type: 'color', default: '#1a1c2c' },
+          { key: 'environment.fog.enabled', label: 'Brouillard', type: 'boolean', default: false },
+          { key: 'environment.fog.color', label: 'Couleur brouillard', type: 'color', default: '#1a1c2c' },
+          { key: 'environment.fog.density', label: 'Densité brouillard', type: 'number', min: 0, max: 0.2, step: 0.005, default: 0.04 },
+        ],
+      },
+      {
+        id: 'lighting',
+        label: 'Éclairage',
+        fields: [
+          { key: 'environment.ambientLight.color', label: 'Lumière ambiante', type: 'color', default: '#ffffff' },
+          { key: 'environment.ambientLight.intensity', label: 'Intensité ambiante', type: 'number', min: 0, max: 2, step: 0.1, default: 0.7 },
+          { key: 'environment.directionalLight.color', label: 'Lumière directionnelle', type: 'color', default: '#ffeedd' },
+          { key: 'environment.directionalLight.intensity', label: 'Intensité directionnelle', type: 'number', min: 0, max: 2, step: 0.1, default: 0.9 },
+        ],
+      },
+    ],
+  },
 };
