@@ -389,6 +389,10 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         game.restart();
       }
     },
+
+    goToMap(mapName) {
+      game.goToScene(mapName);
+    },
   };
 
   // Creation d'une instance 3D
