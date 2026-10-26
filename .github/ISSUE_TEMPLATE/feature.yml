@@ -1,0 +1,27 @@
+name: Proposition de fonctionnalité
+description: Suggérer une nouvelle idée ou une amélioration pour PixelForge
+title: "[Idée]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Partagez vos propositions pour faire évoluer PixelForge !
+  - type: textarea
+    id: problem
+    attributes:
+      label: Votre besoin ou problème rencontré
+      description: Pourquoi cette fonctionnalité serait-elle utile ?
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solution suggérée
+      description: Description claire de ce que vous aimeriez voir ajouté (nouveau nœud, outil d'édition, commande...).
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives envisagées
+      description: Avez-vous pensé à d'autres manières de résoudre ce besoin ?

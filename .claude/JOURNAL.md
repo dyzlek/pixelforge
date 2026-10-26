@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (11) — Fichiers communautaires et templates
+- **Fait** : CONTRIBUTING.md, CODE_OF_CONDUCT.md, SECURITY.md, CHANGELOG.md, .github/ISSUE_TEMPLATE/ (bug.yml, feature.yml) et .github/pull_request_template.md.
+- **Décisions** : documentation des règles de contribution (tests obligatoires, règles architecturales), politique de sécurité pour l'évaluation new Function, et changelog 1.0 à 2.0.
+- **État** : tests et build OK.
+
 ## 2026-10-26 (10) — P0.4 Démo en ligne (GitHub Pages)
 - **Fait** : base configurable via GITHUB_PAGES dans vite.config.js, copie de games/ dans dist/games/ avec index.json, bouton "Charger les jeux d'exemple" dans la bibliothèque, création de .github/workflows/pages.yml.
 - **Décisions** : support statique autonome avec fallback propre.

@@ -1,0 +1,49 @@
+name: Rapport de bug
+description: Signaler un dysfonctionnement dans PixelForge
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Merci de prendre le temps de signaler ce problème pour améliorer PixelForge !
+  - type: textarea
+    id: description
+    attributes:
+      label: Description du bug
+      description: Une explication claire et concise de ce qui ne fonctionne pas comme prévu.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Étapes pour reproduire
+      description: Comment reproduire le comportement observé ?
+      placeholder: |
+        1. Ouvrir l'éditeur sur '...'
+        2. Cliquer sur '...'
+        3. Observer l'erreur '...'
+    validations:
+      required: true
+  - type: textarea
+    id: game
+    attributes:
+      label: Jeu ou fichier concerné
+      description: Si le bug concerne un jeu particulier, collez le JSON ou décrivez sa structure.
+  - type: dropdown
+    id: browser
+    attributes:
+      label: Navigateur
+      options:
+        - Chrome / Chromium
+        - Firefox
+        - Safari
+        - Edge
+        - Autre
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console du navigateur ou logs CLI
+      description: Messages d'erreur ou traces d'exécution éventuels.
+      render: shell
