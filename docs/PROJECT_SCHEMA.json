@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pixelforge.local/schemas/project-v1.1.json",
+  "title": "PixelForge project (v1.1)",
+  "description": "One game = one file games/<meta.id>.pixelforge.json. Ids are free-form unique strings (e.g. spr_ab12cd3); scripts refer to objects/maps/sprites by NAME, entities/objects/maps refer to each other by ID.",
+  "type": "object",
+  "required": ["version", "name", "settings", "palette", "sprites", "objects", "maps", "globalScript"],
+  "additionalProperties": true,
+  "properties": {
+    "version": { "const": 1, "description": "Project format version (always 1; v1.1 fields are optional additions)." },
+    "name": { "type": "string" },
+    "meta": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$", "description": "Must equal the file name without .pixelforge.json." },
+        "description": { "type": "string" },
+        "author": { "type": "string" },
+        "thumbnail": { "type": ["string", "null"], "description": "PNG data URL or null." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "required": ["width", "height", "tileSize", "startMapId"],
+      "properties": {
+        "width": { "type": "integer", "minimum": 16, "description": "Game screen width in px (default 320)." },
+        "height": { "type": "integer", "minimum": 16, "description": "Game screen height in px (default 180)." },
+        "pixelZoom": { "type": "number", "minimum": 1, "default": 3 },
+        "tileSize": { "type": "integer", "minimum": 4, "default": 16 },
+        "background": { "$ref": "#/$defs/color" },
+        "startMapId": { "type": "string", "description": "id of a map in maps[]." },
+        "gravity": { "type": "number", "default": 800, "description": "px/s^2, applied to objects with physics.gravity." },
+        "touchControls": { "type": "boolean", "default": true }
+      }
+    },
+    "palette": {
+      "type": "array", "minItems": 16, "maxItems": 16, "items": { "$ref": "#/$defs/color" },
+      "description": "16 colours. Text sprites use 0-9a-f as indexes into it."
+    },
+    "sprites": { "type": "array", "items": { "$ref": "#/$defs/sprite" } },
+    "sounds": { "type": "array", "items": { "$ref": "#/$defs/sound" } },
+    "objects": { "type": "array", "items": { "$ref": "#/$defs/object" } },
+    "maps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/map" } },
+    "globalScript": { "$ref": "#/$defs/script" }
+  },
+  "$defs": {
+    "color": { "type": "string", "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$" },
+    "script": {
+      "type": "object",
+      "required": ["mode", "code"],
+      "properties": {
+        "mode": { "enum": ["code", "blocks"], "description": "Only `code` is executed. When writing by hand always use mode \"code\", blocks null." },
+        "code": { "type": "string", "description": "Body of new Function('self','game','input','on', code). See docs/SCRIPT_API.md." },
+        "blocks": { "type": ["object", "null"], "description": "Blockly serialisation (editor only)." }
+      }
+    },
+    "sprite": {
+      "type": "object",
+      "required": ["id", "name", "width", "height", "frames", "animations"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "description": "Unique." },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "frames": {
+          "type": "array", "minItems": 1,
+          "items": { "type": "string", "pattern": "^data:image/png;base64,", "description": "PNG of exactly width x height px." }
+        },
+        "animations": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["name", "frames"],
+            "properties": {
+              "name": { "type": "string" },
+              "frames": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "description": "Indexes into sprite.frames." },
+              "fps": { "type": "number", "exclusiveMinimum": 0, "default": 6 },
+              "loop": { "type": "boolean", "default": true }
+            }
+          }
+        }
+      }
+    },
+    "sound": {
+      "type": "object",
+      "required": ["id", "name", "kind"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "kind": { "enum": ["sfx", "file"] },
+        "sfx": {
+          "type": "object",
+          "properties": {
+            "preset": { "enum": ["jump", "coin", "hit", "powerup", "explosion", "laser", "blip", "portal"] },
+            "seed": { "type": "number", "default": 0 },
+            "volume": { "type": "number", "default": 0.5 },
+            "pitch": { "type": "number", "default": 1 }
+          }
+        },
+        "dataUrl": { "type": "string", "pattern": "^data:audio/", "description": "Only when kind = file." }
+      }
+    },
+    "object": {
+      "type": "object",
+      "required": ["id", "name", "spriteId", "physics", "script"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "description": "Unique, case-sensitive; used in scripts (game.spawn('Coin'), on('collide','Coin'))." },
+        "spriteId": { "type": ["string", "null"] },
+        "defaultAnim": { "type": ["string", "null"] },
+        "hitbox": {
+          "oneOf": [
+            { "type": "null", "description": "Whole frame." },
+            { "type": "object", "required": ["x", "y", "w", "h"], "properties": { "x": { "type": "number" }, "y": { "type": "number" }, "w": { "type": "number", "exclusiveMinimum": 0 }, "h": { "type": "number", "exclusiveMinimum": 0 } }, "description": "px relative to the frame's top-left." }
+          ]
+        },
+        "physics": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean", "default": true },
+            "gravity": { "type": "boolean", "default": true },
+            "immovable": { "type": "boolean", "default": false },
+            "bounce": { "type": "number", "default": 0 },
+            "collideMap": { "type": "boolean", "default": true, "description": "Blocked by layers with collides = true." },
+            "collideWorld": { "type": "boolean", "default": true, "description": "Blocked by the map borders." }
+          }
+        },
+        "script": { "$ref": "#/$defs/script" }
+      }
+    },
+    "layer": {
+      "type": "object",
+      "required": ["id", "name", "data"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "collides": { "type": "boolean" },
+        "oneWay": { "type": "boolean", "default": false, "description": "When true with collides = true, acts as a jump-through one-way platform (only blocks from above)." },
+        "scrollFactor": { "oneOf": [{ "type": "number" }, { "type": "object", "properties": { "x": { "type": "number" }, "y": { "type": "number" } } }], "default": 1, "description": "Parallax factor (e.g. 0.3 for far background, 1 for normal)." },
+        "visible": { "type": "boolean", "default": true },
+        "depth": { "enum": ["below", "above"], "default": "below", "description": "above = drawn in front of entities." }
+      }
+    },
+    "map": {
+      "type": "object",
+      "required": ["id", "name", "width", "height", "tileSize", "layers", "entities"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "description": "Unique; used by game.goToMap(name)." },
+        "width": { "type": "integer", "minimum": 1, "description": "In tiles." },
+        "height": { "type": "integer", "minimum": 1, "description": "In tiles." },
+        "tileSize": { "type": "integer", "minimum": 4, "description": "Should equal settings.tileSize and the tileset sprite's frame size." },
+        "tilesetSpriteId": { "type": ["string", "null"], "description": "A sprite whose every frame is one tile (frame size = tileSize)." },
+        "background": { "$ref": "#/$defs/color" },
+        "layers": { "type": "array", "items": { "$ref": "#/$defs/layer" }, "description": "Drawn in order; the last is on top." },
+        "entities": {
+          "type": "array",
+          "items": {
+            "type": "object", "required": ["id", "objectId", "x", "y"],
+            "properties": {
+              "id": { "type": "string" },
+              "objectId": { "type": "string" },
+              "x": { "type": "number", "description": "px, top-left corner of the sprite frame." },
+              "y": { "type": "number" },
+              "props": { "type": "object", "description": "Per-instance values, read in scripts as self.props." }
+            }
+          }
+        }
+      }
+    }
+  }
+}

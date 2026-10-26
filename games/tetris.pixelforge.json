@@ -1,0 +1,4154 @@
+{
+  "version": 1,
+  "name": "Tetris",
+  "meta": {
+    "id": "tetris",
+    "description": "Tetris rétro complet codé à 100% en Blocs (Blockly) avec rotation SRS, 7-bag, ghost piece, hold et musique chiptune",
+    "author": "",
+    "thumbnail": null,
+    "createdAt": "2026-10-26T00:51:39.618Z",
+    "updatedAt": "2026-10-26T00:51:39.698Z"
+  },
+  "settings": {
+    "width": 256,
+    "height": 240,
+    "pixelZoom": 3,
+    "tileSize": 8,
+    "background": "#0d0e17",
+    "startMapId": "map_6b4zfbn",
+    "gravity": 0,
+    "touchControls": true
+  },
+  "palette": [
+    "#0d0e17",
+    "#1b1f32",
+    "#2f3756",
+    "#596892",
+    "#f4f4f4",
+    "#00c060",
+    "#68f090",
+    "#00d0f0",
+    "#80f4ff",
+    "#2850e0",
+    "#7090ff",
+    "#f08020",
+    "#ffba50",
+    "#ffd000",
+    "#e02840",
+    "#b040e0"
+  ],
+  "sprites": [
+    {
+      "id": "spr_i6qs05s",
+      "name": "TilesetTetris",
+      "width": 8,
+      "height": 8,
+      "frames": [
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFklEQVR4nGNgoC+Qljf6D8LkK6ANAADoWAWtcJa8bAAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAL0lEQVR4nGOIzJj0Hx9m0DcP+48PgxVIyxv9x0UzgAh8mLACglYQdCQvn/h/fBgAO4dnqV181AkAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAKElEQVR4nGOIzJj0X988DIyl5Y3AGMbn5RP/zwBTAJNEVoSiYEibAADK32epIk4tOQAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAKElEQVR4nGOIzJj0Hx9mABH65mE4MVyBtLwRVoyhgAEdICvAkKSPAgClWUpSbmMM+gAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAALElEQVR4nGOIzJj0Hxfm5RP/z6BvHvYfFwYrkJY3+o8NwxWgA4IKYIroqAAA+4hBSto5escAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAL0lEQVR4nGOIzJj0X9887L+0vNF/BmyAugqwKkJXgI7hCnBhsAJ8mIGXT/w/PgwAEYROYszCvykAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAN0lEQVR4nGNgwAKk5Y3+65uH/eflE/+PTZ5CBSBJFAUwAXQMVwBi4MJgBZEZk/7jwmAFIAIfBgDff0Z7ukcRWgAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAEklEQVR4nGOQljf6jw8zjAwFAHbaWsELoP7JAAAAAElFTkSuQmCC",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAEklEQVR4nGPg5RP/jw8zjAwFAPhiTEFHfbzfAAAAAElFTkSuQmCC",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAMklEQVR4nGNo+PL/Py6sbx72nwGXJMOFD6gKvnz5AsYgCRgmXgGyIPUUgCTBCmAMXBgA81Cx7XqPAvIAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAMklEQVR4nGMomPD/Py6sbx72nwGXpEbAA1QFX758AWOQBAwTrwBZkHoKQJJgBTAGLgwAnfefHeyJeIwAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAMklEQVR4nGP4vyvgPy6sbx72nwGX5IcGBVQFX758AWOQBAwTrwBZkHoKQJJgBTAGLgwAtsalJRsX2vYAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAMUlEQVR4nGP4vyvgPy6sbx72nwGnggsMqAq+fPkCxiAJGCZBAZIg9RSAJMEKYAxcGAA/I6sNO6eVYgAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAMklEQVR4nGPI+DDhPy6sbx72nwGXJMOBBFQFX758AWOQBAwTrwBZkHoKQJJgBTAGLgwABJ+YEW22lQYAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAMklEQVR4nGP4vyvgPy6sbx72nwGX5AaHB6gKvnz5AsYgCRgmXgGyIPUUgCTBCmAMXBgALPOrJQkfz9IAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAMklEQVR4nGP4vyvgPy6sbx72nwGX5AMNB1QFX758AWOQBAwTrwBZkHoKQJJgBTAGLgwA0lmeZYeRR5cAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAHElEQVR4nGOIzJj0Hx9mABM4gL552BBRACLwYQBylDi3AUBMOgAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAE0lEQVR4nGP48uXLf3yYYWQoAAA/WfbB0KE1VwAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAGklEQVR4nGNgIApc+PAfK8apkKBJA6kACwAAG5wr8WvKfCcAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAH0lEQVR4nGNgIAZscHjwHxvGUEC0CTgVEDSBfEfiAwDecD3LKT8EBwAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAG0lEQVR4nGNgIAb8v8DwHxvGqZCgSQOpABsAAMoaLOG6dXXOAAAAAElFTkSuQmCC",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAIElEQVR4nGNgIAocSPiPgbEqwMUn3gSskiRZgVMBHgAAbrM3J2SJ5gEAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAGklEQVR4nGNgIApc+PAfK8apkKBJA6kACwAAG5wr8WvKfCcAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAH0lEQVR4nGNgIAZscHjwHxvGUEC+Cbg0EK+AZCuQAQA+h0NpbBBZ0gAAAABJRU5ErkJggg=="
+      ],
+      "animations": [
+        {
+          "name": "idle",
+          "frames": [
+            0
+          ],
+          "fps": 1,
+          "loop": true
+        }
+      ]
+    },
+    {
+      "id": "spr_jp1t7l4",
+      "name": "Vide",
+      "width": 8,
+      "height": 8,
+      "frames": [
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAADUlEQVR4nGNgGAUgAAABCAABgukLHQAAAABJRU5ErkJggg=="
+      ],
+      "animations": [
+        {
+          "name": "idle",
+          "frames": [
+            0
+          ],
+          "fps": 1,
+          "loop": true
+        }
+      ]
+    }
+  ],
+  "sounds": [
+    {
+      "id": "snd_7u6dwuw",
+      "name": "deplacement",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "blip",
+        "seed": 0,
+        "volume": 0.2,
+        "pitch": 0.9
+      }
+    },
+    {
+      "id": "snd_b0mzkio",
+      "name": "rotation",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "blip",
+        "seed": 0,
+        "volume": 0.4,
+        "pitch": 1.6
+      }
+    },
+    {
+      "id": "snd_1izhv4j",
+      "name": "chute",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "hit",
+        "seed": 0,
+        "volume": 0.4,
+        "pitch": 1.2
+      }
+    },
+    {
+      "id": "snd_0obnszj",
+      "name": "ligne",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "coin",
+        "seed": 0,
+        "volume": 0.6,
+        "pitch": 1
+      }
+    },
+    {
+      "id": "snd_euakh11",
+      "name": "tetris",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "powerup",
+        "seed": 0,
+        "volume": 0.75,
+        "pitch": 1.3
+      }
+    },
+    {
+      "id": "snd_gn39j1l",
+      "name": "hold",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "powerup",
+        "seed": 0,
+        "volume": 0.4,
+        "pitch": 1.6
+      }
+    },
+    {
+      "id": "snd_bwx7tsb",
+      "name": "perdu",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "explosion",
+        "seed": 0,
+        "volume": 0.6,
+        "pitch": 0.6
+      }
+    },
+    {
+      "id": "snd_o0ht5v2",
+      "name": "niveau",
+      "kind": "sfx",
+      "sfx": {
+        "preset": "portal",
+        "seed": 0,
+        "volume": 0.65,
+        "pitch": 1.2
+      }
+    }
+  ],
+  "objects": [
+    {
+      "id": "obj_gxdjpyg",
+      "name": "TetrisGame",
+      "spriteId": "spr_jp1t7l4",
+      "defaultAnim": "idle",
+      "hitbox": null,
+      "physics": {
+        "enabled": true,
+        "gravity": false,
+        "immovable": true,
+        "bounce": 0,
+        "collideMap": false,
+        "collideWorld": false
+      },
+      "script": {
+        "mode": "blocks",
+        "code": "var z, a, b, c, d, e, f, i, y, g, h, j, k, w, i1, m, n, o, p, x, q, r, s, t, u, v;\n\nfunction initialiserConstantes() {\n  \n        BOARD_X = 11;\n        BOARD_Y = 4;\n        PREVIEW_X = 25;\n        PREVIEW_Y = 4;\n        HOLD_X = 3;\n        HOLD_Y = 4;\n        TILE_GHOST = 16;\n        TILE_FLASH = 17;\n        PIECE_TILES = [9, 10, 11, 12, 13, 14, 15];\n        SHAPES = [\n          [[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],\n          [[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]],\n          [[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]],\n          [[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]]],\n          [[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]],[[1,1],[2,1],[0,2],[1,2]],[[0,0],[0,1],[1,1],[1,2]]],\n          [[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]],\n          [[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]]\n        ];\n        PIECE_DIMS = [{w:4,h:4},{w:3,h:3},{w:3,h:3},{w:2,h:2},{w:3,h:3},{w:3,h:3},{w:3,h:3}];\n        DAS = 0.16;\n        ARR = 0.05;\n        SOFT_DROP_RATE = 0.04;\n        drawnActive = [];\n        drawnGhost = [];\n        getFromBag = function() {\n          if (!bag || bag.length === 0) {\n            bag = [0, 1, 2, 3, 4, 5, 6];\n            for (let i = bag.length - 1; i > 0; i--) {\n              const j = Math.floor(Math.random() * (i + 1));\n              const tmp = bag[i]; bag[i] = bag[j]; bag[j] = tmp;\n            }\n          }\n          return bag.pop();\n        };\n        canFit = function(p, rot, px, py) {\n          const bl = SHAPES[p][rot];\n          for (let i = 0; i < 4; i++) {\n            const c = px + bl[i][0];\n            const r = py + bl[i][1];\n            if (c < 0 || c >= 10 || r >= 20) return false;\n            if (r >= 0 && board[r][c] >= 0) return false;\n          }\n          return true;\n        };\n      ;\n}\n\nfunction initialiserPartie() {\n  initialiserConstantes();\n  i = false;\n  j = false;\n  k = false;\n  m = 0;\n  n = 0;\n  o = 1;\n  p = -1;\n  q = true;\n  r = 0;\n  s = 0;\n  t = 0;\n  u = 0;\n  v = 0;\n  game.removeText('gov1');\n  game.removeText('gov2');\n  game.removeText('gov3');\n  game.removeText('pause');\n  \n        bag = [];\n        board = Array.from({ length: 20 }, () => Array(10).fill(-1));\n        curPiece = getFromBag();\n        nextPiece = getFromBag();\n        curRot = 0;\n        curX = curPiece === 0 ? 3 : curPiece === 3 ? 4 : 3;\n        curY = 0;\n      ;\n  effacerGrille();\n  mettreAJourApercus();\n  mettreAJourHUD();\n  mettreAJourAffichage();\n  game.playMusic('tetris');\n}\n\nfunction effacerAffichageActif() {\n  \n        for (let i = 0; i < drawnGhost.length; i++) {\n          const tx = drawnGhost[i][0], ty = drawnGhost[i][1];\n          const br = ty - BOARD_Y, bc = tx - BOARD_X;\n          const under = (br >= 0 && br < 20 && bc >= 0 && bc < 10) ? board[br][bc] : -1;\n          game.setTile(tx, ty, under, 'Grille');\n        }\n        drawnGhost = [];\n        for (let i = 0; i < drawnActive.length; i++) {\n          const tx = drawnActive[i][0], ty = drawnActive[i][1];\n          const br = ty - BOARD_Y, bc = tx - BOARD_X;\n          const under = (br >= 0 && br < 20 && bc >= 0 && bc < 10) ? board[br][bc] : -1;\n          game.setTile(tx, ty, under, 'Grille');\n        }\n        drawnActive = [];\n      ;\n}\n\nfunction mettreAJourAffichage() {\n  effacerAffichageActif();\n  if (!gameOver && !clearing) {\n    \n                  // Dessin du fantôme\n                  let gy = curY;\n                  while (canFit(curPiece, curRot, curX, gy + 1)) gy++;\n                  if (gy !== curY) {\n                    const bl = SHAPES[curPiece][curRot];\n                    for (let i = 0; i < 4; i++) {\n                      const c = curX + bl[i][0], r = gy + bl[i][1];\n                      if (r >= 0 && r < 20 && c >= 0 && c < 10) {\n                        const tx = BOARD_X + c, ty = BOARD_Y + r;\n                        game.setTile(tx, ty, TILE_GHOST, 'Grille');\n                        drawnGhost.push([tx, ty]);\n                      }\n                    }\n                  }\n                  // Dessin de la pièce active\n                  const bl = SHAPES[curPiece][curRot];\n                  const tileId = PIECE_TILES[curPiece];\n                  for (let i = 0; i < 4; i++) {\n                    const c = curX + bl[i][0], r = curY + bl[i][1];\n                    if (r >= 0 && r < 20 && c >= 0 && c < 10) {\n                      const tx = BOARD_X + c, ty = BOARD_Y + r;\n                      game.setTile(tx, ty, tileId, 'Grille');\n                      drawnActive.push([tx, ty]);\n                    }\n                  }\n                ;\n  }\n}\n\nfunction effacerGrille() {\n  \n        for (let r = 0; r < 20; r++) {\n          for (let c = 0; c < 10; c++) {\n            game.setTile(BOARD_X + c, BOARD_Y + r, board[r][c], 'Grille');\n          }\n        }\n      ;\n}\n\nfunction mettreAJourApercus() {\n  \n        // Aperçu SUIVANT\n        for (let dy = 0; dy < 4; dy++) {\n          for (let dx = 0; dx < 4; dx++) {\n            game.setTile(PREVIEW_X + dx, PREVIEW_Y + dy, -1, 'Grille');\n          }\n        }\n        const dimsN = PIECE_DIMS[nextPiece];\n        const oxN = Math.floor((4 - dimsN.w) / 2);\n        const oyN = Math.floor((4 - dimsN.h) / 2);\n        const blN = SHAPES[nextPiece][0];\n        const tidN = PIECE_TILES[nextPiece];\n        for (let i = 0; i < 4; i++) {\n          game.setTile(PREVIEW_X + oxN + blN[i][0], PREVIEW_Y + oyN + blN[i][1], tidN, 'Grille');\n        }\n  \n        // Aperçu RÉSERVE (HOLD)\n        for (let dy = 0; dy < 4; dy++) {\n          for (let dx = 0; dx < 4; dx++) {\n            game.setTile(HOLD_X + dx, HOLD_Y + dy, -1, 'Grille');\n          }\n        }\n        if (heldPiece >= 0) {\n          const dimsH = PIECE_DIMS[heldPiece];\n          const oxH = Math.floor((4 - dimsH.w) / 2);\n          const oyH = Math.floor((4 - dimsH.h) / 2);\n          const blH = SHAPES[heldPiece][0];\n          const tidH = PIECE_TILES[heldPiece];\n          for (let i = 0; i < 4; i++) {\n            game.setTile(HOLD_X + oxH + blH[i][0], HOLD_Y + oyH + blH[i][1], tidH, 'Grille');\n          }\n        }\n      ;\n}\n\nfunction mettreAJourHUD() {\n  \n        const best = game.load('tetris_best', 0);\n        if (score > best) game.save('tetris_best', score);\n        const record = Math.max(score, best);\n  \n        game.setText('t_hold', 'RÉSERVE', 38, 25, { align: 'center', size: 0.65, color: '#fcc858' });\n        game.setText('t_score_lbl', 'SCORE', 40, 72, { align: 'center', size: 0.65, color: '#fcc858' });\n        game.setText('t_score_val', '' + score, 40, 84, { align: 'center', size: 0.75, color: '#ffffff' });\n  \n        game.setText('t_lines_lbl', 'LIGNES', 40, 102, { align: 'center', size: 0.65, color: '#fcc858' });\n        game.setText('t_lines_val', '' + lignes, 40, 114, { align: 'center', size: 0.75, color: '#ffffff' });\n  \n        game.setText('t_level_lbl', 'NIVEAU', 40, 132, { align: 'center', size: 0.65, color: '#fcc858' });\n        game.setText('t_level_val', '' + niveau, 40, 144, { align: 'center', size: 0.75, color: '#ffffff' });\n  \n        game.setText('t_best_lbl', 'RECORD', 40, 164, { align: 'center', size: 0.65, color: '#a7f070' });\n        game.setText('t_best_val', '' + record, 40, 176, { align: 'center', size: 0.75, color: '#ffffff' });\n  \n        game.setText('t_next', 'SUIVANT', 214, 25, { align: 'center', size: 0.65, color: '#fcc858' });\n        game.setText('t_ctrl_title', 'AIDE', 214, 72, { align: 'center', size: 0.65, color: '#fcc858' });\n        game.setText('t_ctrl1', '← → Bouger', 214, 86, { align: 'center', size: 0.58, color: '#bcd8fc' });\n        game.setText('t_ctrl2', '↑ / X Tourner', 214, 98, { align: 'center', size: 0.58, color: '#bcd8fc' });\n        game.setText('t_ctrl3', '↓ Descente', 214, 110, { align: 'center', size: 0.58, color: '#bcd8fc' });\n        game.setText('t_ctrl4', 'ESPACE Drop', 214, 122, { align: 'center', size: 0.58, color: '#bcd8fc' });\n        game.setText('t_ctrl5', 'C Réserve', 214, 134, { align: 'center', size: 0.58, color: '#bcd8fc' });\n        game.setText('t_ctrl6', 'ENTRÉE Pause', 214, 146, { align: 'center', size: 0.58, color: '#bcd8fc' });\n      ;\n}\n\nfunction spawnNextPiece() {\n  \n        curPiece = nextPiece;\n        nextPiece = getFromBag();\n        curRot = 0;\n        curX = curPiece === 0 ? 3 : curPiece === 3 ? 4 : 3;\n        curY = 0;\n        canHold = true;\n      ;\n  mettreAJourApercus();\n  if (!canFit(curPiece, curRot, curX, curY)) {\n    partiePerdue();\n  }\n  if (!gameOver) {\n    mettreAJourAffichage();\n  }\n}\n\nfunction verrouillerPiece() {\n  if (!gameOver && !clearing) {\n    \n                  const bl = SHAPES[curPiece][curRot];\n                  const tid = PIECE_TILES[curPiece];\n                  for (let i = 0; i < 4; i++) {\n                    const c = curX + bl[i][0], r = curY + bl[i][1];\n                    if (r >= 0 && r < 20 && c >= 0 && c < 10) board[r][c] = tid;\n                  }\n                  drawnActive = [];\n                  drawnGhost = [];\n                  const fullRows = [];\n                  for (let r = 0; r < 20; r++) {\n                    let full = true;\n                    for (let c = 0; c < 10; c++) if (board[r][c] < 0) { full = false; break; }\n                    if (full) fullRows.push(r);\n                  }\n                ;\n    if (fullRows.length > 0) {\n      w = true;\n      \n                            for (let i = 0; i < fullRows.length; i++) {\n                              const r = fullRows[i];\n                              for (let c = 0; c < 10; c++) game.setTile(BOARD_X + c, BOARD_Y + r, TILE_FLASH, 'Grille');\n                              game.particles((BOARD_X + 5) * 8, (BOARD_Y + r) * 8 + 4, '#ffcd75', 14, 60, 300);\n                            }\n                            const count = fullRows.length;\n                            const pts = [0, 100, 300, 500, 800][count] * niveau;\n                            score += pts;\n                            lignes += count;\n                            if (count === 4) {\n                              game.camera.shake(160, 0.012);\n                              game.playSound('tetris');\n                              game.setText('streak', 'TETRIS !', 128, 28, { align: 'center', size: 1.1, color: '#ffd000' });\n                              game.wait(900, () => game.removeText('streak'));\n                            } else {\n                              game.playSound('ligne');\n                            }\n                            const newLvl = Math.floor(lignes / 10) + 1;\n                            if (newLvl > niveau) {\n                              niveau = newLvl;\n                              game.playSound('niveau');\n                              game.setText('levelup', 'NIVEAU ' + niveau + ' !', 128, 28, { align: 'center', size: 1.0, color: '#00d0f0' });\n                              game.wait(1000, () => game.removeText('levelup'));\n                            }\n                          ;\n      mettreAJourHUD();\n      game.wait(130, () => {\n        x = false;\n        \n                                      for (let i = 0; i < fullRows.length; i++) {\n                                        const r = fullRows[i];\n                                        board.splice(r, 1);\n                                        board.unshift(Array(10).fill(-1));\n                                      }\n                                    ;\n        effacerGrille();\n        spawnNextPiece();\n      });\n    } else {\n      game.playSound('deplacement', 1, 1);\n      spawnNextPiece();\n    }\n  }\n}\n\nfunction descendre() {\n  if (canFit(curPiece, curRot, curX, curY + 1)) {\n    curY++;\n    mettreAJourAffichage();\n  } else {\n    verrouillerPiece();\n  }\n}\n\nfunction deplacer() {\n  if (!gameOver && !enPause && !clearing) {\n    if (canFit(curPiece, curRot, curX + moveDx, curY)) {\n      curX += moveDx;\n      game.playSound('deplacement', 1, 1);\n      mettreAJourAffichage();\n    }\n  }\n}\n\nfunction tourner() {\n  if (!gameOver && !enPause && !clearing) {\n    \n                  const nextRot = (curRot + rotDir + 4) % 4;\n                  const kicks = [[0, 0], [-1, 0], [1, 0], [-2, 0], [2, 0], [0, -1]];\n                  let turned = false;\n                  for (let i = 0; i < kicks.length; i++) {\n                    const kx = kicks[i][0], ky = kicks[i][1];\n                    if (canFit(curPiece, nextRot, curX + kx, curY + ky)) {\n                      curRot = nextRot;\n                      curX += kx;\n                      curY += ky;\n                      turned = true;\n                      break;\n                    }\n                  }\n                ;\n    if (turned) {\n      game.playSound('rotation', 1, 1);\n      mettreAJourAffichage();\n    }\n  }\n}\n\nfunction reserver() {\n  if (canHold && !gameOver && !enPause && !clearing) {\n    y = false;\n    game.playSound('hold', 1, 1);\n    effacerAffichageActif();\n    \n                  if (heldPiece === -1) {\n                    heldPiece = curPiece;\n                    spawnNextPiece();\n                  } else {\n                    const tmp = heldPiece;\n                    heldPiece = curPiece;\n                    curPiece = tmp;\n                    curRot = 0;\n                    curX = curPiece === 0 ? 3 : curPiece === 3 ? 4 : 3;\n                    curY = 0;\n                    if (!canFit(curPiece, curRot, curX, curY)) {\n                      partiePerdue();\n                    } else {\n                      updateDisplay();\n                    }\n                  }\n                ;\n    mettreAJourApercus();\n  }\n}\n\nfunction partiePerdue() {\n  z = true;\n  effacerAffichageActif();\n  game.stopMusic();\n  game.playSound('perdu', 1, 1);\n  game.camera.shake(300, 0.02);\n  game.setText('gov1', 'FIN DE PARTIE', 128, 92, { color: '#ef7d57', size: 1.15, align: 'center' });\n  \n        game.setText('gov2', 'SCORE : ' + score, 128, 114, { align: 'center', size: 0.85, color: '#ffffff' });\n        game.setText('gov3', 'ENTRÉE POUR REJOUER', 128, 134, { align: 'center', size: 0.72, color: '#fcc858' });\n      ;\n}\n\non('create', () => {\n  initialiserPartie();\n});\non('update', (dt) => {\n  if (!gameOver && !enPause && !clearing) {\n    \n                      const leftDown = input.isDown('LEFT') || input.isDown('A') || input.isDown('Q');\n                      const rightDown = input.isDown('RIGHT') || input.isDown('D');\n                      const downDown = input.isDown('DOWN') || input.isDown('S');\n    \n                      // Déplacement horizontal répétitif (DAS/ARR)\n                      if (leftDown && !rightDown) {\n                        if (moveDir !== -1) {\n                          moveDir = -1; dasTimer = 0; arrTimer = 0;\n                          moveDx = -1; deplacer();\n                        } else {\n                          dasTimer += dt;\n                          if (dasTimer >= DAS) {\n                            arrTimer += dt;\n                            if (arrTimer >= ARR) { arrTimer = 0; moveDx = -1; deplacer(); }\n                          }\n                        }\n                      } else if (rightDown && !leftDown) {\n                        if (moveDir !== 1) {\n                          moveDir = 1; dasTimer = 0; arrTimer = 0;\n                          moveDx = 1; deplacer();\n                        } else {\n                          dasTimer += dt;\n                          if (dasTimer >= DAS) {\n                            arrTimer += dt;\n                            if (arrTimer >= ARR) { arrTimer = 0; moveDx = 1; deplacer(); }\n                          }\n                        }\n                      } else {\n                        moveDir = 0; dasTimer = 0; arrTimer = 0;\n                      }\n    \n                      // Descente rapide (soft drop)\n                      if (downDown) {\n                        softDropTimer += dt;\n                        if (softDropTimer >= SOFT_DROP_RATE) {\n                          softDropTimer = 0;\n                          if (canFit(curPiece, curRot, curX, curY + 1)) {\n                            curY++;\n                            score += 1;\n                            updateDisplay();\n                            updateHud();\n                          } else {\n                            verrouillerPiece();\n                          }\n                        }\n                      } else {\n                        softDropTimer = 0;\n                      }\n    \n                      // Gravité normale\n                      const dropInterval = Math.max(0.08, 0.85 - (niveau - 1) * 0.075);\n                      dropTimer += dt;\n                      if (dropTimer >= dropInterval) {\n                        dropTimer = 0;\n                        descendre();\n                      }\n                    ;\n  }\n});\non('keydown', 'LEFT', () => {\n  a = -1;\n  deplacer();\n});\non('keydown', 'RIGHT', () => {\n  b = 1;\n  deplacer();\n});\non('keydown', 'UP', () => {\n  c = 1;\n  tourner();\n});\non('keydown', 'W', () => {\n  d = 1;\n  tourner();\n});\non('keydown', 'X', () => {\n  e = 1;\n  tourner();\n});\non('keydown', 'Z', () => {\n  f = -1;\n  tourner();\n});\non('keydown', 'DOWN', () => {\n  descendre();\n});\non('keydown', 'SPACE', () => {\n  if (g) {\n    initialiserPartie();\n  } else {\n    if (!enPause && !clearing) {\n      \n                              let dist = 0;\n                              while (canFit(curPiece, curRot, curX, curY + 1)) {\n                                curY++;\n                                dist++;\n                              }\n                              score += dist * 2;\n                            ;\n      game.camera.shake(80, 0.005);\n      game.playSound('chute', 1, 1);\n      mettreAJourHUD();\n      verrouillerPiece();\n    }\n  }\n});\non('keydown', 'C', () => {\n  reserver();\n});\non('keydown', 'SHIFT', () => {\n  reserver();\n});\non('keydown', 'ENTER', () => {\n  if (h) {\n    initialiserPartie();\n  } else {\n    enPause = !enPause;\n    if (i1) {\n      game.stopMusic();\n      game.setText('pause', 'PAUSE', 128, 108, { color: '#00d0f0', size: 1.4, align: 'center' });\n    } else {\n      game.removeText('pause');\n      game.playMusic('tetris');\n    }\n  }\n});\n",
+        "blocks": {
+          "blocks": {
+            "languageVersion": 0,
+            "blocks": [
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1001",
+                "x": 460,
+                "y": 20,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "initialiserConstantes"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "pf_js",
+                      "id": "js_1000",
+                      "fields": {
+                        "CODE": "\n      BOARD_X = 11;\n      BOARD_Y = 4;\n      PREVIEW_X = 25;\n      PREVIEW_Y = 4;\n      HOLD_X = 3;\n      HOLD_Y = 4;\n      TILE_GHOST = 16;\n      TILE_FLASH = 17;\n      PIECE_TILES = [9, 10, 11, 12, 13, 14, 15];\n      SHAPES = [\n        [[[0,1],[1,1],[2,1],[3,1]],[[2,0],[2,1],[2,2],[2,3]],[[0,2],[1,2],[2,2],[3,2]],[[1,0],[1,1],[1,2],[1,3]]],\n        [[[0,0],[0,1],[1,1],[2,1]],[[1,0],[2,0],[1,1],[1,2]],[[0,1],[1,1],[2,1],[2,2]],[[1,0],[1,1],[0,2],[1,2]]],\n        [[[2,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[1,2],[2,2]],[[0,1],[1,1],[2,1],[0,2]],[[0,0],[1,0],[1,1],[1,2]]],\n        [[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]],[[0,0],[1,0],[0,1],[1,1]]],\n        [[[1,0],[2,0],[0,1],[1,1]],[[1,0],[1,1],[2,1],[2,2]],[[1,1],[2,1],[0,2],[1,2]],[[0,0],[0,1],[1,1],[1,2]]],\n        [[[1,0],[0,1],[1,1],[2,1]],[[1,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[2,1],[1,2]],[[1,0],[0,1],[1,1],[1,2]]],\n        [[[0,0],[1,0],[1,1],[2,1]],[[2,0],[1,1],[2,1],[1,2]],[[0,1],[1,1],[1,2],[2,2]],[[1,0],[0,1],[1,1],[0,2]]]\n      ];\n      PIECE_DIMS = [{w:4,h:4},{w:3,h:3},{w:3,h:3},{w:2,h:2},{w:3,h:3},{w:3,h:3},{w:3,h:3}];\n      DAS = 0.16;\n      ARR = 0.05;\n      SOFT_DROP_RATE = 0.04;\n      drawnActive = [];\n      drawnGhost = [];\n      getFromBag = function() {\n        if (!bag || bag.length === 0) {\n          bag = [0, 1, 2, 3, 4, 5, 6];\n          for (let i = bag.length - 1; i > 0; i--) {\n            const j = Math.floor(Math.random() * (i + 1));\n            const tmp = bag[i]; bag[i] = bag[j]; bag[j] = tmp;\n          }\n        }\n        return bag.pop();\n      };\n      canFit = function(p, rot, px, py) {\n        const bl = SHAPES[p][rot];\n        for (let i = 0; i < 4; i++) {\n          const c = px + bl[i][0];\n          const r = py + bl[i][1];\n          if (c < 0 || c >= 10 || r >= 20) return false;\n          if (r >= 0 && board[r][c] >= 0) return false;\n        }\n        return true;\n      };\n    "
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1039",
+                "x": 460,
+                "y": 360,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "initialiserPartie"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "procedures_callnoreturn",
+                      "id": "call_1002",
+                      "extraState": {
+                        "name": "initialiserConstantes"
+                      },
+                      "fields": {
+                        "NAME": "initialiserConstantes"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "variables_set",
+                          "id": "vset_1004",
+                          "fields": {
+                            "VAR": "gameOver"
+                          },
+                          "inputs": {
+                            "VALUE": {
+                              "block": {
+                                "type": "logic_boolean",
+                                "id": "bool_1003",
+                                "fields": {
+                                  "BOOL": "FALSE"
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "variables_set",
+                              "id": "vset_1006",
+                              "fields": {
+                                "VAR": "enPause"
+                              },
+                              "inputs": {
+                                "VALUE": {
+                                  "block": {
+                                    "type": "logic_boolean",
+                                    "id": "bool_1005",
+                                    "fields": {
+                                      "BOOL": "FALSE"
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "variables_set",
+                                  "id": "vset_1008",
+                                  "fields": {
+                                    "VAR": "clearing"
+                                  },
+                                  "inputs": {
+                                    "VALUE": {
+                                      "block": {
+                                        "type": "logic_boolean",
+                                        "id": "bool_1007",
+                                        "fields": {
+                                          "BOOL": "FALSE"
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "variables_set",
+                                      "id": "vset_1010",
+                                      "fields": {
+                                        "VAR": "score"
+                                      },
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "math_number",
+                                            "id": "num_1009",
+                                            "fields": {
+                                              "NUM": 0
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "variables_set",
+                                          "id": "vset_1012",
+                                          "fields": {
+                                            "VAR": "lignes"
+                                          },
+                                          "inputs": {
+                                            "VALUE": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "num_1011",
+                                                "fields": {
+                                                  "NUM": 0
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "variables_set",
+                                              "id": "vset_1014",
+                                              "fields": {
+                                                "VAR": "niveau"
+                                              },
+                                              "inputs": {
+                                                "VALUE": {
+                                                  "block": {
+                                                    "type": "math_number",
+                                                    "id": "num_1013",
+                                                    "fields": {
+                                                      "NUM": 1
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "next": {
+                                                "block": {
+                                                  "type": "variables_set",
+                                                  "id": "vset_1016",
+                                                  "fields": {
+                                                    "VAR": "heldPiece"
+                                                  },
+                                                  "inputs": {
+                                                    "VALUE": {
+                                                      "block": {
+                                                        "type": "math_number",
+                                                        "id": "num_1015",
+                                                        "fields": {
+                                                          "NUM": -1
+                                                        }
+                                                      }
+                                                    }
+                                                  },
+                                                  "next": {
+                                                    "block": {
+                                                      "type": "variables_set",
+                                                      "id": "vset_1018",
+                                                      "fields": {
+                                                        "VAR": "canHold"
+                                                      },
+                                                      "inputs": {
+                                                        "VALUE": {
+                                                          "block": {
+                                                            "type": "logic_boolean",
+                                                            "id": "bool_1017",
+                                                            "fields": {
+                                                              "BOOL": "TRUE"
+                                                            }
+                                                          }
+                                                        }
+                                                      },
+                                                      "next": {
+                                                        "block": {
+                                                          "type": "variables_set",
+                                                          "id": "vset_1020",
+                                                          "fields": {
+                                                            "VAR": "moveDir"
+                                                          },
+                                                          "inputs": {
+                                                            "VALUE": {
+                                                              "block": {
+                                                                "type": "math_number",
+                                                                "id": "num_1019",
+                                                                "fields": {
+                                                                  "NUM": 0
+                                                                }
+                                                              }
+                                                            }
+                                                          },
+                                                          "next": {
+                                                            "block": {
+                                                              "type": "variables_set",
+                                                              "id": "vset_1022",
+                                                              "fields": {
+                                                                "VAR": "dasTimer"
+                                                              },
+                                                              "inputs": {
+                                                                "VALUE": {
+                                                                  "block": {
+                                                                    "type": "math_number",
+                                                                    "id": "num_1021",
+                                                                    "fields": {
+                                                                      "NUM": 0
+                                                                    }
+                                                                  }
+                                                                }
+                                                              },
+                                                              "next": {
+                                                                "block": {
+                                                                  "type": "variables_set",
+                                                                  "id": "vset_1024",
+                                                                  "fields": {
+                                                                    "VAR": "arrTimer"
+                                                                  },
+                                                                  "inputs": {
+                                                                    "VALUE": {
+                                                                      "block": {
+                                                                        "type": "math_number",
+                                                                        "id": "num_1023",
+                                                                        "fields": {
+                                                                          "NUM": 0
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  },
+                                                                  "next": {
+                                                                    "block": {
+                                                                      "type": "variables_set",
+                                                                      "id": "vset_1026",
+                                                                      "fields": {
+                                                                        "VAR": "softDropTimer"
+                                                                      },
+                                                                      "inputs": {
+                                                                        "VALUE": {
+                                                                          "block": {
+                                                                            "type": "math_number",
+                                                                            "id": "num_1025",
+                                                                            "fields": {
+                                                                              "NUM": 0
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      },
+                                                                      "next": {
+                                                                        "block": {
+                                                                          "type": "variables_set",
+                                                                          "id": "vset_1028",
+                                                                          "fields": {
+                                                                            "VAR": "dropTimer"
+                                                                          },
+                                                                          "inputs": {
+                                                                            "VALUE": {
+                                                                              "block": {
+                                                                                "type": "math_number",
+                                                                                "id": "num_1027",
+                                                                                "fields": {
+                                                                                  "NUM": 0
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          },
+                                                                          "next": {
+                                                                            "block": {
+                                                                              "type": "pf_remove_text",
+                                                                              "id": "rm_1029",
+                                                                              "fields": {
+                                                                                "ID": "gov1"
+                                                                              },
+                                                                              "next": {
+                                                                                "block": {
+                                                                                  "type": "pf_remove_text",
+                                                                                  "id": "rm_1030",
+                                                                                  "fields": {
+                                                                                    "ID": "gov2"
+                                                                                  },
+                                                                                  "next": {
+                                                                                    "block": {
+                                                                                      "type": "pf_remove_text",
+                                                                                      "id": "rm_1031",
+                                                                                      "fields": {
+                                                                                        "ID": "gov3"
+                                                                                      },
+                                                                                      "next": {
+                                                                                        "block": {
+                                                                                          "type": "pf_remove_text",
+                                                                                          "id": "rm_1032",
+                                                                                          "fields": {
+                                                                                            "ID": "pause"
+                                                                                          },
+                                                                                          "next": {
+                                                                                            "block": {
+                                                                                              "type": "pf_js",
+                                                                                              "id": "js_1033",
+                                                                                              "fields": {
+                                                                                                "CODE": "\n      bag = [];\n      board = Array.from({ length: 20 }, () => Array(10).fill(-1));\n      curPiece = getFromBag();\n      nextPiece = getFromBag();\n      curRot = 0;\n      curX = curPiece === 0 ? 3 : curPiece === 3 ? 4 : 3;\n      curY = 0;\n    "
+                                                                                              },
+                                                                                              "next": {
+                                                                                                "block": {
+                                                                                                  "type": "procedures_callnoreturn",
+                                                                                                  "id": "call_1034",
+                                                                                                  "extraState": {
+                                                                                                    "name": "effacerGrille"
+                                                                                                  },
+                                                                                                  "fields": {
+                                                                                                    "NAME": "effacerGrille"
+                                                                                                  },
+                                                                                                  "next": {
+                                                                                                    "block": {
+                                                                                                      "type": "procedures_callnoreturn",
+                                                                                                      "id": "call_1035",
+                                                                                                      "extraState": {
+                                                                                                        "name": "mettreAJourApercus"
+                                                                                                      },
+                                                                                                      "fields": {
+                                                                                                        "NAME": "mettreAJourApercus"
+                                                                                                      },
+                                                                                                      "next": {
+                                                                                                        "block": {
+                                                                                                          "type": "procedures_callnoreturn",
+                                                                                                          "id": "call_1036",
+                                                                                                          "extraState": {
+                                                                                                            "name": "mettreAJourHUD"
+                                                                                                          },
+                                                                                                          "fields": {
+                                                                                                            "NAME": "mettreAJourHUD"
+                                                                                                          },
+                                                                                                          "next": {
+                                                                                                            "block": {
+                                                                                                              "type": "procedures_callnoreturn",
+                                                                                                              "id": "call_1037",
+                                                                                                              "extraState": {
+                                                                                                                "name": "mettreAJourAffichage"
+                                                                                                              },
+                                                                                                              "fields": {
+                                                                                                                "NAME": "mettreAJourAffichage"
+                                                                                                              },
+                                                                                                              "next": {
+                                                                                                                "block": {
+                                                                                                                  "type": "pf_play_music",
+                                                                                                                  "id": "pm_1038",
+                                                                                                                  "fields": {
+                                                                                                                    "SOUND": "tetris"
+                                                                                                                  }
+                                                                                                                }
+                                                                                                              }
+                                                                                                            }
+                                                                                                          }
+                                                                                                        }
+                                                                                                      }
+                                                                                                    }
+                                                                                                  }
+                                                                                                }
+                                                                                              }
+                                                                                            }
+                                                                                          }
+                                                                                        }
+                                                                                      }
+                                                                                    }
+                                                                                  }
+                                                                                }
+                                                                              }
+                                                                            }
+                                                                          }
+                                                                        }
+                                                                      }
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1041",
+                "x": 460,
+                "y": 940,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "effacerAffichageActif"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "pf_js",
+                      "id": "js_1040",
+                      "fields": {
+                        "CODE": "\n      for (let i = 0; i < drawnGhost.length; i++) {\n        const tx = drawnGhost[i][0], ty = drawnGhost[i][1];\n        const br = ty - BOARD_Y, bc = tx - BOARD_X;\n        const under = (br >= 0 && br < 20 && bc >= 0 && bc < 10) ? board[br][bc] : -1;\n        game.setTile(tx, ty, under, 'Grille');\n      }\n      drawnGhost = [];\n      for (let i = 0; i < drawnActive.length; i++) {\n        const tx = drawnActive[i][0], ty = drawnActive[i][1];\n        const br = ty - BOARD_Y, bc = tx - BOARD_X;\n        const under = (br >= 0 && br < 20 && bc >= 0 && bc < 10) ? board[br][bc] : -1;\n        game.setTile(tx, ty, under, 'Grille');\n      }\n      drawnActive = [];\n    "
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1046",
+                "x": 460,
+                "y": 1150,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "mettreAJourAffichage"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "procedures_callnoreturn",
+                      "id": "call_1042",
+                      "extraState": {
+                        "name": "effacerAffichageActif"
+                      },
+                      "fields": {
+                        "NAME": "effacerAffichageActif"
+                      },
+                      "next": {
+                        "block": {
+                          "type": "controls_if",
+                          "id": "cif_1043",
+                          "inputs": {
+                            "IF0": {
+                              "block": {
+                                "type": "pf_js_val",
+                                "id": "jsval_1044",
+                                "fields": {
+                                  "EXPR": "!gameOver && !clearing"
+                                }
+                              }
+                            },
+                            "DO0": {
+                              "block": {
+                                "type": "pf_js",
+                                "id": "js_1045",
+                                "fields": {
+                                  "CODE": "\n              // Dessin du fantôme\n              let gy = curY;\n              while (canFit(curPiece, curRot, curX, gy + 1)) gy++;\n              if (gy !== curY) {\n                const bl = SHAPES[curPiece][curRot];\n                for (let i = 0; i < 4; i++) {\n                  const c = curX + bl[i][0], r = gy + bl[i][1];\n                  if (r >= 0 && r < 20 && c >= 0 && c < 10) {\n                    const tx = BOARD_X + c, ty = BOARD_Y + r;\n                    game.setTile(tx, ty, TILE_GHOST, 'Grille');\n                    drawnGhost.push([tx, ty]);\n                  }\n                }\n              }\n              // Dessin de la pièce active\n              const bl = SHAPES[curPiece][curRot];\n              const tileId = PIECE_TILES[curPiece];\n              for (let i = 0; i < 4; i++) {\n                const c = curX + bl[i][0], r = curY + bl[i][1];\n                if (r >= 0 && r < 20 && c >= 0 && c < 10) {\n                  const tx = BOARD_X + c, ty = BOARD_Y + r;\n                  game.setTile(tx, ty, tileId, 'Grille');\n                  drawnActive.push([tx, ty]);\n                }\n              }\n            "
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1048",
+                "x": 460,
+                "y": 1420,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "effacerGrille"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "pf_js",
+                      "id": "js_1047",
+                      "fields": {
+                        "CODE": "\n      for (let r = 0; r < 20; r++) {\n        for (let c = 0; c < 10; c++) {\n          game.setTile(BOARD_X + c, BOARD_Y + r, board[r][c], 'Grille');\n        }\n      }\n    "
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1050",
+                "x": 460,
+                "y": 1600,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "mettreAJourApercus"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "pf_js",
+                      "id": "js_1049",
+                      "fields": {
+                        "CODE": "\n      // Aperçu SUIVANT\n      for (let dy = 0; dy < 4; dy++) {\n        for (let dx = 0; dx < 4; dx++) {\n          game.setTile(PREVIEW_X + dx, PREVIEW_Y + dy, -1, 'Grille');\n        }\n      }\n      const dimsN = PIECE_DIMS[nextPiece];\n      const oxN = Math.floor((4 - dimsN.w) / 2);\n      const oyN = Math.floor((4 - dimsN.h) / 2);\n      const blN = SHAPES[nextPiece][0];\n      const tidN = PIECE_TILES[nextPiece];\n      for (let i = 0; i < 4; i++) {\n        game.setTile(PREVIEW_X + oxN + blN[i][0], PREVIEW_Y + oyN + blN[i][1], tidN, 'Grille');\n      }\n\n      // Aperçu RÉSERVE (HOLD)\n      for (let dy = 0; dy < 4; dy++) {\n        for (let dx = 0; dx < 4; dx++) {\n          game.setTile(HOLD_X + dx, HOLD_Y + dy, -1, 'Grille');\n        }\n      }\n      if (heldPiece >= 0) {\n        const dimsH = PIECE_DIMS[heldPiece];\n        const oxH = Math.floor((4 - dimsH.w) / 2);\n        const oyH = Math.floor((4 - dimsH.h) / 2);\n        const blH = SHAPES[heldPiece][0];\n        const tidH = PIECE_TILES[heldPiece];\n        for (let i = 0; i < 4; i++) {\n          game.setTile(HOLD_X + oxH + blH[i][0], HOLD_Y + oyH + blH[i][1], tidH, 'Grille');\n        }\n      }\n    "
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1052",
+                "x": 460,
+                "y": 2040,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "mettreAJourHUD"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "pf_js",
+                      "id": "js_1051",
+                      "fields": {
+                        "CODE": "\n      const best = game.load('tetris_best', 0);\n      if (score > best) game.save('tetris_best', score);\n      const record = Math.max(score, best);\n\n      game.setText('t_hold', 'RÉSERVE', 38, 25, { align: 'center', size: 0.65, color: '#fcc858' });\n      game.setText('t_score_lbl', 'SCORE', 40, 72, { align: 'center', size: 0.65, color: '#fcc858' });\n      game.setText('t_score_val', '' + score, 40, 84, { align: 'center', size: 0.75, color: '#ffffff' });\n\n      game.setText('t_lines_lbl', 'LIGNES', 40, 102, { align: 'center', size: 0.65, color: '#fcc858' });\n      game.setText('t_lines_val', '' + lignes, 40, 114, { align: 'center', size: 0.75, color: '#ffffff' });\n\n      game.setText('t_level_lbl', 'NIVEAU', 40, 132, { align: 'center', size: 0.65, color: '#fcc858' });\n      game.setText('t_level_val', '' + niveau, 40, 144, { align: 'center', size: 0.75, color: '#ffffff' });\n\n      game.setText('t_best_lbl', 'RECORD', 40, 164, { align: 'center', size: 0.65, color: '#a7f070' });\n      game.setText('t_best_val', '' + record, 40, 176, { align: 'center', size: 0.75, color: '#ffffff' });\n\n      game.setText('t_next', 'SUIVANT', 214, 25, { align: 'center', size: 0.65, color: '#fcc858' });\n      game.setText('t_ctrl_title', 'AIDE', 214, 72, { align: 'center', size: 0.65, color: '#fcc858' });\n      game.setText('t_ctrl1', '← → Bouger', 214, 86, { align: 'center', size: 0.58, color: '#bcd8fc' });\n      game.setText('t_ctrl2', '↑ / X Tourner', 214, 98, { align: 'center', size: 0.58, color: '#bcd8fc' });\n      game.setText('t_ctrl3', '↓ Descente', 214, 110, { align: 'center', size: 0.58, color: '#bcd8fc' });\n      game.setText('t_ctrl4', 'ESPACE Drop', 214, 122, { align: 'center', size: 0.58, color: '#bcd8fc' });\n      game.setText('t_ctrl5', 'C Réserve', 214, 134, { align: 'center', size: 0.58, color: '#bcd8fc' });\n      game.setText('t_ctrl6', 'ENTRÉE Pause', 214, 146, { align: 'center', size: 0.58, color: '#bcd8fc' });\n    "
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1061",
+                "x": 460,
+                "y": 2350,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "spawnNextPiece"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "pf_js",
+                      "id": "js_1053",
+                      "fields": {
+                        "CODE": "\n      curPiece = nextPiece;\n      nextPiece = getFromBag();\n      curRot = 0;\n      curX = curPiece === 0 ? 3 : curPiece === 3 ? 4 : 3;\n      curY = 0;\n      canHold = true;\n    "
+                      },
+                      "next": {
+                        "block": {
+                          "type": "procedures_callnoreturn",
+                          "id": "call_1054",
+                          "extraState": {
+                            "name": "mettreAJourApercus"
+                          },
+                          "fields": {
+                            "NAME": "mettreAJourApercus"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "controls_if",
+                              "id": "cif_1055",
+                              "inputs": {
+                                "IF0": {
+                                  "block": {
+                                    "type": "pf_js_val",
+                                    "id": "jsval_1056",
+                                    "fields": {
+                                      "EXPR": "!canFit(curPiece, curRot, curX, curY)"
+                                    }
+                                  }
+                                },
+                                "DO0": {
+                                  "block": {
+                                    "type": "procedures_callnoreturn",
+                                    "id": "call_1057",
+                                    "extraState": {
+                                      "name": "partiePerdue"
+                                    },
+                                    "fields": {
+                                      "NAME": "partiePerdue"
+                                    }
+                                  }
+                                }
+                              },
+                              "next": {
+                                "block": {
+                                  "type": "controls_if",
+                                  "id": "cif_1058",
+                                  "inputs": {
+                                    "IF0": {
+                                      "block": {
+                                        "type": "pf_js_val",
+                                        "id": "jsval_1059",
+                                        "fields": {
+                                          "EXPR": "!gameOver"
+                                        }
+                                      }
+                                    },
+                                    "DO0": {
+                                      "block": {
+                                        "type": "procedures_callnoreturn",
+                                        "id": "call_1060",
+                                        "extraState": {
+                                          "name": "mettreAJourAffichage"
+                                        },
+                                        "fields": {
+                                          "NAME": "mettreAJourAffichage"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1080",
+                "x": 460,
+                "y": 2650,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "verrouillerPiece"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "cif_1062",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "pf_js_val",
+                            "id": "jsval_1063",
+                            "fields": {
+                              "EXPR": "!gameOver && !clearing"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "pf_js",
+                            "id": "js_1064",
+                            "fields": {
+                              "CODE": "\n              const bl = SHAPES[curPiece][curRot];\n              const tid = PIECE_TILES[curPiece];\n              for (let i = 0; i < 4; i++) {\n                const c = curX + bl[i][0], r = curY + bl[i][1];\n                if (r >= 0 && r < 20 && c >= 0 && c < 10) board[r][c] = tid;\n              }\n              drawnActive = [];\n              drawnGhost = [];\n              const fullRows = [];\n              for (let r = 0; r < 20; r++) {\n                let full = true;\n                for (let c = 0; c < 10; c++) if (board[r][c] < 0) { full = false; break; }\n                if (full) fullRows.push(r);\n              }\n            "
+                            },
+                            "next": {
+                              "block": {
+                                "type": "controls_if",
+                                "id": "cif_1065",
+                                "extraState": {
+                                  "hasElse": true
+                                },
+                                "inputs": {
+                                  "IF0": {
+                                    "block": {
+                                      "type": "pf_js_val",
+                                      "id": "jsval_1066",
+                                      "fields": {
+                                        "EXPR": "fullRows.length > 0"
+                                      }
+                                    }
+                                  },
+                                  "DO0": {
+                                    "block": {
+                                      "type": "variables_set",
+                                      "id": "vset_1068",
+                                      "fields": {
+                                        "VAR": "clearing"
+                                      },
+                                      "inputs": {
+                                        "VALUE": {
+                                          "block": {
+                                            "type": "logic_boolean",
+                                            "id": "bool_1067",
+                                            "fields": {
+                                              "BOOL": "TRUE"
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "pf_js",
+                                          "id": "js_1069",
+                                          "fields": {
+                                            "CODE": "\n                      for (let i = 0; i < fullRows.length; i++) {\n                        const r = fullRows[i];\n                        for (let c = 0; c < 10; c++) game.setTile(BOARD_X + c, BOARD_Y + r, TILE_FLASH, 'Grille');\n                        game.particles((BOARD_X + 5) * 8, (BOARD_Y + r) * 8 + 4, '#ffcd75', 14, 60, 300);\n                      }\n                      const count = fullRows.length;\n                      const pts = [0, 100, 300, 500, 800][count] * niveau;\n                      score += pts;\n                      lignes += count;\n                      if (count === 4) {\n                        game.camera.shake(160, 0.012);\n                        game.playSound('tetris');\n                        game.setText('streak', 'TETRIS !', 128, 28, { align: 'center', size: 1.1, color: '#ffd000' });\n                        game.wait(900, () => game.removeText('streak'));\n                      } else {\n                        game.playSound('ligne');\n                      }\n                      const newLvl = Math.floor(lignes / 10) + 1;\n                      if (newLvl > niveau) {\n                        niveau = newLvl;\n                        game.playSound('niveau');\n                        game.setText('levelup', 'NIVEAU ' + niveau + ' !', 128, 28, { align: 'center', size: 1.0, color: '#00d0f0' });\n                        game.wait(1000, () => game.removeText('levelup'));\n                      }\n                    "
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "procedures_callnoreturn",
+                                              "id": "call_1070",
+                                              "extraState": {
+                                                "name": "mettreAJourHUD"
+                                              },
+                                              "fields": {
+                                                "NAME": "mettreAJourHUD"
+                                              },
+                                              "next": {
+                                                "block": {
+                                                  "type": "pf_wait",
+                                                  "id": "wait_1071",
+                                                  "inputs": {
+                                                    "MS": {
+                                                      "block": {
+                                                        "type": "math_number",
+                                                        "id": "num_1072",
+                                                        "fields": {
+                                                          "NUM": 130
+                                                        }
+                                                      }
+                                                    },
+                                                    "DO": {
+                                                      "block": {
+                                                        "type": "variables_set",
+                                                        "id": "vset_1074",
+                                                        "fields": {
+                                                          "VAR": "clearing"
+                                                        },
+                                                        "inputs": {
+                                                          "VALUE": {
+                                                            "block": {
+                                                              "type": "logic_boolean",
+                                                              "id": "bool_1073",
+                                                              "fields": {
+                                                                "BOOL": "FALSE"
+                                                              }
+                                                            }
+                                                          }
+                                                        },
+                                                        "next": {
+                                                          "block": {
+                                                            "type": "pf_js",
+                                                            "id": "js_1075",
+                                                            "fields": {
+                                                              "CODE": "\n                              for (let i = 0; i < fullRows.length; i++) {\n                                const r = fullRows[i];\n                                board.splice(r, 1);\n                                board.unshift(Array(10).fill(-1));\n                              }\n                            "
+                                                            },
+                                                            "next": {
+                                                              "block": {
+                                                                "type": "procedures_callnoreturn",
+                                                                "id": "call_1076",
+                                                                "extraState": {
+                                                                  "name": "effacerGrille"
+                                                                },
+                                                                "fields": {
+                                                                  "NAME": "effacerGrille"
+                                                                },
+                                                                "next": {
+                                                                  "block": {
+                                                                    "type": "procedures_callnoreturn",
+                                                                    "id": "call_1077",
+                                                                    "extraState": {
+                                                                      "name": "spawnNextPiece"
+                                                                    },
+                                                                    "fields": {
+                                                                      "NAME": "spawnNextPiece"
+                                                                    }
+                                                                  }
+                                                                }
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "ELSE": {
+                                    "block": {
+                                      "type": "pf_play_sound",
+                                      "id": "ps_1078",
+                                      "fields": {
+                                        "SOUND": "deplacement"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "procedures_callnoreturn",
+                                          "id": "call_1079",
+                                          "extraState": {
+                                            "name": "spawnNextPiece"
+                                          },
+                                          "fields": {
+                                            "NAME": "spawnNextPiece"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1086",
+                "x": 460,
+                "y": 3150,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "descendre"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "cif_1081",
+                      "extraState": {
+                        "hasElse": true
+                      },
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "pf_js_val",
+                            "id": "jsval_1082",
+                            "fields": {
+                              "EXPR": "canFit(curPiece, curRot, curX, curY + 1)"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "pf_js",
+                            "id": "js_1083",
+                            "fields": {
+                              "CODE": "curY++"
+                            },
+                            "next": {
+                              "block": {
+                                "type": "procedures_callnoreturn",
+                                "id": "call_1084",
+                                "extraState": {
+                                  "name": "mettreAJourAffichage"
+                                },
+                                "fields": {
+                                  "NAME": "mettreAJourAffichage"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "ELSE": {
+                          "block": {
+                            "type": "procedures_callnoreturn",
+                            "id": "call_1085",
+                            "extraState": {
+                              "name": "verrouillerPiece"
+                            },
+                            "fields": {
+                              "NAME": "verrouillerPiece"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1094",
+                "x": 460,
+                "y": 3350,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "deplacer"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "cif_1087",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "pf_js_val",
+                            "id": "jsval_1088",
+                            "fields": {
+                              "EXPR": "!gameOver && !enPause && !clearing"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "controls_if",
+                            "id": "cif_1089",
+                            "inputs": {
+                              "IF0": {
+                                "block": {
+                                  "type": "pf_js_val",
+                                  "id": "jsval_1090",
+                                  "fields": {
+                                    "EXPR": "canFit(curPiece, curRot, curX + moveDx, curY)"
+                                  }
+                                }
+                              },
+                              "DO0": {
+                                "block": {
+                                  "type": "pf_js",
+                                  "id": "js_1091",
+                                  "fields": {
+                                    "CODE": "curX += moveDx"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "pf_play_sound",
+                                      "id": "ps_1092",
+                                      "fields": {
+                                        "SOUND": "deplacement"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "procedures_callnoreturn",
+                                          "id": "call_1093",
+                                          "extraState": {
+                                            "name": "mettreAJourAffichage"
+                                          },
+                                          "fields": {
+                                            "NAME": "mettreAJourAffichage"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1102",
+                "x": 460,
+                "y": 3600,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "tourner"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "cif_1095",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "pf_js_val",
+                            "id": "jsval_1096",
+                            "fields": {
+                              "EXPR": "!gameOver && !enPause && !clearing"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "pf_js",
+                            "id": "js_1097",
+                            "fields": {
+                              "CODE": "\n              const nextRot = (curRot + rotDir + 4) % 4;\n              const kicks = [[0, 0], [-1, 0], [1, 0], [-2, 0], [2, 0], [0, -1]];\n              let turned = false;\n              for (let i = 0; i < kicks.length; i++) {\n                const kx = kicks[i][0], ky = kicks[i][1];\n                if (canFit(curPiece, nextRot, curX + kx, curY + ky)) {\n                  curRot = nextRot;\n                  curX += kx;\n                  curY += ky;\n                  turned = true;\n                  break;\n                }\n              }\n            "
+                            },
+                            "next": {
+                              "block": {
+                                "type": "controls_if",
+                                "id": "cif_1098",
+                                "inputs": {
+                                  "IF0": {
+                                    "block": {
+                                      "type": "pf_js_val",
+                                      "id": "jsval_1099",
+                                      "fields": {
+                                        "EXPR": "turned"
+                                      }
+                                    }
+                                  },
+                                  "DO0": {
+                                    "block": {
+                                      "type": "pf_play_sound",
+                                      "id": "ps_1100",
+                                      "fields": {
+                                        "SOUND": "rotation"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "procedures_callnoreturn",
+                                          "id": "call_1101",
+                                          "extraState": {
+                                            "name": "mettreAJourAffichage"
+                                          },
+                                          "fields": {
+                                            "NAME": "mettreAJourAffichage"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1111",
+                "x": 460,
+                "y": 3950,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "reserver"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "cif_1103",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "pf_js_val",
+                            "id": "jsval_1104",
+                            "fields": {
+                              "EXPR": "canHold && !gameOver && !enPause && !clearing"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "variables_set",
+                            "id": "vset_1106",
+                            "fields": {
+                              "VAR": "canHold"
+                            },
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "logic_boolean",
+                                  "id": "bool_1105",
+                                  "fields": {
+                                    "BOOL": "FALSE"
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "pf_play_sound",
+                                "id": "ps_1107",
+                                "fields": {
+                                  "SOUND": "hold"
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "procedures_callnoreturn",
+                                    "id": "call_1108",
+                                    "extraState": {
+                                      "name": "effacerAffichageActif"
+                                    },
+                                    "fields": {
+                                      "NAME": "effacerAffichageActif"
+                                    },
+                                    "next": {
+                                      "block": {
+                                        "type": "pf_js",
+                                        "id": "js_1109",
+                                        "fields": {
+                                          "CODE": "\n              if (heldPiece === -1) {\n                heldPiece = curPiece;\n                spawnNextPiece();\n              } else {\n                const tmp = heldPiece;\n                heldPiece = curPiece;\n                curPiece = tmp;\n                curRot = 0;\n                curX = curPiece === 0 ? 3 : curPiece === 3 ? 4 : 3;\n                curY = 0;\n                if (!canFit(curPiece, curRot, curX, curY)) {\n                  partiePerdue();\n                } else {\n                  updateDisplay();\n                }\n              }\n            "
+                                        },
+                                        "next": {
+                                          "block": {
+                                            "type": "procedures_callnoreturn",
+                                            "id": "call_1110",
+                                            "extraState": {
+                                              "name": "mettreAJourApercus"
+                                            },
+                                            "fields": {
+                                              "NAME": "mettreAJourApercus"
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "procedures_defnoreturn",
+                "id": "def_1127",
+                "x": 460,
+                "y": 4300,
+                "extraState": {
+                  "params": []
+                },
+                "fields": {
+                  "NAME": "partiePerdue"
+                },
+                "inputs": {
+                  "STACK": {
+                    "block": {
+                      "type": "variables_set",
+                      "id": "vset_1113",
+                      "fields": {
+                        "VAR": "gameOver"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "logic_boolean",
+                            "id": "bool_1112",
+                            "fields": {
+                              "BOOL": "TRUE"
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "procedures_callnoreturn",
+                          "id": "call_1114",
+                          "extraState": {
+                            "name": "effacerAffichageActif"
+                          },
+                          "fields": {
+                            "NAME": "effacerAffichageActif"
+                          },
+                          "next": {
+                            "block": {
+                              "type": "pf_stop_music",
+                              "id": "sm_1115",
+                              "next": {
+                                "block": {
+                                  "type": "pf_play_sound",
+                                  "id": "ps_1116",
+                                  "fields": {
+                                    "SOUND": "perdu"
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "pf_cam_shake",
+                                      "id": "shake_1117",
+                                      "inputs": {
+                                        "MS": {
+                                          "block": {
+                                            "type": "math_number",
+                                            "id": "num_1118",
+                                            "fields": {
+                                              "NUM": 300
+                                            }
+                                          }
+                                        },
+                                        "POWER": {
+                                          "block": {
+                                            "type": "math_number",
+                                            "id": "num_1119",
+                                            "fields": {
+                                              "NUM": 0.02
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "pf_set_text_opts",
+                                          "id": "txt_1120",
+                                          "fields": {
+                                            "ID": "gov1",
+                                            "ALIGN": "center"
+                                          },
+                                          "inputs": {
+                                            "TEXT": {
+                                              "block": {
+                                                "type": "text",
+                                                "id": "txt_1121",
+                                                "fields": {
+                                                  "TEXT": "FIN DE PARTIE"
+                                                }
+                                              }
+                                            },
+                                            "X": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "num_1122",
+                                                "fields": {
+                                                  "NUM": 128
+                                                }
+                                              }
+                                            },
+                                            "Y": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "num_1123",
+                                                "fields": {
+                                                  "NUM": 92
+                                                }
+                                              }
+                                            },
+                                            "COLOR": {
+                                              "block": {
+                                                "type": "pf_colour",
+                                                "id": "col_1124",
+                                                "fields": {
+                                                  "COL": "#ef7d57"
+                                                }
+                                              }
+                                            },
+                                            "SIZE": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "num_1125",
+                                                "fields": {
+                                                  "NUM": 1.15
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "pf_js",
+                                              "id": "js_1126",
+                                              "fields": {
+                                                "CODE": "\n      game.setText('gov2', 'SCORE : ' + score, 128, 114, { align: 'center', size: 0.85, color: '#ffffff' });\n      game.setText('gov3', 'ENTRÉE POUR REJOUER', 128, 134, { align: 'center', size: 0.72, color: '#fcc858' });\n    "
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_create",
+                "id": "on_create_1128",
+                "x": 20,
+                "y": 20,
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "procedures_callnoreturn",
+                      "id": "call_1129",
+                      "extraState": {
+                        "name": "initialiserPartie"
+                      },
+                      "fields": {
+                        "NAME": "initialiserPartie"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_update",
+                "id": "on_update_1130",
+                "x": 20,
+                "y": 140,
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "cif_1131",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "pf_js_val",
+                            "id": "jsval_1132",
+                            "fields": {
+                              "EXPR": "!gameOver && !enPause && !clearing"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "pf_js",
+                            "id": "js_1133",
+                            "fields": {
+                              "CODE": "\n                  const leftDown = input.isDown('LEFT') || input.isDown('A') || input.isDown('Q');\n                  const rightDown = input.isDown('RIGHT') || input.isDown('D');\n                  const downDown = input.isDown('DOWN') || input.isDown('S');\n\n                  // Déplacement horizontal répétitif (DAS/ARR)\n                  if (leftDown && !rightDown) {\n                    if (moveDir !== -1) {\n                      moveDir = -1; dasTimer = 0; arrTimer = 0;\n                      moveDx = -1; deplacer();\n                    } else {\n                      dasTimer += dt;\n                      if (dasTimer >= DAS) {\n                        arrTimer += dt;\n                        if (arrTimer >= ARR) { arrTimer = 0; moveDx = -1; deplacer(); }\n                      }\n                    }\n                  } else if (rightDown && !leftDown) {\n                    if (moveDir !== 1) {\n                      moveDir = 1; dasTimer = 0; arrTimer = 0;\n                      moveDx = 1; deplacer();\n                    } else {\n                      dasTimer += dt;\n                      if (dasTimer >= DAS) {\n                        arrTimer += dt;\n                        if (arrTimer >= ARR) { arrTimer = 0; moveDx = 1; deplacer(); }\n                      }\n                    }\n                  } else {\n                    moveDir = 0; dasTimer = 0; arrTimer = 0;\n                  }\n\n                  // Descente rapide (soft drop)\n                  if (downDown) {\n                    softDropTimer += dt;\n                    if (softDropTimer >= SOFT_DROP_RATE) {\n                      softDropTimer = 0;\n                      if (canFit(curPiece, curRot, curX, curY + 1)) {\n                        curY++;\n                        score += 1;\n                        updateDisplay();\n                        updateHud();\n                      } else {\n                        verrouillerPiece();\n                      }\n                    }\n                  } else {\n                    softDropTimer = 0;\n                  }\n\n                  // Gravité normale\n                  const dropInterval = Math.max(0.08, 0.85 - (niveau - 1) * 0.075);\n                  dropTimer += dt;\n                  if (dropTimer >= dropInterval) {\n                    dropTimer = 0;\n                    descendre();\n                  }\n                "
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_left_1134",
+                "x": 20,
+                "y": 450,
+                "fields": {
+                  "KEY": "LEFT"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "variables_set",
+                      "id": "vset_1136",
+                      "fields": {
+                        "VAR": "moveDx"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "math_number",
+                            "id": "num_1135",
+                            "fields": {
+                              "NUM": -1
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "procedures_callnoreturn",
+                          "id": "call_1137",
+                          "extraState": {
+                            "name": "deplacer"
+                          },
+                          "fields": {
+                            "NAME": "deplacer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_right_1138",
+                "x": 20,
+                "y": 590,
+                "fields": {
+                  "KEY": "RIGHT"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "variables_set",
+                      "id": "vset_1140",
+                      "fields": {
+                        "VAR": "moveDx"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "math_number",
+                            "id": "num_1139",
+                            "fields": {
+                              "NUM": 1
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "procedures_callnoreturn",
+                          "id": "call_1141",
+                          "extraState": {
+                            "name": "deplacer"
+                          },
+                          "fields": {
+                            "NAME": "deplacer"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_up_1142",
+                "x": 20,
+                "y": 730,
+                "fields": {
+                  "KEY": "UP"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "variables_set",
+                      "id": "vset_1144",
+                      "fields": {
+                        "VAR": "rotDir"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "math_number",
+                            "id": "num_1143",
+                            "fields": {
+                              "NUM": 1
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "procedures_callnoreturn",
+                          "id": "call_1145",
+                          "extraState": {
+                            "name": "tourner"
+                          },
+                          "fields": {
+                            "NAME": "tourner"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_w_1146",
+                "x": 20,
+                "y": 870,
+                "fields": {
+                  "KEY": "W"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "variables_set",
+                      "id": "vset_1148",
+                      "fields": {
+                        "VAR": "rotDir"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "math_number",
+                            "id": "num_1147",
+                            "fields": {
+                              "NUM": 1
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "procedures_callnoreturn",
+                          "id": "call_1149",
+                          "extraState": {
+                            "name": "tourner"
+                          },
+                          "fields": {
+                            "NAME": "tourner"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_x_1150",
+                "x": 20,
+                "y": 1010,
+                "fields": {
+                  "KEY": "X"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "variables_set",
+                      "id": "vset_1152",
+                      "fields": {
+                        "VAR": "rotDir"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "math_number",
+                            "id": "num_1151",
+                            "fields": {
+                              "NUM": 1
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "procedures_callnoreturn",
+                          "id": "call_1153",
+                          "extraState": {
+                            "name": "tourner"
+                          },
+                          "fields": {
+                            "NAME": "tourner"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_z_1154",
+                "x": 20,
+                "y": 1150,
+                "fields": {
+                  "KEY": "Z"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "variables_set",
+                      "id": "vset_1156",
+                      "fields": {
+                        "VAR": "rotDir"
+                      },
+                      "inputs": {
+                        "VALUE": {
+                          "block": {
+                            "type": "math_number",
+                            "id": "num_1155",
+                            "fields": {
+                              "NUM": -1
+                            }
+                          }
+                        }
+                      },
+                      "next": {
+                        "block": {
+                          "type": "procedures_callnoreturn",
+                          "id": "call_1157",
+                          "extraState": {
+                            "name": "tourner"
+                          },
+                          "fields": {
+                            "NAME": "tourner"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_down_1158",
+                "x": 20,
+                "y": 1290,
+                "fields": {
+                  "KEY": "DOWN"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "procedures_callnoreturn",
+                      "id": "call_1159",
+                      "extraState": {
+                        "name": "descendre"
+                      },
+                      "fields": {
+                        "NAME": "descendre"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_space_1160",
+                "x": 20,
+                "y": 1430,
+                "fields": {
+                  "KEY": "SPACE"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "cif_1161",
+                      "extraState": {
+                        "hasElse": true
+                      },
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "variables_get",
+                            "id": "vget_1162",
+                            "fields": {
+                              "VAR": "gameOver"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "procedures_callnoreturn",
+                            "id": "call_1163",
+                            "extraState": {
+                              "name": "initialiserPartie"
+                            },
+                            "fields": {
+                              "NAME": "initialiserPartie"
+                            }
+                          }
+                        },
+                        "ELSE": {
+                          "block": {
+                            "type": "controls_if",
+                            "id": "cif_1164",
+                            "inputs": {
+                              "IF0": {
+                                "block": {
+                                  "type": "pf_js_val",
+                                  "id": "jsval_1165",
+                                  "fields": {
+                                    "EXPR": "!enPause && !clearing"
+                                  }
+                                }
+                              },
+                              "DO0": {
+                                "block": {
+                                  "type": "pf_js",
+                                  "id": "js_1166",
+                                  "fields": {
+                                    "CODE": "\n                        let dist = 0;\n                        while (canFit(curPiece, curRot, curX, curY + 1)) {\n                          curY++;\n                          dist++;\n                        }\n                        score += dist * 2;\n                      "
+                                  },
+                                  "next": {
+                                    "block": {
+                                      "type": "pf_cam_shake",
+                                      "id": "shake_1167",
+                                      "inputs": {
+                                        "MS": {
+                                          "block": {
+                                            "type": "math_number",
+                                            "id": "num_1168",
+                                            "fields": {
+                                              "NUM": 80
+                                            }
+                                          }
+                                        },
+                                        "POWER": {
+                                          "block": {
+                                            "type": "math_number",
+                                            "id": "num_1169",
+                                            "fields": {
+                                              "NUM": 0.005
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "pf_play_sound",
+                                          "id": "ps_1170",
+                                          "fields": {
+                                            "SOUND": "chute"
+                                          },
+                                          "next": {
+                                            "block": {
+                                              "type": "procedures_callnoreturn",
+                                              "id": "call_1171",
+                                              "extraState": {
+                                                "name": "mettreAJourHUD"
+                                              },
+                                              "fields": {
+                                                "NAME": "mettreAJourHUD"
+                                              },
+                                              "next": {
+                                                "block": {
+                                                  "type": "procedures_callnoreturn",
+                                                  "id": "call_1172",
+                                                  "extraState": {
+                                                    "name": "verrouillerPiece"
+                                                  },
+                                                  "fields": {
+                                                    "NAME": "verrouillerPiece"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_c_1173",
+                "x": 20,
+                "y": 1720,
+                "fields": {
+                  "KEY": "C"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "procedures_callnoreturn",
+                      "id": "call_1174",
+                      "extraState": {
+                        "name": "reserver"
+                      },
+                      "fields": {
+                        "NAME": "reserver"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_shift_1175",
+                "x": 20,
+                "y": 1860,
+                "fields": {
+                  "KEY": "SHIFT"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "procedures_callnoreturn",
+                      "id": "call_1176",
+                      "extraState": {
+                        "name": "reserver"
+                      },
+                      "fields": {
+                        "NAME": "reserver"
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "k_enter_1177",
+                "x": 20,
+                "y": 2000,
+                "fields": {
+                  "KEY": "ENTER"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "cif_1178",
+                      "extraState": {
+                        "hasElse": true
+                      },
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "variables_get",
+                            "id": "vget_1179",
+                            "fields": {
+                              "VAR": "gameOver"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "procedures_callnoreturn",
+                            "id": "call_1180",
+                            "extraState": {
+                              "name": "initialiserPartie"
+                            },
+                            "fields": {
+                              "NAME": "initialiserPartie"
+                            }
+                          }
+                        },
+                        "ELSE": {
+                          "block": {
+                            "type": "pf_js",
+                            "id": "js_1181",
+                            "fields": {
+                              "CODE": "enPause = !enPause"
+                            },
+                            "next": {
+                              "block": {
+                                "type": "controls_if",
+                                "id": "cif_1182",
+                                "extraState": {
+                                  "hasElse": true
+                                },
+                                "inputs": {
+                                  "IF0": {
+                                    "block": {
+                                      "type": "variables_get",
+                                      "id": "vget_1183",
+                                      "fields": {
+                                        "VAR": "enPause"
+                                      }
+                                    }
+                                  },
+                                  "DO0": {
+                                    "block": {
+                                      "type": "pf_stop_music",
+                                      "id": "sm_1184",
+                                      "next": {
+                                        "block": {
+                                          "type": "pf_set_text_opts",
+                                          "id": "txt_1185",
+                                          "fields": {
+                                            "ID": "pause",
+                                            "ALIGN": "center"
+                                          },
+                                          "inputs": {
+                                            "TEXT": {
+                                              "block": {
+                                                "type": "text",
+                                                "id": "txt_1186",
+                                                "fields": {
+                                                  "TEXT": "PAUSE"
+                                                }
+                                              }
+                                            },
+                                            "X": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "num_1187",
+                                                "fields": {
+                                                  "NUM": 128
+                                                }
+                                              }
+                                            },
+                                            "Y": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "num_1188",
+                                                "fields": {
+                                                  "NUM": 108
+                                                }
+                                              }
+                                            },
+                                            "COLOR": {
+                                              "block": {
+                                                "type": "pf_colour",
+                                                "id": "col_1189",
+                                                "fields": {
+                                                  "COL": "#00d0f0"
+                                                }
+                                              }
+                                            },
+                                            "SIZE": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "num_1190",
+                                                "fields": {
+                                                  "NUM": 1.4
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  },
+                                  "ELSE": {
+                                    "block": {
+                                      "type": "pf_remove_text",
+                                      "id": "rm_1191",
+                                      "fields": {
+                                        "ID": "pause"
+                                      },
+                                      "next": {
+                                        "block": {
+                                          "type": "pf_play_music",
+                                          "id": "pm_1192",
+                                          "fields": {
+                                            "SOUND": "tetris"
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "maps": [
+    {
+      "id": "map_6b4zfbn",
+      "name": "Tetris",
+      "width": 32,
+      "height": 30,
+      "tileSize": 8,
+      "tilesetSpriteId": "spr_i6qs05s",
+      "background": "#0d0e17",
+      "layers": [
+        {
+          "id": "lay_acftv1s",
+          "name": "Fond",
+          "visible": true,
+          "solid": false,
+          "data": [
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            18,
+            19,
+            20,
+            21,
+            22,
+            23,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            8,
+            8,
+            8,
+            3,
+            1,
+            1,
+            1,
+            1,
+            4,
+            8,
+            8,
+            3,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            4,
+            8,
+            8,
+            3,
+            1,
+            1,
+            1,
+            1,
+            4,
+            8,
+            8,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            8,
+            8,
+            5,
+            1,
+            1,
+            1,
+            1,
+            6,
+            8,
+            8,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            8,
+            8,
+            5,
+            1,
+            1,
+            1,
+            1,
+            6,
+            8,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            7,
+            2,
+            8,
+            8,
+            5,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            6,
+            5,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            6,
+            5,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            6,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8,
+            8
+          ]
+        },
+        {
+          "id": "lay_7wrucvh",
+          "name": "Grille",
+          "visible": true,
+          "solid": false,
+          "data": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ]
+        }
+      ],
+      "entities": [
+        {
+          "id": "ent_5b89e31",
+          "objectId": "obj_gxdjpyg",
+          "x": 0,
+          "y": 0
+        }
+      ]
+    }
+  ],
+  "globalScript": {
+    "mode": "blocks",
+    "code": "",
+    "blocks": null
+  }
+}

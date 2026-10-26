@@ -1,0 +1,26 @@
+# Journal — PixelForge
+
+**But** : moteur / éditeur de jeux 2D dans le navigateur, basé sur Phaser 3 : pixel art, cartes en tuiles, objets avec scripts en code (CodeMirror) ou en blocs (Blockly), test en direct, export HTML autonome.
+**Technos** : Vite 6, JS vanilla (modules ES), phaser 3.90, blockly 11, codemirror 6.
+**Structure** : voir docs/ARCHITECTURE.md (onglets = modules mount/unmount dans src/editors/* et src/runtime/play.js ; noyau src/core ; API des scripts docs/SCRIPT_API.md).
+**Lancer** : `npm install` puis `npm run dev` (ou config `pixelforge` de .claude/launch.json, port 5180). Projet sauvegardé en localStorage (`pixelforge.project`) ; Enregistrer/Ouvrir = fichier .pixelforge.json.
+
+---
+
+## 2026-10-26 (3) — v1.2 : prêt pour Portal en blocs
+- **Fait (Sonnet, effort medium)** : overlapStart/overlapEnd, setCollideMap/setCollideObjects, flipY, setHitbox, raycast contre les instances (+ layer/instance/objectName), camera.setOffset ; blocs correspondants (cibles, rayons, caméra) ; docs v1.2, validate.js, autocomplétion.
+- **Vérifié (Opus)** : build, e2e MCP ALL OK, validate monde-1-1 OK, engine.js toujours 1 seul export. Mini Portal en blocs joué en headless par l'agent.
+- **Limites** : overlapEnd absent si une instance est détruite ; un portail posé sur le joueur déclenche overlapStart (prévoir une garde) ; glisser-déposer Blockly dans le navigateur non testé ; tetris a des variables non déclarées (heldPiece, gameOver) dans son script.
+
+## 2026-10-26 (2) — v1.1 : API étendue, bibliothèque, MCP, Monde 1-1
+- **Fait** : moteur v1.1 (son WebAudio, souris, manette, tactile, tuiles get/set, raycast, hitTile, messages, props, particules, save/load) ; bibliothèque games/ + API REST/SSE dans vite.config.js (synchro live avec le disque) ; serveur MCP 20 outils (mcp/), CLI `npm run pf`, AGENTS.md, llms.txt, docs/PROJECT_SCHEMA.json ; blocs pour toute l'API (107) ; onglet Sons ; éditeur de cartes (props d'instance, calques 'above', mini-carte, copier/coller) ; jeu « Monde 1-1 » généré par games-src/monde-1-1.mjs.
+- **Corrigé par Opus** : échappement de l'export HTML (export-template.js). **Par l'agent 1-1** : touching faux sur les overlaps (engine.js).
+- **Vérifié** : build ; e2e MCP OK ; validate monde-1-1 OK ; 1-1 joué jusqu'au château par un bot ; bibliothèque affiche les 3 jeux. Un jeu « tetris » est apparu dans games/ (créé hors de cette session, probablement via MCP).
+- **À faire (manques pour Portal relevés)** : setPosition/setVelocity sur une autre instance en blocs, overlapStart/overlapEnd, self.setCollideMap, raycast contre les instances, tuiles non portalisables, API caméra (zone morte, position), hitbox par instance, flipY, police HUD pixel, outil MCP play_test headless, upsert_game à id fixe, miniatures des jeux créés par MCP.
+- **Duplication à surveiller** : src/editors/sound/synth.js copie la synthèse de engine.js.
+
+## 2026-10-26 — Création du moteur
+- **Fait** : noyau + shell (Opus) ; 4 modules en parallèle par Sonnet : pixel (src/editors/pixel), cartes (src/editors/map), objets & code/blocs (src/editors/objects), runtime + exemple (src/runtime, src/core/sample.js). Puis passe Sonnet : Coin/Flag de l'exemple en blocs + correctif espacement HUD.
+- **Vérifié** : `npm run build` OK ; les 4 onglets s'affichent dans le navigateur ; dessin + annuler OK ; le jeu d'exemple tourne.
+- **Décisions** : un tileset = un sprite dont chaque frame est une tuile ; le runtime n'exécute que `script.code` (les blocs régénèrent le code) ; engine.js sans import pour être inliné dans l'export HTML (`?raw`) ; noms d'objets de l'exemple en anglais (Player, Coin, Enemy, Flag).
+- **État / limites connues** : `collide` arrive après séparation physique (vy = 0) → tester « sauter sur la tête » par la géométrie ; calques de tuiles toujours sous les entités ; suppression d'un sprite laisse des spriteId orphelins ; export HTML charge Phaser depuis le CDN jsdelivr ; pas de son.

@@ -1,0 +1,21 @@
+# PixelForge
+
+> 2D game editor and engine for the web (Vite, vanilla JS, Phaser 3, Blockly). A game is one JSON file in games/<id>.pixelforge.json, editable by AI through an MCP server, a CLI, or directly.
+
+Start with AGENTS.md. Then call the MCP tool `pixelforge_guide`, or read the API reference.
+
+## Docs
+- [AGENTS.md](AGENTS.md): workflow, text-sprite format, golden rules, recipes (platformer, top-down, projectile, pickup, patrol)
+- [docs/SCRIPT_API.md](docs/SCRIPT_API.md): scripting API (self, game, input, on)
+- [docs/PROJECT_SCHEMA.json](docs/PROJECT_SCHEMA.json): JSON Schema of the project file
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): architecture, storage, library, AI integration
+
+## Tools
+- [mcp/server.js](mcp/server.js): MCP server (stdio), configured in .mcp.json (`npm run mcp`)
+- [mcp/cli.js](mcp/cli.js): `npm run pf -- list | show | validate | render | export <game> [map]`
+- [mcp/lib/](mcp/lib/): Node library (PNG codec, text sprites, validation, ASCII map rendering, HTML export)
+
+## Optional
+- [src/core/project.js](src/core/project.js): project defaults and normalization
+- [src/runtime/engine.js](src/runtime/engine.js): the game engine
+- [src/core/sample.js](src/core/sample.js): complete sample project

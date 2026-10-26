@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "pixelforge": {
+      "command": "node",
+      "args": [
+        "mcp/server.js"
+      ]
+    }
+  }
+}

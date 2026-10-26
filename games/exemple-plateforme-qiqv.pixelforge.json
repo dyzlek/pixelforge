@@ -1,0 +1,2326 @@
+{
+  "version": 1,
+  "name": "Exemple : plateforme",
+  "meta": {
+    "id": "exemple-plateforme-qiqv",
+    "description": "",
+    "author": "",
+    "thumbnail": "data:image/png;base64,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",
+    "createdAt": "2026-10-25T23:47:32.155Z",
+    "updatedAt": "2026-10-25T23:47:32.231Z"
+  },
+  "settings": {
+    "width": 320,
+    "height": 180,
+    "pixelZoom": 3,
+    "tileSize": 16,
+    "background": "#41a6f6",
+    "startMapId": "map_h6qyrfs",
+    "gravity": 800,
+    "touchControls": true
+  },
+  "palette": [
+    "#1a1c2c",
+    "#5d275d",
+    "#b13e53",
+    "#ef7d57",
+    "#ffcd75",
+    "#a7f070",
+    "#38b764",
+    "#257179",
+    "#29366f",
+    "#3b5dc9",
+    "#41a6f6",
+    "#73eff7",
+    "#f4f4f4",
+    "#94b0c2",
+    "#566c86",
+    "#333c57"
+  ],
+  "sprites": [
+    {
+      "id": "spr_d6w36pn",
+      "name": "Tileset",
+      "width": 16,
+      "height": 16,
+      "frames": [
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA4UlEQVR4AaRPMQ5BQRTcbFRaEbehcwIH0TqBRuMUGifQ0ahcwA1EhEJUEv687Gzm/92nIcabN2923hM3j/nnH8SQPuvjM7F2qemqRTQAnmkFB6grVy1fcNsNoQca0VADBzhTPS6W9wAMpler4AAerE7nQsNM9XwBBnhEsB9PepQsLDeJ5IDUh+2lT2r1sH9b7f7QVwTMRq+ut9rTZwF6ZtXdiNzY0NbXArwz1cmNqoFbAEgX3kb49OLoGb2NCNCL4y8jzLoNPcHFxV/ggEbdRg2Vi4sADmBSeJcUAfpIuXfJFwAA//8LEFpmAAAABklEQVQDAJOVnzFFSMnQAAAAAElFTkSuQmCC",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAuElEQVR4AaSPwQ3CQBADoxMvGqCbUASUyYcSoBsa4IUEmiiOfLtZ8kgk63Jrr+1r9/Hy3YM2zN/tdZz/tg/XLgbX0zttjudDmjFw7WIAEfF8fOJo8HTIziCSCCI8Ha4ziCSC6hlwoDNgEFusPcN1yWCtBQsR0k0GWzVZjs2YgcmgqolAUKLuOicDXfysEtF441YJq0QMvHH7J0TsadwFBacniJDQ0zTjVHAyEIHIUTVJBr7k/1WTHwAAAP//v0DeNwAAAAZJREFUAwBYvFcx0LuA/gAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkUlEQVR4AayQwQmFQAxEQ9r8RXywFu3DFvRuFbYhqO+WhMxpFUY286LLjM/rfo/If8diSvY+iuG/2HzfLlNiQTF8uPMakZ/T35T4sWL48NQBBtmUOp46YIFsSh3/tgNuIJtSx1MHNTsfVC/O8NRBzc5C9eIM/7aDmp0bqhdneOoAI2as546nDliIGeu548MdPAAAAP//kaO4/wAAAAZJREFUAwDKF2fICfhnGwAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AbySvQ2AIBCFL4xkbawYxKEcwBEcgIpYOw098kyuIBzmPI2EFxJ+vvsCuJRStmbZYnZU2hoOsiSGnS5AYZj79wBoIVqlxmDyIyFmgPYg72sMeEE7/geY/SBKqQzwKvhoEqEC9KrcvUoF6FWRKvNcBeDJJ+N7ALRxSZbA9AQAAP//6Len2wAAAAZJREFUAwD1aI5PAn3+pwAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkklEQVR4AbSS0Q2AIAxEm8ZJHEQ3cBvncBVX0H+XcAIHMEFKUkLgqh+NJBfguL4GAodjDh7xtZ7kERMY+3YDF1sQMIxdk7agENBURwNBo00ZYHWQEJLmM8DqgIrF0zwLySOelp48+ucfyB1Vcj1dozk94ltIHwsVi5cAXyEJ1tKmCWAd1n6516YQoIdlgbV2/4MHAAD//wK64MQAAAAGSURBVAMACCz8MatWUo4AAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAkUlEQVR4AayQsQ2FQAxDoyzx/woUtKzFqjAAa1DQAK9Lorg6kIwufoGT7dOy3iPyefmZkr2PYvgvNj+23ZRYUAwf7rxG5Of1NyV+rBg+PHWAQTaljqcOWCCbUse/7YAbyKbU8dRBzc4H1YszPHVQs7NQvTjDv+2gZueG6sUZnjrAiBnrueOpAxZixnru+HAHDwAAAP//f5RUPQAAAAZJREFUAwAwQxiQRoGrSwAAAABJRU5ErkJggg=="
+      ],
+      "animations": [
+        {
+          "name": "idle",
+          "frames": [
+            0
+          ],
+          "fps": 1,
+          "loop": true
+        }
+      ]
+    },
+    {
+      "id": "spr_m42f0xa",
+      "name": "Player",
+      "width": 16,
+      "height": 16,
+      "frames": [
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA1klEQVR4AaSRIQsCQRCFR6NJ/4DYBK02wV9gEARNF4w2sZvsgv4L4YpgtVm0mMRqtSgGy5XznrBwN/NWhTvuMTdv3n63yxYl5+MFbDr9WIv9iwKwkIWZTwHhrSQ+aTAFrAaRaO1ep4/3F0CH0J9HTRQjuoPKfF0wycRgPgW0g0PcvU5FC37CybwG8JgN40xCNXpuAMhvawsUI/j6GAaAQLlXlf0kNIKvqQaAQGMciU+Yp0UB6cDluKQ34jI/AS7oqxTQet7FCQvdNyr6tAwgqAdfr1HP3wAAAP//MrMJKAAAAAZJREFUAwAIE2wh6JdqXQAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0ElEQVR4AbSQIQsCQRCFR6NJ/4DYBK02wV9gEARNF4w2sZvsgv4L4YpgtVm0mMRqtSgGy5X1RhjYm3mLgtxxj9l58/Zj2CL9+eUH2HT6TgstCzfgiyiMfAiIbyUKSYMhYDVISGv3On28nwA6xP151ORiBDeozNcFk0wN5ENAOzq47nVKWuynnMxvAI/Z0G1ri0xIGuQbAK9Z7lVpP4mN2BeYVAPgQWOcUEg89wUBfuByXMIHlcxXgARDFQJazzuJ+KKcuXLvywCieuT8gD7r+RsAAP//xeb4DgAAAAZJREFUAwCslmghqQz4YAAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA4UlEQVR4AaSQIQvCUBSF74wm/QNiVatYBH+BQRA0GYwmxW6yC/ovhBXBarNoMYnValEMlpW5I7xxd+99IGzs8PbOOffb9gqU8/ICdp1+LGW9ywRg0CpbvgkIH0XySYJNwGYQkdThc/l5fwFkCfvruIFFyfyC8nIbqGZiWL4JaI9Ocfc+Jyn4CSdzK8BrMYwzDbGRuQKgv6+usCjBl7+hACiUehU6zkIl+JKqACjUJxH5hJxLAWqtaXoGt/M6gPiAfM4A5LArcwjvIE8BPOADKEHc490U0Hw/yQkDllyO1eVfAAAA//+nt+OiAAAABklEQVQDAFPVfGFdp1vNAAAAAElFTkSuQmCC",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA0klEQVR4AaSRIQvCUBSFr0aT/gGxCVptgr/AIAiaXjDaxG6yC/ovhBXBarNoMYnValEMlpXnjjDY7j0PBo59XHbeed82Xln+vIKCXW/oNexdVICNrMxyKogeFQmhxVSwGcWiOXwuv6yQQJfwfJ20MQz0C2rLbck0k4DlVNB1J9+/z0WDPPHkbiN4LcY+11APet0I0N83VhgG5Po3jACF6qAux1lkQK6tRoBCaxpLCKxnoYJs4XZe0xNJO1QQ2sRyKkjtRWZQ0Hk/BUCCCVzTmSP+AgAA//+yIYgZAAAABklEQVQDANXpaoEEdvlxAAAAAElFTkSuQmCC",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA20lEQVR4AaSQIQsCQRCF54wm/QNiVatYBH+BQRA0GYwmxW6yC/ovhCuC1WbRYhKr1aIYLFfOe8LC7MwsCHfcY27fvPn2dguU8wkCdp1+KmXtZQIwaIUt3wTEjyKFJMEmYDNISOrwufy8vwAyhPV13EBRMv+gvNxGKpkZlm8C2qNT2r3PSQp+xvFeBXgthqmXEAvZVwDk99UVihJ8eQwFQKDUq9BxFivBl1QFQKA+SSgk9LlMAA/czusIcl6tNfXuSAF4gA/yb57xALzBB9zulucBmu8nObkhWWX/CwAA//8U3yULAAAABklEQVQDAAmXeIFOb8rZAAAAAElFTkSuQmCC",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA1UlEQVR4AaSRIQvCUBSFr0aT/gGxCVptgr/AIAiaFow2sZvsgv4LYUWw2ixaTGK1WhSDZWXuCA+2e88TZWMfdzvv7NvGK0rOwyvYdPqxhr2LCvAgK7OcCsJbSXxoMRWsBpFodq/TJ/tJoEu4P4+aGAb6BZX5umCaScByKmgHh7h7nYoGeeLJnEbwmA3jTEPd6HUjQH9bW2AYkOvfMAIUyr2q7CehAbm2GgEKjXEkPrCehgpc4XJc0t1w65hfBSikYcK/BGmZu6aC1vMuACVMR1APzBa/AQAA//+5T1WyAAAABklEQVQDALIWamG8FeBeAAAAAElFTkSuQmCC"
+      ],
+      "animations": [
+        {
+          "name": "idle",
+          "frames": [
+            0,
+            1
+          ],
+          "fps": 3,
+          "loop": true
+        },
+        {
+          "name": "run",
+          "frames": [
+            2,
+            3,
+            4,
+            5
+          ],
+          "fps": 10,
+          "loop": true
+        }
+      ]
+    },
+    {
+      "id": "spr_czgrbrx",
+      "name": "Coin",
+      "width": 16,
+      "height": 16,
+      "frames": [
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAp0lEQVR4AcyPzQmDQBBGN4GcckkaSE25WYonD2IdFuDNdrzagHagvMMns+4giggGHpmfNx/rM5z8XRMwFNnk4T02eQGHEj//XwD1dqdZFCDhldcBJBEC9HKoYQnQwh4iWLyQJcCKR+ok4N2VQewJSgL2HFnnRgHfqnnwtLHt+XPRTi5S9AlaIAICUAO1HGqIAhhYgSNgDnZHD0kAQ0QPdmvcgLW01c8AAAD//3FetrwAAAAGSURBVAMAmqpOIZLjwM0AAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApklEQVR4AbSOsQ2DMBBFnUip0iQLZKZ0GSVViog5GICOdWhZADYAPUsnfeFvUSAsfft8d//dXdPBcx5g+n0WVW1RuwFGDI/3KyHiyBGrLICG27flyQpI/myuAlCbhM/VCgCNOp0/qm1hAffhnxDGPVnAnknr5wDmftQhOXY5CsUGz6a7UHBytQIQRp2ocdTjtYCYhBHRHDlilQXQgEFFzqkKcM0utwIAAP//D3S2sgAAAAZJREFUAwARNzYhupYpqgAAAABJRU5ErkJggg==",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAbklEQVR4AdyQMQ6AIAxFq4mTi17AM7l5FCcH4zk8ABvXYeUCcANIE5IOhL+QLpD8QGj7+9qZOo+uQXiuxEKQugTL/dN2HgiAdAlg6xKEBKt7S1r7ggbtMomMbhCtJ5ZMXL90d7B/ZmLVfeWnmyADAAD///upUI0AAAAGSURBVAMASCEQIdfmNWQAAAAASUVORK5CYII=",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAApklEQVR4AbSOsQ2DMBBFnUip0iQLZKZ0GSVViog5GICOdWhZADYAPUsnfeFvUSAsfft8d//dXdPBcx5g+n0WVW1RuwFGDI/3KyHiyBGrLICG27flyQpI/myuAlCbhM/VCgCNOp0/qm1hAffhnxDGPVnAnknr5wDmftQhOXY5CsUGz6a7UHBytQIQRp2ocdTjtYCYhBHRHDlilQXQgEFFzqkKcM0utwIAAP//D3S2sgAAAAZJREFUAwARNzYhupYpqgAAAABJRU5ErkJggg=="
+      ],
+      "animations": [
+        {
+          "name": "spin",
+          "frames": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "fps": 8,
+          "loop": true
+        }
+      ]
+    },
+    {
+      "id": "spr_rka0lzh",
+      "name": "Slime",
+      "width": 16,
+      "height": 16,
+      "frames": [
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAk0lEQVR4AeyRvQ2AIBCFL+xga2kcwcbOURzAUbR2AEcwMXYWTmNiYY95JBg4ORpiJ8kXfh7vcYCixPYHEH33BtXcahfps14VWBM3SOtPwHR2GnAjn/MgE4DFYb8IcIM0hweaCcAArHVPAOMQ0ICreQEQirJCJ8J1L6DZOspHOSCkK3sX8ciIAK9XQWSvKKljySiFGwAA//+d3+D4AAAABklEQVQDAGJJUwG+l9yoAAAAAElFTkSuQmCC",
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAgklEQVR4AeySsQmAMBBFj+xgaymOkMbOURwgo2jtAI4giJ2F0wgW9pFf3CEHekU6SeBx5OffTzjiKHHlAKI/zsDPXfxCfxuZwXSGCLRB7zmcdcfCsF8E+MCq3CcvWJuegNUID2CfBECoao9i8vRJQLsFKkc7QPskwLz2xeCOpaAUbgAAAP//eFp4KwAAAAZJREFUAwC9vVMBcm2uawAAAABJRU5ErkJggg=="
+      ],
+      "animations": [
+        {
+          "name": "idle",
+          "frames": [
+            0,
+            1
+          ],
+          "fps": 3,
+          "loop": true
+        }
+      ]
+    },
+    {
+      "id": "spr_8tns4jt",
+      "name": "Flag",
+      "width": 16,
+      "height": 16,
+      "frames": [
+        "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAh0lEQVR4AeySsQmAMBBFT5dxCzcQC8EBrG0FOzsHEBzDwt5KbJ3CGaxPPsQQkhOjpRj45PLv/iOEhKQWrxVD6ui9acAeNdRvCY1xxleSqBogNW0PYNt7BEjnIXgNkMKA3d4AQQjDkhwAhk1JIdNzAGbTp/4BRF95g7xsuag7mqeFUJ/y+QcHAAAA//8NIRVUAAAABklEQVQDABvmNssZv52vAAAAAElFTkSuQmCC"
+      ],
+      "animations": [
+        {
+          "name": "idle",
+          "frames": [
+            0
+          ],
+          "fps": 1,
+          "loop": true
+        }
+      ]
+    }
+  ],
+  "sounds": [],
+  "objects": [
+    {
+      "id": "obj_4u8q7hc",
+      "name": "Player",
+      "spriteId": "spr_m42f0xa",
+      "defaultAnim": "idle",
+      "hitbox": {
+        "x": 4,
+        "y": 1,
+        "w": 8,
+        "h": 15
+      },
+      "physics": {
+        "enabled": true,
+        "gravity": true,
+        "immovable": false,
+        "bounce": 0,
+        "collideMap": true,
+        "collideWorld": false
+      },
+      "script": {
+        "mode": "code",
+        "code": "// Le joueur : il se déplace, saute, change d'animation, et la caméra le suit.\nconst SPEED = 90;   // vitesse de marche (pixels par seconde)\nconst JUMP = 290;   // force du saut\n\non('create', () => {\n  game.camera.follow(self);\n});\n\non('update', (dt) => {\n  // 1. Aller à gauche / à droite (flèches, ou Q / D, ou A)\n  self.vx = 0;\n  if (input.isDown('LEFT') || input.isDown('Q') || input.isDown('A')) {\n    self.vx = -SPEED;\n    self.flipX = true;      // le sprite regarde vers la gauche\n  }\n  if (input.isDown('RIGHT') || input.isDown('D')) {\n    self.vx = SPEED;\n    self.flipX = false;\n  }\n\n  // 2. Sauter : self.jump() ne fait rien si on n'est pas posé sur le sol\n  if (input.justPressed('SPACE') || input.justPressed('UP') || input.justPressed('Z') || input.justPressed('W')) {\n    self.jump(JUMP);\n  }\n\n  // 3. Animation : course si on bouge, repos sinon\n  self.play(self.vx !== 0 ? 'run' : 'idle');\n\n  // 4. Tombé dans un trou ? On recommence le niveau.\n  if (self.y > game.mapHeight + 32) {\n    game.score = 0;\n    game.restart();\n  }\n});\n",
+        "blocks": null
+      }
+    },
+    {
+      "id": "obj_wwu0ej2",
+      "name": "Coin",
+      "spriteId": "spr_czgrbrx",
+      "defaultAnim": "spin",
+      "hitbox": {
+        "x": 3,
+        "y": 3,
+        "w": 10,
+        "h": 10
+      },
+      "physics": {
+        "enabled": true,
+        "gravity": false,
+        "immovable": true,
+        "bounce": 0,
+        "collideMap": false,
+        "collideWorld": false
+      },
+      "script": {
+        "mode": "blocks",
+        "code": "on('overlap', 'Player', (other) => {\n  self.destroy();\n  game.score += 1;\n  game.setText('score', 'Pièces : ' + String(game.score), 4, 4);\n});\n",
+        "blocks": {
+          "blocks": {
+            "languageVersion": 0,
+            "blocks": [
+              {
+                "type": "pf_on_overlap",
+                "id": "FVz~!p366IsC^ctua1k.",
+                "x": 20,
+                "y": 20,
+                "fields": {
+                  "OBJ": "Player"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "pf_destroy_self",
+                      "id": "@j[+:r;|mguN=c/%jkGy",
+                      "next": {
+                        "block": {
+                          "type": "pf_score_add",
+                          "id": "uu[laKR}JQ3c4G#znT+5",
+                          "inputs": {
+                            "VALUE": {
+                              "block": {
+                                "type": "math_number",
+                                "id": "mMK7acNDrtau-e!A)3[:",
+                                "fields": {
+                                  "NUM": 1
+                                }
+                              }
+                            }
+                          },
+                          "next": {
+                            "block": {
+                              "type": "pf_set_text",
+                              "id": "$d!D+YZ+#g/v|=n^NhfC",
+                              "fields": {
+                                "ID": "score"
+                              },
+                              "inputs": {
+                                "TEXT": {
+                                  "block": {
+                                    "type": "text_join",
+                                    "id": "NFaXfz(Y9XEJ0,8Bmor2",
+                                    "extraState": {
+                                      "itemCount": 2
+                                    },
+                                    "inputs": {
+                                      "ADD0": {
+                                        "block": {
+                                          "type": "text",
+                                          "id": "Rm}nr8Cr|RtpkCfnilXJ",
+                                          "fields": {
+                                            "TEXT": "Pièces : "
+                                          }
+                                        }
+                                      },
+                                      "ADD1": {
+                                        "block": {
+                                          "type": "pf_score_get",
+                                          "id": "{TS+=L6}#ETx!H_ErUQx"
+                                        }
+                                      }
+                                    }
+                                  }
+                                },
+                                "X": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "KTj%Xfc}~(4H].vF{/#U",
+                                    "fields": {
+                                      "NUM": 4
+                                    }
+                                  }
+                                },
+                                "Y": {
+                                  "block": {
+                                    "type": "math_number",
+                                    "id": "DJOKFh${zeOIfD2Uth{}",
+                                    "fields": {
+                                      "NUM": 4
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "obj_7sbgx8c",
+      "name": "Enemy",
+      "spriteId": "spr_rka0lzh",
+      "defaultAnim": "idle",
+      "hitbox": {
+        "x": 1,
+        "y": 6,
+        "w": 14,
+        "h": 10
+      },
+      "physics": {
+        "enabled": true,
+        "gravity": true,
+        "immovable": true,
+        "bounce": 0,
+        "collideMap": true,
+        "collideWorld": false
+      },
+      "script": {
+        "mode": "code",
+        "code": "// L'ennemi : il fait des allers-retours. Sauter sur sa tête le tue, le toucher de côté fait perdre.\nconst SPEED = 30;\nlet dir = -1;           // -1 = vers la gauche, 1 = vers la droite\n\non('create', () => {\n  self.vx = dir * SPEED;\n});\n\non('update', () => {\n  // Bloqué par un mur ? Sa vitesse tombe à 0 : on fait demi-tour.\n  if (self.vx === 0) dir = -dir;\n  self.vx = dir * SPEED;\n  self.flipX = dir > 0;\n\n  // Tombé dans un trou : on le supprime\n  if (self.y > game.mapHeight + 16) self.destroy();\n});\n\n// Demi-tour aussi toutes les 1,4 secondes\non('timer', 1400, () => {\n  dir = -dir;\n});\n\non('collide', 'Player', (player) => {\n  // Le joueur est « au-dessus » si le bas de son sprite est près du haut du slime\n  const fromAbove = player.y + player.height - self.y < 10;\n  if (fromAbove) {\n    self.destroy();\n    player.vy = -180;   // petit rebond\n    game.score += 3;\n    game.vars.showScore();\n  } else {\n    game.camera.shake(150, 0.01);\n    game.score = 0;\n    game.restart();\n  }\n});\n",
+        "blocks": null
+      }
+    },
+    {
+      "id": "obj_t70n7kh",
+      "name": "Flag",
+      "spriteId": "spr_8tns4jt",
+      "defaultAnim": "idle",
+      "hitbox": {
+        "x": 2,
+        "y": 0,
+        "w": 10,
+        "h": 16
+      },
+      "physics": {
+        "enabled": true,
+        "gravity": false,
+        "immovable": true,
+        "bounce": 0,
+        "collideMap": false,
+        "collideWorld": false
+      },
+      "script": {
+        "mode": "blocks",
+        "code": "on('overlap', 'Player', (other) => {\n  if (!self.vars['won']) {\n    self.vars['won'] = true;\n    game.camera.flash(300);\n    game.setText('win1', 'Bravo !', game.width / 2 - 48, 50);\n    game.setText('win2', 'Score : ' + String(game.score), game.width / 2 - 48, 63);\n    game.setText('win3', 'ENTREE = rejouer', game.width / 2 - 48, 76);\n  }\n});\non('keydown', 'ENTER', () => {\n  if (self.vars['won']) {\n    game.score = 0;\n    game.restart();\n  }\n});\n",
+        "blocks": {
+          "blocks": {
+            "languageVersion": 0,
+            "blocks": [
+              {
+                "type": "pf_on_overlap",
+                "id": "eHAKKWwC+6}I;FQJ)$Y8",
+                "x": 20,
+                "y": 20,
+                "fields": {
+                  "OBJ": "Player"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "Y{^S?v,f)JNw6-T7%Mu%",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "logic_negate",
+                            "id": "vdKs:L#ow$5ZR(wwpD^X",
+                            "inputs": {
+                              "BOOL": {
+                                "block": {
+                                  "type": "pf_selfvar_get",
+                                  "id": "_TyOPt.mR3OVH!f,ceO@",
+                                  "fields": {
+                                    "NAME": "won"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "pf_selfvar_set",
+                            "id": "a}=K$mWO--mgyLoct^RI",
+                            "fields": {
+                              "NAME": "won"
+                            },
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "logic_boolean",
+                                  "id": "GFBRYz$:T|6dC[w;(?N!",
+                                  "fields": {
+                                    "BOOL": "TRUE"
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "pf_cam_flash",
+                                "id": "I)crQFP1uaWMS?=!p(m|",
+                                "inputs": {
+                                  "MS": {
+                                    "block": {
+                                      "type": "math_number",
+                                      "id": "WxsrSp%bZ52E.MM?@`Be",
+                                      "fields": {
+                                        "NUM": 300
+                                      }
+                                    }
+                                  }
+                                },
+                                "next": {
+                                  "block": {
+                                    "type": "pf_set_text",
+                                    "id": "~f/.paH_;?I_NlB!/+m|",
+                                    "fields": {
+                                      "ID": "win1"
+                                    },
+                                    "inputs": {
+                                      "TEXT": {
+                                        "block": {
+                                          "type": "text",
+                                          "id": "%-XLVh$R_,jz,1~s]vU*",
+                                          "fields": {
+                                            "TEXT": "Bravo !"
+                                          }
+                                        }
+                                      },
+                                      "X": {
+                                        "block": {
+                                          "type": "math_arithmetic",
+                                          "id": "w#3cr!g7wuS1k!=gkf/=",
+                                          "fields": {
+                                            "OP": "MINUS"
+                                          },
+                                          "inputs": {
+                                            "A": {
+                                              "block": {
+                                                "type": "math_arithmetic",
+                                                "id": "$,G,abyTe#er*?$VRaxa",
+                                                "fields": {
+                                                  "OP": "DIVIDE"
+                                                },
+                                                "inputs": {
+                                                  "A": {
+                                                    "block": {
+                                                      "type": "pf_game_info",
+                                                      "id": "EoW318m*nh}XmTM30Na9",
+                                                      "fields": {
+                                                        "PROP": "width"
+                                                      }
+                                                    }
+                                                  },
+                                                  "B": {
+                                                    "block": {
+                                                      "type": "math_number",
+                                                      "id": "ik,djkbNXE#yg,L=WbI+",
+                                                      "fields": {
+                                                        "NUM": 2
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            },
+                                            "B": {
+                                              "block": {
+                                                "type": "math_number",
+                                                "id": "=vkpmPeLAf3P)9GBkCl7",
+                                                "fields": {
+                                                  "NUM": 48
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      },
+                                      "Y": {
+                                        "block": {
+                                          "type": "math_number",
+                                          "id": "=#0r)vY,Sp*j^_l_GnF;",
+                                          "fields": {
+                                            "NUM": 50
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "next": {
+                                      "block": {
+                                        "type": "pf_set_text",
+                                        "id": "a{@b0r()Upvz1lZx?-U:",
+                                        "fields": {
+                                          "ID": "win2"
+                                        },
+                                        "inputs": {
+                                          "TEXT": {
+                                            "block": {
+                                              "type": "text_join",
+                                              "id": "Q3^Wx:/rts.Lka|BbY):",
+                                              "extraState": {
+                                                "itemCount": 2
+                                              },
+                                              "inputs": {
+                                                "ADD0": {
+                                                  "block": {
+                                                    "type": "text",
+                                                    "id": "uqB{@/a@sM4LUc[}{ToP",
+                                                    "fields": {
+                                                      "TEXT": "Score : "
+                                                    }
+                                                  }
+                                                },
+                                                "ADD1": {
+                                                  "block": {
+                                                    "type": "pf_score_get",
+                                                    "id": "oTT/SA5(2*~*GG2x~yjc"
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "X": {
+                                            "block": {
+                                              "type": "math_arithmetic",
+                                              "id": "ENg^8Z|[KZTyc5|Ru4B.",
+                                              "fields": {
+                                                "OP": "MINUS"
+                                              },
+                                              "inputs": {
+                                                "A": {
+                                                  "block": {
+                                                    "type": "math_arithmetic",
+                                                    "id": "];xiCq$3zv-L^Qv3Btv.",
+                                                    "fields": {
+                                                      "OP": "DIVIDE"
+                                                    },
+                                                    "inputs": {
+                                                      "A": {
+                                                        "block": {
+                                                          "type": "pf_game_info",
+                                                          "id": "MmHOHG]Ng7]j5Z,]$Np^",
+                                                          "fields": {
+                                                            "PROP": "width"
+                                                          }
+                                                        }
+                                                      },
+                                                      "B": {
+                                                        "block": {
+                                                          "type": "math_number",
+                                                          "id": "1zjQwCg+=3nwDPK8;=G}",
+                                                          "fields": {
+                                                            "NUM": 2
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                },
+                                                "B": {
+                                                  "block": {
+                                                    "type": "math_number",
+                                                    "id": "S%W#J57n4rr(Wh*p[sYO",
+                                                    "fields": {
+                                                      "NUM": 48
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          },
+                                          "Y": {
+                                            "block": {
+                                              "type": "math_number",
+                                              "id": "f1)h{Ji+yPI8=z^bwPX*",
+                                              "fields": {
+                                                "NUM": 63
+                                              }
+                                            }
+                                          }
+                                        },
+                                        "next": {
+                                          "block": {
+                                            "type": "pf_set_text",
+                                            "id": "q-+B.-26H*hpU)tf($_y",
+                                            "fields": {
+                                              "ID": "win3"
+                                            },
+                                            "inputs": {
+                                              "TEXT": {
+                                                "block": {
+                                                  "type": "text",
+                                                  "id": ":|ss#olPWYE*N4[vRVX!",
+                                                  "fields": {
+                                                    "TEXT": "ENTREE = rejouer"
+                                                  }
+                                                }
+                                              },
+                                              "X": {
+                                                "block": {
+                                                  "type": "math_arithmetic",
+                                                  "id": "-+s-oC|h_3EjN7%,ocgB",
+                                                  "fields": {
+                                                    "OP": "MINUS"
+                                                  },
+                                                  "inputs": {
+                                                    "A": {
+                                                      "block": {
+                                                        "type": "math_arithmetic",
+                                                        "id": "n~p38RymLHWnuYm1W1Ko",
+                                                        "fields": {
+                                                          "OP": "DIVIDE"
+                                                        },
+                                                        "inputs": {
+                                                          "A": {
+                                                            "block": {
+                                                              "type": "pf_game_info",
+                                                              "id": "s6$Eio=+oG9r`4N`P^Ey",
+                                                              "fields": {
+                                                                "PROP": "width"
+                                                              }
+                                                            }
+                                                          },
+                                                          "B": {
+                                                            "block": {
+                                                              "type": "math_number",
+                                                              "id": "yDU%y5[fF7H}5l;I%DB(",
+                                                              "fields": {
+                                                                "NUM": 2
+                                                              }
+                                                            }
+                                                          }
+                                                        }
+                                                      }
+                                                    },
+                                                    "B": {
+                                                      "block": {
+                                                        "type": "math_number",
+                                                        "id": "BUW`*f|ZKM@p}xDI,yA:",
+                                                        "fields": {
+                                                          "NUM": 48
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              },
+                                              "Y": {
+                                                "block": {
+                                                  "type": "math_number",
+                                                  "id": "TZN_~O=mdfEea+%+?C_}",
+                                                  "fields": {
+                                                    "NUM": 76
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              {
+                "type": "pf_on_key",
+                "id": "$y-u-jFLhpcO{5g+~A!6",
+                "x": 20,
+                "y": 300,
+                "fields": {
+                  "KEY": "ENTER"
+                },
+                "inputs": {
+                  "DO": {
+                    "block": {
+                      "type": "controls_if",
+                      "id": "/@/WRJ2|GZZ-xcnd|X-*",
+                      "inputs": {
+                        "IF0": {
+                          "block": {
+                            "type": "pf_selfvar_get",
+                            "id": "66$Of_z}fiI[Z.TV73v7",
+                            "fields": {
+                              "NAME": "won"
+                            }
+                          }
+                        },
+                        "DO0": {
+                          "block": {
+                            "type": "pf_score_set",
+                            "id": "z;oI{:+wDld7wqOiFO|I",
+                            "inputs": {
+                              "VALUE": {
+                                "block": {
+                                  "type": "math_number",
+                                  "id": "B2m1fV]:Rp)Hus)*,#xB",
+                                  "fields": {
+                                    "NUM": 0
+                                  }
+                                }
+                              }
+                            },
+                            "next": {
+                              "block": {
+                                "type": "pf_restart",
+                                "id": "%+.v-Zha[w.N,B7qsp[c"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "maps": [
+    {
+      "id": "map_h6qyrfs",
+      "name": "Niveau 1",
+      "width": 60,
+      "height": 12,
+      "tileSize": 16,
+      "tilesetSpriteId": "spr_d6w36pn",
+      "background": "#41a6f6",
+      "layers": [
+        {
+          "id": "lay_7dbedug",
+          "name": "Décor",
+          "data": [
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1
+          ],
+          "collides": false,
+          "visible": true,
+          "depth": "below"
+        },
+        {
+          "id": "lay_9dqwkli",
+          "name": "Sol",
+          "data": [
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            4,
+            4,
+            4,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            4,
+            4,
+            4,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            4,
+            4,
+            4,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            4,
+            4,
+            4,
+            2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            3,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            5,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            2,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            3,
+            3,
+            -1,
+            -1,
+            -1,
+            -1,
+            -1,
+            5,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            -1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            -1,
+            -1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            -1,
+            -1,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            -1,
+            -1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            -1,
+            -1,
+            -1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            -1,
+            -1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          "collides": true,
+          "visible": true,
+          "depth": "below"
+        }
+      ],
+      "entities": [
+        {
+          "id": "ent_qu9wh7m",
+          "objectId": "obj_4u8q7hc",
+          "x": 32,
+          "y": 144
+        },
+        {
+          "id": "ent_mbwghky",
+          "objectId": "obj_wwu0ej2",
+          "x": 96,
+          "y": 144
+        },
+        {
+          "id": "ent_3ya5gr4",
+          "objectId": "obj_wwu0ej2",
+          "x": 112,
+          "y": 128
+        },
+        {
+          "id": "ent_ou46mux",
+          "objectId": "obj_wwu0ej2",
+          "x": 128,
+          "y": 144
+        },
+        {
+          "id": "ent_0tfwhzk",
+          "objectId": "obj_wwu0ej2",
+          "x": 192,
+          "y": 112
+        },
+        {
+          "id": "ent_z8gerxt",
+          "objectId": "obj_wwu0ej2",
+          "x": 368,
+          "y": 112
+        },
+        {
+          "id": "ent_rx52mq6",
+          "objectId": "obj_wwu0ej2",
+          "x": 416,
+          "y": 80
+        },
+        {
+          "id": "ent_5hunw6l",
+          "objectId": "obj_wwu0ej2",
+          "x": 432,
+          "y": 80
+        },
+        {
+          "id": "ent_839j1f8",
+          "objectId": "obj_wwu0ej2",
+          "x": 448,
+          "y": 80
+        },
+        {
+          "id": "ent_rrioh3c",
+          "objectId": "obj_wwu0ej2",
+          "x": 624,
+          "y": 112
+        },
+        {
+          "id": "ent_5pn8l3z",
+          "objectId": "obj_wwu0ej2",
+          "x": 720,
+          "y": 144
+        },
+        {
+          "id": "ent_4wgpewu",
+          "objectId": "obj_wwu0ej2",
+          "x": 800,
+          "y": 144
+        },
+        {
+          "id": "ent_0ik3b2v",
+          "objectId": "obj_wwu0ej2",
+          "x": 864,
+          "y": 112
+        },
+        {
+          "id": "ent_hkwg5cb",
+          "objectId": "obj_7sbgx8c",
+          "x": 224,
+          "y": 144
+        },
+        {
+          "id": "ent_lcrcucl",
+          "objectId": "obj_7sbgx8c",
+          "x": 432,
+          "y": 144
+        },
+        {
+          "id": "ent_4xw55c0",
+          "objectId": "obj_7sbgx8c",
+          "x": 688,
+          "y": 144
+        },
+        {
+          "id": "ent_62vz6tj",
+          "objectId": "obj_t70n7kh",
+          "x": 896,
+          "y": 144
+        }
+      ]
+    }
+  ],
+  "globalScript": {
+    "mode": "code",
+    "code": "// Script global : lancé une fois au début de chaque niveau (self vaut null ici).\nlet elapsed = 0;\n\non('create', () => {\n  // game.vars est partagé par tous les scripts : on y range une fonction pratique pour afficher le score.\n  game.vars.showScore = () => game.setText('score', 'Pièces : ' + game.score, 4, 4);\n  game.vars.showScore();\n  game.setText('help', 'Flèches ou Q/D : bouger   Espace : sauter', 4, game.height - 16);\n});\n\n// L'aide disparaît au bout de 6 secondes\non('update', (dt) => {\n  elapsed += dt;\n  if (elapsed > 6) game.removeText('help');\n});\n",
+    "blocks": null
+  }
+}

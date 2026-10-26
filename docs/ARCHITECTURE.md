@@ -1,0 +1,128 @@
+# PixelForge — architecture
+
+Moteur / éditeur de jeux 2D dans le navigateur, basé sur **Phaser 3**.
+Vite + JavaScript (modules ES), pas de framework UI.
+
+```
+index.html
+src/
+  main.js              shell : barre du haut, onglets, menu projet (Nouveau / Ouvrir / Enregistrer / Exporter)
+  style.css            thème global (variables CSS)
+  core/
+    project.js         schéma du projet, createEmptyProject(), uid(), helpers
+    store.js           état global + événements + sauvegarde auto (localStorage)
+    sample.js          projet d'exemple (sprites dessinés en code, carte, scripts)   [runtime]
+  editors/
+    pixel/             éditeur de pixel art + animations                           [agent pixel]
+    map/               éditeur de cartes (tuiles, calques, collisions, entités)    [agent map]
+    objects/           objets du jeu : propriétés, physique, script code OU blocs  [agent code]
+  runtime/
+    engine.js          transforme un projet en jeu Phaser (aucun import !)         [agent runtime]
+    play.js            onglet « Jouer » + export HTML autonome                    [agent runtime]
+docs/
+  ARCHITECTURE.md      ce fichier
+  SCRIPT_API.md        API des scripts (partagée entre blocs, code et runtime)
+```
+
+## Contrat des modules d'onglet
+
+Chaque onglet est un module qui exporte :
+
+```js
+export function mount(container, store) { ... }   // appelé à chaque ouverture de l'onglet
+export function unmount() { ... }                 // appelé quand on quitte l'onglet (nettoyer listeners, jeux Phaser…)
+```
+
+`container` est un `<div class="tab-view">` vide, pleine taille (flex). Le module construit tout son DOM dedans.
+Un module ne touche **jamais** au DOM hors de son container, et n'importe jamais un autre éditeur.
+Préfixer les classes CSS par le module (`px-`, `map-`, `obj-`, `play-`) et mettre le CSS dans un fichier
+`style.css` du dossier du module, importé par le module (`import './style.css'`).
+
+## Store (src/core/store.js)
+
+```js
+store.project                 // l'objet projet courant (voir schéma)
+store.update(fn, reason?)     // fn(project) modifie le projet en place ; émet 'change' ; sauvegarde auto
+store.on(event, cb) -> off()  // événements : 'change' (reason), 'load' (projet remplacé)
+store.emit(event, payload)
+store.load(projectJson)       // remplace le projet (émet 'load')
+store.toJSON()                // string JSON
+store.ui                      // état d'interface partagé, libre : { selectedSpriteId, selectedMapId, selectedObjectId }
+```
+
+Ne pas garder de copie du projet : toujours relire `store.project` (il est remplacé au chargement).
+
+## Schéma du projet (voir src/core/project.js pour les valeurs par défaut)
+
+```js
+{
+  version: 1,
+  name: 'Mon jeu',
+  settings: { width: 320, height: 180, pixelZoom: 3, tileSize: 16, background: '#1a1c2c',
+              startMapId: '<id>', gravity: 800 },
+  palette: ['#1a1c2c', ...],           // couleurs (hex) proposées dans l'éditeur pixel
+
+  sprites: [{
+    id, name,
+    width, height,                     // taille d'une frame en pixels
+    frames: ['data:image/png;base64,…'],   // une image PNG par frame (taille width×height)
+    animations: [{ name: 'idle', frames: [0, 1], fps: 6, loop: true }]
+  }],
+
+  // Un « tileset » est simplement un sprite dont chaque frame est une tuile (taille = tileSize).
+  objects: [{
+    id, name,                          // name est utilisé par les scripts (game.spawn('Coin'), collide 'Coin')
+    spriteId, defaultAnim: 'idle' | null,
+    hitbox: null | { x, y, w, h },     // en pixels relatifs à la frame ; null = toute la frame
+    physics: { enabled: true, gravity: true, immovable: false, bounce: 0, collideMap: true, collideWorld: true },
+    script: { mode: 'blocks' | 'code', code: '', blocks: null }   // blocks = sérialisation JSON Blockly
+  }],
+
+  maps: [{
+    id, name,
+    width: 40, height: 12,             // en tuiles
+    tileSize: 16,
+    tilesetSpriteId: '<sprite id>' | null,
+    background: '#1a1c2c',
+    layers: [{ id, name, data: [-1, …],  // width*height, -1 = vide, sinon index de frame du tileset
+               collides: true, visible: true }],
+    entities: [{ id, objectId, x, y }]   // x,y en pixels (coin haut-gauche de la frame)
+  }],
+
+  globalScript: { mode: 'blocks' | 'code', code: '', blocks: null }
+}
+```
+
+Le runtime n'exécute **que** `script.code`. Le mode blocs régénère `code` à chaque modification.
+
+### Champs ajoutés en v1.1 (remplis par normalizeProject si absents)
+
+```js
+meta: { id, description, author, thumbnail: dataURL|null, createdAt, updatedAt },  // id = identifiant de la bibliothèque
+settings.touchControls: true,          // croix + boutons A/B tactiles sur mobile
+sounds: [{ id, name,
+           kind: 'sfx' | 'file',
+           sfx: { preset: 'jump'|'coin'|'hit'|'powerup'|'explosion'|'laser'|'blip'|'portal',
+                  seed: 0, volume: 0.5, pitch: 1 },   // son synthétisé (WebAudio), si kind = 'sfx'
+           dataUrl: 'data:audio/…' }],                 // fichier importé, si kind = 'file'
+maps[].layers[].depth: 'below' | 'above',             // 'above' = dessiné devant les entités
+maps[].entities[].props: { clé: valeur }              // propriétés propres à l'instance → self.props
+```
+
+## Bibliothèque de jeux et stockage
+
+Un projet = un jeu. La bibliothèque contient plusieurs jeux, identifiés par `project.meta.id`.
+
+- **Sur disque (source de vérité quand le serveur de dev tourne)** : `games/<meta.id>.pixelforge.json`
+  (JSON du projet, indenté 2 espaces). Le serveur Vite expose une API REST (plugin dans vite.config.js) :
+  - `GET /api/games` → `[{ id, name, description, thumbnail, updatedAt }]`
+  - `GET /api/games/:id` → projet ; `PUT /api/games/:id` (corps = projet) ; `DELETE /api/games/:id`
+  - `GET /api/events` → Server-Sent Events : `{ type: 'game-changed' | 'game-deleted', id }` quand un fichier
+    de `games/` change sur disque (par ex. modifié par une IA via le serveur MCP) → l'éditeur recharge le jeu ouvert.
+- **Sans serveur (build statique)** : IndexedDB du navigateur, même interface.
+- Le serveur MCP (`mcp/`) et la CLI lisent / écrivent directement les fichiers de `games/`.
+
+## IA
+
+- `AGENTS.md` (racine) : guide pour toute IA qui veut créer un jeu. `llms.txt` : index court.
+- `mcp/` : serveur MCP (stdio) + bibliothèque Node pour manipuler les jeux de `games/`. Déclaré dans `.mcp.json`.
