@@ -7,6 +7,17 @@
 
 ---
 
+## 2026-10-26 (26) — [Phase A] A7 : Gestionnaire de projets (Project Manager)
+- **Fait** :
+  - Création de `src/ui/project-manager.js` et `project-manager.css` : écran d'accueil dédié façon Project Manager de Godot 4.
+  - Grille de cartes de projets avec miniatures grand format, titre, description, badge de projet actif et date relative.
+  - Recherche en direct et tri par date ou nom (A-Z).
+  - Modal de création avec modèles prêts à l'emploi : Plateforme 2D (complet avec Blueprints), Projet Vide, et Vue de dessus (Top-down).
+  - Actions rapides : Ouvrir, Dupliquer, Exporter JSON, Supprimer et « Charger les jeux d'exemple ».
+  - Commande « Fermer le projet / Retour aux projets » dans le menu Jeu pour basculer facilement.
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #8.
+
 ## 2026-10-26 (25) — [Phase A] A6 : Lancer, console et débogage distant dans le dock
 - **Fait** :
   - Création de `src/ui/panels/console.js` et `console.css` : panneau Console dans le dock bas avec historique de logs, filtrage par niveau et recherche.
