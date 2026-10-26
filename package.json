@@ -1,7 +1,7 @@
 {
   "name": "pixelforge",
   "version": "1.0.0",
-  "description": "Éditeur de jeux 2D dans le navigateur avec moteur Phaser 3, pixel art, cartes en tuiles et scripts visuels Blueprint",
+  "description": "Éditeur de jeux 2D dans le navigateur avec moteur Phaser 4, pixel art, cartes en tuiles et scripts visuels Blueprint",
   "private": true,
   "scripts": {
     "dev": "vite",

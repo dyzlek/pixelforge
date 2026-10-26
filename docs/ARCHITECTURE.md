@@ -1,6 +1,6 @@
 # PixelForge — architecture
 
-Moteur / éditeur de jeux 2D dans le navigateur, basé sur **Phaser 3**.
+Moteur / éditeur de jeux 2D dans le navigateur, basé sur **Phaser 4**.
 Vite + JavaScript (modules ES), pas de framework UI.
 
 ```
