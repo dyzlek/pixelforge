@@ -4,8 +4,13 @@
  */
 
 import './console.css';
-import { getDebugSnapshot } from '../../runtime/play.js';
 import { getIconSvg } from '../icons.js';
+
+function getDebugSnapshot() {
+  return typeof globalThis !== 'undefined' && globalThis.__pfDebugSnapshot
+    ? globalThis.__pfDebugSnapshot()
+    : null;
+}
 
 export function createConsolePanel(container, store, workspace) {
   let activeTab = 'logs'; // 'logs' | 'remote'

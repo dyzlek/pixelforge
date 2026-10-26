@@ -1,6 +1,5 @@
 import './style.css';
 import { store } from './core/store.js';
-import { exportStandaloneHTML } from './runtime/play.js';
 import { DockManager } from './ui/dock.js';
 import { DocumentWorkspace } from './ui/documents.js';
 import { createResourcesPanel } from './ui/panels/resources.js';
@@ -266,8 +265,9 @@ function download(filename, content, type) {
 
 const slug = () => (store.project?.name || 'jeu').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'jeu';
 
-function triggerExport() {
+async function triggerExport() {
   if (!store.currentId) { toast('Ouvrez un jeu depuis la bibliothèque pour l\'exporter'); return; }
+  const { exportStandaloneHTML } = await import('./runtime/play.js');
   download(slug() + '.html', exportStandaloneHTML(store.project), 'text/html');
 }
 

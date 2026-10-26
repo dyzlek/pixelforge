@@ -170,3 +170,7 @@ export function exportStandaloneHTML(project) {
 export function getDebugSnapshot() {
   return ctx?.game?.__debugSnapshot?.() || null;
 }
+
+if (typeof globalThis !== 'undefined') {
+  globalThis.__pfDebugSnapshot = getDebugSnapshot;
+}

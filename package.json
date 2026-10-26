@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node src/graph/test/graph.test.mjs && node src/audio/test/chip.test.mjs && node src/ai/test/ai.test.mjs && node src/runtime3d/test/engine3d.test.mjs && node src/runtime3d/test/cameras.test.mjs && node src/editors/voxel/test/mesher.test.mjs && node src/editors/scene3d/test/gridmap.test.mjs && node mcp/test/e2e.mjs",
+    "test": "node src/graph/test/graph.test.mjs && node src/audio/test/chip.test.mjs && node src/ai/test/ai.test.mjs && node src/runtime3d/test/engine3d.test.mjs && node src/runtime3d/test/cameras.test.mjs && node src/editors/voxel/test/mesher.test.mjs && node src/editors/scene3d/test/gridmap.test.mjs && node src/core/test/compression.test.mjs && node mcp/test/e2e.mjs",
     "doc:nodes": "node scripts/gen-nodes-doc.mjs",
     "check:doc": "node scripts/gen-nodes-doc.mjs --check",
+    "test:e2e": "playwright test",
     "mcp": "node mcp/server.js",
     "pf": "node mcp/cli.js"
   },
@@ -44,6 +45,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "blockly": "^11.2.2",
     "vite": "^6.3.5"
   },
