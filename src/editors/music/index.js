@@ -3,6 +3,7 @@ import './music.css';
 import { createSong, uid } from '../../core/project.js';
 import { createChipAudio, MASTER_GAIN } from '../../audio/chip.js';
 import { renderChannelRack } from './rack.js';
+import { renderPianoRoll } from './pianoroll.js';
 import { getIconSvg } from '../../ui/icons.js';
 
 let sharedAudioCtx = null;
@@ -42,6 +43,7 @@ export function mount(container, store, { refId = null } = {}) {
   let selectedChannelId = song.channels?.[0]?.id || null;
   let isPlaying = false;
   let playMode = 'pattern'; // 'pattern' ou 'song'
+  let activeView = 'rack'; // 'rack' ou 'pianoroll'
   let currentStep = -1;
   let metronome = false;
   let activeController = null;
@@ -110,6 +112,46 @@ export function mount(container, store, { refId = null } = {}) {
   modeGroup.appendChild(btnPatMode);
   modeGroup.appendChild(btnSongMode);
   transport.appendChild(modeGroup);
+
+  // Vue Rack / Piano Roll
+  const viewGroup = document.createElement('div');
+  viewGroup.className = 'pf-transport-btn-group';
+
+  const btnViewRack = document.createElement('button');
+  btnViewRack.className = 'pf-transport-btn active';
+  btnViewRack.style.width = 'auto';
+  btnViewRack.style.padding = '0 8px';
+  btnViewRack.style.fontSize = '11px';
+  btnViewRack.style.fontWeight = 'bold';
+  btnViewRack.textContent = 'RACK';
+  btnViewRack.title = 'Vue Channel Rack';
+
+  const btnViewRoll = document.createElement('button');
+  btnViewRoll.className = 'pf-transport-btn';
+  btnViewRoll.style.width = 'auto';
+  btnViewRoll.style.padding = '0 8px';
+  btnViewRoll.style.fontSize = '11px';
+  btnViewRoll.style.fontWeight = 'bold';
+  btnViewRoll.textContent = 'PIANO ROLL';
+  btnViewRoll.title = 'Vue Piano Roll interactif';
+
+  btnViewRack.onclick = () => {
+    activeView = 'rack';
+    btnViewRack.classList.add('active');
+    btnViewRoll.classList.remove('active');
+    render();
+  };
+
+  btnViewRoll.onclick = () => {
+    activeView = 'pianoroll';
+    btnViewRoll.classList.add('active');
+    btnViewRack.classList.remove('active');
+    render();
+  };
+
+  viewGroup.appendChild(btnViewRack);
+  viewGroup.appendChild(btnViewRoll);
+  transport.appendChild(viewGroup);
 
   const sep1 = document.createElement('div');
   sep1.className = 'pf-transport-sep';
@@ -324,10 +366,35 @@ export function mount(container, store, { refId = null } = {}) {
     }
   }
 
-  // Rendu du Channel Rack
+  // Rendu du Channel Rack ou Piano Roll
   function render() {
     updateLenSelectValue();
     refreshPatternSelect();
+
+    if (activeView === 'pianoroll') {
+      renderPianoRoll(mainArea, {
+        song,
+        activePatternId,
+        selectedChannelId,
+        chip: getSharedChip(),
+        currentStep,
+        onNotesChange() {
+          store.update((p) => {
+            const cur = (p.songs || []).find((s) => s.id === song.id);
+            if (cur) cur.patterns = song.patterns;
+          }, 'song:notes');
+        },
+        onChannelChange(chId, patch) {
+          store.update((p) => {
+            const curSong = (p.songs || []).find((s) => s.id === song.id);
+            const curCh = (curSong?.channels || []).find((c) => c.id === chId);
+            if (curCh) Object.assign(curCh, patch);
+          }, 'song:channel_patch');
+          render();
+        }
+      });
+      return;
+    }
 
     renderChannelRack(mainArea, {
       song,
@@ -336,6 +403,9 @@ export function mount(container, store, { refId = null } = {}) {
       selectedChannelId,
       onChannelSelect(chId) {
         selectedChannelId = chId;
+        activeView = 'pianoroll';
+        btnViewRoll.classList.add('active');
+        btnViewRack.classList.remove('active');
         render();
       },
       onStepToggle(chId, stepIndex, pitch, active) {
