@@ -7,6 +7,16 @@
 
 ---
 
+## 2026-10-26 (25) — [Phase A] A6 : Lancer, console et débogage distant dans le dock
+- **Fait** :
+  - Création de `src/ui/panels/console.js` et `console.css` : panneau Console dans le dock bas avec historique de logs, filtrage par niveau et recherche.
+  - Détection des erreurs de script avec lien de navigation en 1 clic vers l'objet ou script concerné.
+  - Inspecteur distant (Remote Inspector) temps réel avec rafraîchissement des instances vivantes (positions, vitesses, états, variables `self.vars`) et compteur de FPS via `game.__debugSnapshot()`.
+  - Création de `src/ui/panels/problems.js` : panneau Problèmes avec validation continue du projet (débouncée à 1 s) et navigation instantanée vers la ressource fautive.
+  - Raccordement des raccourcis globaux F5 (Lancer le jeu), F6 (Scène courante) et F8 (Arrêter).
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #7.
+
 ## 2026-10-26 (24) — [Phase A] A5 : Éditeur de scène 2D et arbre de scène (Scene Tree)
 - **Fait** :
   - Support de `angle`, `scale`, `locked`, `visible` sur les entités de scène dans `docs/PROJECT_SCHEMA.json`, `src/core/project.js` (`normalizeProject`) et `src/runtime/engine.js` (sans aucun import).

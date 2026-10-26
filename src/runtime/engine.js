@@ -458,6 +458,8 @@ export function createGame(project, parent, Phaser, opts = {}) {
   }
   setupTouch();
 
+  let activeScene = null;
+
   // ---------- Chargement des images (asynchrone) ----------
   const loadImage = (src) => new Promise((resolve) => {
     if (!src) { resolve(null); return; }
@@ -530,6 +532,7 @@ export function createGame(project, parent, Phaser, opts = {}) {
     }
 
     create() {
+      activeScene = this;
       const map = this.map;
       this.insts = [];
       this.nextId = 1;
@@ -1477,5 +1480,22 @@ export function createGame(project, parent, Phaser, opts = {}) {
     if (touchEl && touchEl.parentNode) touchEl.parentNode.removeChild(touchEl);
     audio.dispose();
   });
+  game.__debugSnapshot = () => {
+    if (!activeScene || !activeScene.insts) return { instances: [], fps: 0, mapName: '' };
+    return {
+      fps: activeScene.game?.loop ? Math.round(activeScene.game.loop.actualFps) : 60,
+      mapName: activeScene.map?.name || '',
+      instances: activeScene.insts.filter((i) => !i.dead).map((i) => ({
+        id: i.id,
+        name: i.name,
+        x: Math.round(i.self.x),
+        y: Math.round(i.self.y),
+        vx: Math.round(i.self.vx || 0),
+        vy: Math.round(i.self.vy || 0),
+        onGround: !!i.self.onGround,
+        vars: { ...i.vars },
+      })),
+    };
+  };
   return game;
 }
