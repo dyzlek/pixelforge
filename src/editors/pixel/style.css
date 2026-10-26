@@ -13,7 +13,7 @@
 /* Liste des sprites */
 .px-sprite-list { display: flex; flex-direction: column; gap: 2px; max-height: 38vh; overflow: auto; margin-bottom: 8px; }
 .px-sprite-list .list-item { padding: 3px 6px; }
-.px-thumb { width: 30px; height: 30px; object-fit: contain; flex: none; background: #2a2d3e; border-radius: 3px; }
+.px-thumb { width: 30px; height: 30px; object-fit: contain; flex: none; background: var(--bg-2); border-radius: 3px; }
 .px-sprite-name { min-width: 0; line-height: 1.2; }
 .px-sprite-name div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .px-sprite-name small { color: var(--muted); font-size: 10px; }
@@ -27,7 +27,7 @@
 .px-coords { margin-left: auto; color: var(--muted); font-family: var(--mono); font-size: 11px; min-width: 110px; text-align: right; }
 
 /* Zone de dessin */
-.px-viewport { flex: 1; min-height: 0; position: relative; overflow: hidden; background: #12131b; cursor: crosshair; touch-action: none; }
+.px-viewport { flex: 1; min-height: 0; position: relative; overflow: hidden; background: var(--bg-0); cursor: crosshair; touch-action: none; }
 .px-viewport.panning { cursor: grab; }
 .px-stage { position: absolute; box-shadow: 0 0 0 1px rgba(255, 255, 255, .15); }
 .px-stage canvas { position: absolute; left: 0; top: 0; pointer-events: none; image-rendering: pixelated; }
@@ -44,7 +44,7 @@
 .px-frames { flex: 1; display: flex; gap: 6px; overflow-x: auto; align-items: flex-start; padding-bottom: 4px; }
 .px-frame { flex: none; padding: 3px; border: 1px solid var(--border); border-radius: var(--radius); cursor: pointer; text-align: center; background: var(--panel-2); }
 .px-frame.active { border-color: var(--accent); }
-.px-frame.over { border-color: var(--accent-2); background: #2f3652; }
+.px-frame.over { border-color: var(--accent-2); background: var(--bg-3); }
 .px-frame canvas { display: block; image-rendering: pixelated; }
 .px-frame span { font-size: 10px; color: var(--muted); }
 
@@ -53,11 +53,11 @@
 .px-cbox { position: relative; width: 44px; height: 38px; flex: none; }
 .px-cbox i { position: absolute; width: 26px; height: 26px; border: 2px solid var(--border); border-radius: 3px; cursor: pointer; background-size: 8px 8px; }
 .px-cbox .sec { right: 0; bottom: 0; }
-.px-cbox .pri { left: 0; top: 0; z-index: 1; border-color: #fff; }
+.px-cbox .pri { left: 0; top: 0; z-index: 1; border-color: var(--fg-0); }
 .px-palette { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }
 .px-swatch { aspect-ratio: 1; border: 1px solid var(--border); border-radius: 3px; cursor: pointer; padding: 0; }
 .px-swatch:hover { border-color: var(--text); }
-.px-swatch.pri { outline: 2px solid #fff; outline-offset: -1px; z-index: 1; }
+.px-swatch.pri { outline: 2px solid var(--fg-0); outline-offset: -1px; z-index: 1; }
 .px-swatch.sec { outline: 2px dashed var(--accent-2); outline-offset: -1px; }
 .px-swatch.edit { box-shadow: 0 0 0 1px var(--accent); }
 .px-swatch.none { background: repeating-conic-gradient(#555 0 25%, #999 0 50%) 0 0 / 8px 8px; }

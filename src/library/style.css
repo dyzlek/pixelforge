@@ -7,12 +7,12 @@
 .lib-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
 .lib-card:hover { border-color: var(--muted); }
 .lib-card.current { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
-.lib-thumb { aspect-ratio: 16 / 9; width: 100%; display: block; cursor: pointer; object-fit: contain; image-rendering: pixelated; background-color: #12131b; }
+.lib-thumb { aspect-ratio: 16 / 9; width: 100%; display: block; cursor: pointer; object-fit: contain; image-rendering: pixelated; background-color: var(--bg-0); }
 .lib-thumb.empty { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 11px; }
 .lib-body { padding: 10px 12px 6px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .lib-name { font-weight: 600; font-size: 14px; display: flex; gap: 6px; align-items: center; min-width: 0; }
 .lib-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lib-name .lib-badge { flex: none; font-size: 10px; background: var(--accent); color: #1a1c2c; border-radius: 99px; padding: 0 7px; font-weight: 700; }
+.lib-name .lib-badge { flex: none; font-size: 10px; background: var(--accent); color: #ffffff; border-radius: 99px; padding: 0 7px; font-weight: 700; }
 .lib-desc { color: var(--muted); font-size: 12px; min-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lib-date { color: var(--muted); font-size: 11px; }
 .lib-actions { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 12px 12px; }
