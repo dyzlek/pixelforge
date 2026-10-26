@@ -1,11 +1,18 @@
 # Journal — PixelForge
 
+## 2026-10-26 (40) — Feuille de route v4
+- **Fait** : `ROADMAP-V4.md` : prérequis (PR #61, restes de correction.md, tests Playwright), décisions V1-V7, phases E (Phaser 4.2.1), F (vrai éditeur 3D : rendu partagé, hiérarchie, gizmos, glTF, Rapier, préfabriqués), G (DAW : synthés, sampler, effets, multipiste, MIDI, automation), H (IA qui crée les ressources via les ops MCP partagées, génère, teste et corrige), jalons, risques.
+- **Essayé** : vérification de Phaser 4 (npm : 4.2.1 stable) et du guide de migration ; engine.js n'utilise aucune API supprimée.
+- **Refusé ou retiré** : —
+- **Décisions** : aucune prise ; les questions V1-V7 attendent l'humain.
+- **État** : fichier écrit sur la branche fix/phases-b-c-relecture, non commité.
+
 ## 2026-10-26 (39) — Correctifs phases B et C (Opus, sans délégation à la demande de l'utilisateur)
 - **Fait** : runtime 3D (gridmap `{blockSize, blocks}`, modèles voxel rendus, collisions 3 axes en sous-pas, son, keydown, ambiance par scène, startScene3DId, API étendue, rotateY positif = droite, purge des instances, nettoyage WebGL) ; éditeurs voxel / scène 3D (format unique, couleur 0, dimensions width/height/depth, annuler/rétablir via store.update, pas de modification à l'ouverture, glTF vérifié, fuites) ; RLE durci ; nœuds Blueprint 2D-only + erreur de compilation par dimension (éditeur, MCP, validate) ; chip.js (batterie, solo, boucle loop.start, rendu hors-ligne synchrone, robustesse, purge) ; éditeur musical (nettoyages, undo) ; échappement HTML des noms ; play.js (scène testée, resize 3D). Nouveau test `src/runtime3d/test/sim3d.test.mjs`. correction.md mis à jour (fait / reste).
 - **Essayé** : vérification du mouvement dans le navigateur : impossible, panneau caché (pas de requestAnimationFrame) ; chargement et rendu de Cube Runner vérifiés.
 - **Refusé ou retiré** : l'utilisateur ne veut pas de sous-agents pour coder.
 - **Décisions** : gravité 3D = settings.gravity3d ou gravity/800*30 ; fin de boucle musicale = fin de l'arrangement (loop.end ignoré) ; cases 3D centrées sur les entiers ; cameras.js laissé tel quel.
-- **État** : branche fix/phases-b-c-relecture, commit b767ffc, poussé (pas de PR).
+- **État** : branche fix/phases-b-c-relecture, commits b767ffc + journal, poussé ; PR #61 ouverte vers main (https://github.com/dyzlek/pixelforge/pull/61).
 
 ## 2026-10-26 (38) — Relecture (Opus) des phases B et C → correction.md
 - **Fait** : build, npm test, check:doc, validate x5 : tout passe. 5 relecteurs Sonnet (audio B, éditeur musical/MCP B, runtime 3D, éditeurs 3D, MCP/Blueprints/jeux 3D), constats critiques revérifiés par Opus. `correction.md` à la racine : 5 critiques 3D (gridmap non lue par le runtime → jeux 3D injouables, format gridmap de l'éditeur différent, modèles voxel jamais rendus, couleur 0 invisible, pas de collisions murales), majeurs B (batterie, solo, boucle, undo, fuites, song-text).
