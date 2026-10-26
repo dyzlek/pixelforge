@@ -29,8 +29,10 @@ function getSharedChip() {
   return sharedChipAudio;
 }
 
+// Instance par onglet ; renvoie un handle { dispose, onShow, onHide }.
 export function mount(container, store, { refId = null } = {}) {
   const cleanups = [];
+  let active = false;
   container.innerHTML = '';
 
   const songs = () => store.project.songs || (store.project.songs = []);
@@ -607,6 +609,7 @@ export function mount(container, store, { refId = null } = {}) {
 
   // Raccourcis clavier (Espace pour Play/Stop)
   const handleKeyDown = (e) => {
+    if (!active) return;
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
     if (e.code === 'Space') {
       e.preventDefault();
@@ -622,9 +625,14 @@ export function mount(container, store, { refId = null } = {}) {
 
   render();
 
-  return () => {
-    stopPlayback();
-    for (const fn of cleanups) fn();
-    if (mainArea.cleanups) for (const fn of mainArea.cleanups) fn();
+  return {
+    dispose() {
+      active = false;
+      stopPlayback();
+      for (const fn of cleanups) fn();
+      if (mainArea.cleanups) for (const fn of mainArea.cleanups) fn();
+    },
+    onShow() { active = true; store.ui.selectedSongId = song.id; },
+    onHide() { active = false; stopPlayback(); },
   };
 }

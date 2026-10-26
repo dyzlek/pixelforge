@@ -8,6 +8,7 @@ import { listGames, getGame, saveGame, deleteGame, backendInfo, isValidId } from
 import { createEmptyProject, createMeta, normalizeProject } from '../core/project.js';
 import { createSampleProject } from '../core/sample.js';
 import { getIconSvg } from './icons.js';
+import { renderThumbnail } from '../library/thumbnail.js';
 
 const rtf = new Intl.RelativeTimeFormat('fr', { numeric: 'auto' });
 function relativeDate(iso) {
@@ -223,8 +224,7 @@ export function createProjectManager(container, store, onOpenProject = () => {})
       }
       modalBack.remove();
       await saveGame(proj);
-      await store.load(proj.meta.id);
-      onOpenProject(proj.meta.id);
+      await openProject(proj.meta.id);
     };
   }
 
@@ -242,15 +242,12 @@ export function createProjectManager(container, store, onOpenProject = () => {})
       fileInput.click();
     } else if (act === 'sample-games') {
       try {
-        const sample = createSampleProject('Exemple Plateforme');
-        await saveGame(sample);
-        await refreshGames();
+        await loadSampleGames();
       } catch (err) {
         alert(err.message);
       }
     } else if (openId) {
-      await store.load(openId);
-      onOpenProject(openId);
+      await openProject(openId);
     } else if (cloneId) {
       const orig = await getGame(cloneId);
       if (orig) {
@@ -269,11 +266,57 @@ export function createProjectManager(container, store, onOpenProject = () => {})
       const g = games.find((x) => x.id === delId);
       if (confirm(`Voulez-vous vraiment supprimer le projet "${g?.name || delId}" ? Cette action est irréversible.`)) {
         await deleteGame(delId);
-        if (store.currentId === delId) store.currentId = null;
+        if (store.currentId === delId) store.closeGame();
         await refreshGames();
       }
     }
   });
+
+  // Ouvre un jeu de la bibliothèque (store.load attend le contenu du jeu, pas son id)
+  async function openProject(id) {
+    if (id !== store.currentId && !(await store.openGame(id))) { alert('Jeu introuvable.'); return; }
+    onOpenProject(id);
+  }
+
+  // Jeux d'exemple : ceux de games/ (copiés dans dist/games/ au build), sinon l'exemple intégré.
+  // Demande avant d'écraser un jeu existant du même id.
+  async function loadSampleGames() {
+    const base = (import.meta.env?.BASE_URL || '/').replace(/\/+$/, '');
+    const projects = [];
+    try {
+      const res = await fetch(base + '/games/index.json');
+      if (res.ok && (res.headers.get('content-type') || '').includes('json')) {
+        for (const item of await res.json()) {
+          const gr = await fetch(base + '/games/' + item.file);
+          if (gr.ok) projects.push(normalizeProject(await gr.json()));
+        }
+      }
+    } catch (e) { console.warn('Impossible de charger games/index.json', e); }
+    if (!projects.length) {
+      const sample = createSampleProject();
+      sample.meta.thumbnail = await renderThumbnail(sample).catch(() => null);
+      await saveGame(sample); await refreshGames(); return;
+    }
+    const existing = new Map((await listGames()).map((g) => [g.id, g.name]));
+    const clashes = projects.filter((p) => existing.has(p.meta.id));
+    let replace = false;
+    if (clashes.length) {
+      replace = confirm('Ces jeux existent déjà dans votre bibliothèque :\n\n'
+        + clashes.map((p) => '• ' + (existing.get(p.meta.id) || p.name)).join('\n')
+        + '\n\nOK : les remplacer par la version d\'origine (vos modifications seront perdues).\n'
+        + 'Annuler : les garder et ne charger que les jeux manquants.');
+    }
+    let reopenId = null;
+    for (const p of projects) {
+      if (existing.has(p.meta.id) && !replace) continue;
+      // Jeu ouvert remplacé : on le ferme d'abord pour que sa sauvegarde automatique ne réécrive pas l'ancienne version
+      if (p.meta.id === store.currentId) { store.closeGame(); reopenId = p.meta.id; }
+      if (!p.meta.thumbnail) p.meta.thumbnail = await renderThumbnail(p).catch(() => null);
+      await saveGame(p);
+    }
+    if (reopenId) await store.openGame(reopenId);
+    await refreshGames();
+  }
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));

@@ -1,5 +1,14 @@
 # Journal — PixelForge
 
+## 2026-10-26 (37) — Correctifs Phase A : ouverture, jeux d'exemple, onglets A2 
+- **Fait** : `src/ui/project-manager.js` — ouverture/création via `store.openGame` (au lieu de `store.load(id)`), suppression du jeu ouvert via `store.closeGame()`, bouton « Jeux d'exemple » restauré (games/index.json + confirmation avant écrasement, repli sur l'exemple intégré).
+- **Essayé** : rien d'autre.
+- **Refusé ou retiré** : —
+- **Fait (Sonnet)** : A2 — éditeurs pixel/map/objects/sound/music/play en instances `{dispose,onShow,onHide}` par onglet, clavier limité à l'onglet actif, titres d'onglets échappés (documents.js).
+- **Décisions** : undo global du store laissé tel quel ; titre d'onglet ne suit pas un changement de ressource interne (limite connue).
+- **Vérifié** : build, npm test, check:doc, validate x3, ouverture d'un jeu dans le navigateur.
+- **État** : main, commité et poussé.
+
 ## 2026-10-26 (36) — [Phase B] B8 : Contenu de depart et morceaux de demonstration
 - **Fait** :
   - Composition et integration de 6 morceaux chiptune originaux complets dans `src/audio/presets/` :

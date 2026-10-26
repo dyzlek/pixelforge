@@ -71,19 +71,13 @@ function uniqueName(base, names) {
 
 const isBlank = (c) => !c.getContext('2d').getImageData(0, 0, c.width, c.height).data.some((v, i) => i % 4 === 3 && v);
 
-let cleanup = null;
-
-export function mount(container, store) {
-  unmount();
-  cleanup = build(container, store);
+// Chaque appel crée une instance indépendante (un onglet = une instance) et renvoie son handle { dispose, onShow, onHide }.
+export function mount(container, store, opts = {}) {
+  return build(container, store, opts);
 }
 
-export function unmount() {
-  cleanup?.();
-  cleanup = null;
-}
-
-function build(root, store) {
+function build(root, store, opts = {}) {
+  let active = false;         // onglet visible : seul cas où l'instance écoute le clavier
   const disposers = [];
   const listen = (target, ev, fn, opts) => {
     target.addEventListener(ev, fn, opts);
@@ -91,7 +85,8 @@ function build(root, store) {
   };
 
   // ---------- état ----------
-  const sprite = () => findById(store.project.sprites, store.ui.selectedSpriteId);
+  let spriteId = opts.refId ?? store.ui.selectedSpriteId;
+  const sprite = () => findById(store.project.sprites, spriteId);
   let frames = [];            // canvas de travail, un par frame du sprite courant (source de vérité pendant l'édition)
   let fi = 0;                 // frame courante
   let ready = false;
@@ -205,6 +200,7 @@ function build(root, store) {
   }
 
   function selectSprite(id) {
+    spriteId = id;
     store.ui.selectedSpriteId = id;
     fi = 0;
     sel = null;
@@ -980,7 +976,7 @@ function build(root, store) {
 
   function addSprite(sp) {
     store.update((p) => {
-      const i = p.sprites.findIndex((x) => x.id === store.ui.selectedSpriteId);
+      const i = p.sprites.findIndex((x) => x.id === spriteId);
       p.sprites.splice(i < 0 ? p.sprites.length : i + 1, 0, sp);
     }, 'sprite');
     selectSprite(sp.id);
@@ -1255,7 +1251,7 @@ function build(root, store) {
   function setBrush(n) { brush = n; syncToolbar(); drawOverlay(); }
 
   listen(window, 'keydown', (e) => {
-    if (modal) return;
+    if (!active || modal) return;
     const t = e.target;
     const typing = t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' ||
       (t.tagName === 'INPUT' && !['checkbox', 'color', 'range', 'radio', 'button'].includes(t.type));
@@ -1291,11 +1287,15 @@ function build(root, store) {
 
   // ---------- démarrage ----------
   disposers.push(() => { cancelAnimationFrame(raf); loadToken++; ready = false; modal = null; });
-  if (!sprite()) store.ui.selectedSpriteId = store.project.sprites[0]?.id ?? null;
+  if (!sprite()) spriteId = store.project.sprites[0]?.id ?? null;
   renderSprites();
   renderColors();
   syncToolbar();
   loadSprite();
 
-  return () => { for (const d of disposers.reverse()) d(); };
+  return {
+    dispose() { active = false; for (const d of disposers.reverse()) d(); },
+    onShow() { active = true; store.ui.selectedSpriteId = spriteId; },
+    onHide() { active = false; spaceDown = false; },
+  };
 }

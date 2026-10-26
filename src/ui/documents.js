@@ -1,10 +1,25 @@
 /**
  * PixelForge Studio — Multi-document Workspace (Godot 4 / IDE style)
  * Permet d'ouvrir plusieurs ressources simultanément dans des onglets centraux sans écraser l'état.
+ *
+ * Contrat des modules d'éditeur (un onglet = une instance, tout l'état est local à l'instance) :
+ *
+ *   export function mount(container, store, { refId }) -> handle
+ *   handle = {
+ *     dispose(),   // obligatoire : retire DOM, écouteurs (window/document/store) et timers de CETTE instance
+ *     onShow?(),   // l'onglet devient actif et visible : l'instance active ses raccourcis clavier
+ *     onHide?(),   // l'onglet est masqué : l'instance ignore le clavier
+ *   }
+ *
+ * Un handle peut aussi être une simple fonction (équivalent à { dispose }). Les conteneurs de tous les
+ * documents restent montés ; seul `display` bascule. L'instance édite `refId` (pas store.ui.selectedXxxId) ;
+ * onShow() republie sa sélection dans store.ui pour l'inspecteur / l'arbre de scène.
  */
 
 import './documents.css';
 import { getIconSvg } from './icons.js';
+
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const ICON_NAMES = {
   library: 'project',
@@ -25,7 +40,7 @@ export class DocumentWorkspace {
     this.tabbar = tabbar;
     this.view = view;
     this.store = store;
-    this.docs = []; // { id, kind, refId, title, icon, dirty, container, module, unmountFn }
+    this.docs = []; // { id, kind, refId, title, icon, dirty, container, module, handle, shown }
     this.activeId = null;
 
     this.setupShortcuts();
@@ -60,7 +75,7 @@ export class DocumentWorkspace {
         const list = JSON.parse(raw);
         if (Array.isArray(list) && list.length > 0) {
           for (const item of list) {
-            this.open(item, false);
+            this.open({ kind: item.kind, refId: item.refId, title: item.title }, false); // l'icône est recalculée (jamais relue du stockage)
           }
           const savedActive = localStorage.getItem(`pixelforge.activeDoc.${this.store.currentId}`);
           if (savedActive && this.docs.some((d) => d.id === savedActive)) {
@@ -179,7 +194,8 @@ export class DocumentWorkspace {
       dirty: false,
       container,
       module: null,
-      unmountFn: null,
+      handle: null,
+      shown: false,
     };
 
     this.docs.push(doc);
@@ -198,19 +214,16 @@ export class DocumentWorkspace {
 
       if (mod) {
         doc.module = mod;
-        if (refId) {
-          if (kind === 'pixel' || kind === 'sprite') this.store.ui.selectedSpriteId = refId;
-          else if (kind === 'map' || kind === 'scene') this.store.ui.selectedMapId = refId;
-          else if (kind === 'objects' || kind === 'script') this.store.ui.selectedObjectId = refId;
-          else if (kind === 'sound') this.store.ui.selectedSoundId = refId;
-          else if (kind === 'song' || kind === 'music') this.store.ui.selectedSongId = refId;
-        }
-        const unmount = mod.mount(container, this.store, { refId });
-        doc.unmountFn = typeof unmount === 'function' ? unmount : mod.unmount;
+        const res = mod.mount(container, this.store, { refId });
+        if (typeof res === 'function') doc.handle = { dispose: res };
+        else if (res && typeof res.dispose === 'function') doc.handle = res;
+        else doc.handle = { dispose: () => mod.unmount?.() }; // ancien contrat (module à instance unique)
+        if (!this.docs.includes(doc)) this.disposeDoc(doc); // fermé pendant le chargement
+        else if (this.activeId === id) this.setShown(doc, true);
       }
     } catch (err) {
       console.error(`Erreur au chargement de l'éditeur pour ${id}:`, err);
-      container.innerHTML = `<div style="padding:20px;color:var(--danger)">Erreur de chargement: ${err.message}</div>`;
+      container.innerHTML = `<div style="padding:20px;color:var(--danger)">Erreur de chargement: ${esc(err.message)}</div>`;
     }
 
     if (activateNow) {
@@ -243,12 +256,14 @@ export class DocumentWorkspace {
 
     this.activeId = id;
 
-    // Affiche le conteneur du document actif, masque tous les autres
+    // Affiche le conteneur du document actif, masque tous les autres (puis notifie les instances)
     for (const d of this.docs) {
       if (d.container) {
         d.container.style.display = d.id === id ? 'flex' : 'none';
       }
     }
+    for (const d of this.docs) if (d.id !== id) this.setShown(d, false);
+    this.setShown(doc, true);
 
     // Met à jour l'apparence des onglets
     for (const tabEl of this.tabbar.querySelectorAll('.pf-doc-tab')) {
@@ -264,16 +279,8 @@ export class DocumentWorkspace {
 
     const doc = this.docs[idx];
 
-    // Nettoyage de l'instance
-    try {
-      if (typeof doc.unmountFn === 'function') doc.unmountFn();
-      else if (doc.module?.unmount) doc.module.unmount();
-    } catch (e) {
-      console.error(e);
-    }
-
-    // Retrait du DOM
-    doc.container?.remove();
+    // Nettoyage de l'instance (uniquement la sienne) puis retrait du DOM
+    this.disposeDoc(doc);
     this.docs.splice(idx, 1);
 
     // Sélection du nouvel onglet actif si l'actuel a été fermé
@@ -292,18 +299,32 @@ export class DocumentWorkspace {
   }
 
   closeAll() {
-    for (const doc of this.docs) {
-      try {
-        if (typeof doc.unmountFn === 'function') doc.unmountFn();
-        else if (doc.module?.unmount) doc.module.unmount();
-      } catch (e) {
-        console.error(e);
-      }
-      doc.container?.remove();
-    }
+    for (const doc of this.docs) this.disposeDoc(doc);
     this.docs = [];
     this.activeId = null;
     this.renderTabs();
+  }
+
+  setShown(doc, shown) {
+    if (!doc.handle || doc.shown === shown) return;
+    doc.shown = shown;
+    try {
+      if (shown) doc.handle.onShow?.();
+      else doc.handle.onHide?.();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  disposeDoc(doc) {
+    this.setShown(doc, false);
+    try {
+      doc.handle?.dispose();
+    } catch (e) {
+      console.error(e);
+    }
+    doc.handle = null;
+    doc.container?.remove();
   }
 
   cycleNext() {
@@ -341,8 +362,8 @@ export class DocumentWorkspace {
       tab.title = `${doc.title} (${doc.kind})`;
 
       tab.innerHTML = `
-        <span class="pf-doc-tab-icon">${doc.icon}</span>
-        <span class="pf-doc-tab-title">${doc.title}</span>
+        <span class="pf-doc-tab-icon">${/^\s*<svg[\s>]/i.test(doc.icon) ? doc.icon : esc(doc.icon)}</span>
+        <span class="pf-doc-tab-title">${esc(doc.title)}</span>
         <span class="pf-doc-tab-dirty" style="display:${doc.dirty ? 'inline' : 'none'}">●</span>
         ${doc.kind !== 'library' ? '<button class="pf-doc-tab-close" title="Fermer (Ctrl+W)">×</button>' : ''}
       `;

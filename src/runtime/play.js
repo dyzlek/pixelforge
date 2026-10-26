@@ -120,6 +120,7 @@ export function mount(container, store) {
 
   addLog('Jeu lancé. Flèches / Q D pour bouger, Espace pour sauter (selon les scripts).', 'sys');
   start();
+  return { dispose: unmount }; // onglet unique (play:main) : l'état de module suffit
 }
 
 export function unmount() {

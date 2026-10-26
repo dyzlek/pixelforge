@@ -433,6 +433,7 @@ export function renderPianoRoll(container, opts) {
   };
 
   const onKeyDown = (e) => {
+    if (!container.isConnected || container.getClientRects().length === 0) return; // onglet masqué
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
     if (KEY_MAP[e.code]) {
       e.preventDefault();
