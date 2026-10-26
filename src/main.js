@@ -8,6 +8,7 @@ import { createSceneTree } from './ui/panels/scene-tree.js';
 import { createInspector } from './ui/inspector.js';
 import { createConsolePanel } from './ui/panels/console.js';
 import { createProblemsPanel } from './ui/panels/problems.js';
+import { createAiAssistantPanel } from './ui/panels/ai-assistant.js';
 import { CommandPalette } from './ui/command-palette.js';
 import { openPreferencesModal, getPreferences, applyPreferences } from './ui/preferences.js';
 import { getIconSvg } from './ui/icons.js';
@@ -176,6 +177,15 @@ dock.registerPanel({
   icon: getIconSvg('search', 13),
   area: 'right',
   mount: (container) => createInspector(container, store),
+  unmount: () => {},
+});
+
+dock.registerPanel({
+  id: 'ai-assistant',
+  title: 'Assistant IA',
+  icon: getIconSvg('sparkles', 13),
+  area: 'right',
+  mount: (container) => createAiAssistantPanel(container, store, workspace),
   unmount: () => {},
 });
 

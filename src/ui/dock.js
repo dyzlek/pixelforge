@@ -388,6 +388,13 @@ export class DockManager {
         id: 'view',
         label: 'Affichage',
         items: [
+          { label: "Assistant IA local (LM Studio)", shortcut: 'Ctrl+Maj+I', action: () => this.activatePanel('ai-assistant') },
+          { label: 'Inspecteur', action: () => this.activatePanel('inspector') },
+          { label: 'Ressources', action: () => this.activatePanel('resources') },
+          { label: 'Scène', action: () => this.activatePanel('scene-tree') },
+          { label: 'Console', action: () => this.activatePanel('console') },
+          { label: 'Problèmes', action: () => this.activatePanel('problems') },
+          { sep: true },
           { label: 'Basculer panneau gauche', action: () => this.toggleCollapse('left') },
           { label: 'Basculer panneau droit', action: () => this.toggleCollapse('right') },
           { label: 'Basculer console', action: () => this.toggleCollapse('bottom') },
