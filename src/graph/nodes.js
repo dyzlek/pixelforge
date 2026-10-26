@@ -62,6 +62,18 @@ const SET_PROPS = [['x', 'x'], ['y', 'y'], ['vx (vitesse horizontale)', 'vx'], [
 const GET_PROPS = [...SET_PROPS, ['numéro (id)', 'id'], ['au sol ?', 'onGround'], ['largeur', 'width'], ['hauteur', 'height'], ['nom', 'name'],
   ['centre x', 'centerX'], ['centre y', 'centerY']];
 const CHANGE_PROPS = [['x', 'x'], ['y', 'y'], ['vx', 'vx'], ['vy', 'vy'], ['angle', 'angle'], ['échelle', 'scale']];
+const SET_PROPS_3D = [
+  ['x', 'x'], ['y', 'y'], ['z', 'z'],
+  ['vx (vitesse X)', 'vx'], ['vy (vitesse Y)', 'vy'], ['vz (vitesse Z)', 'vz'],
+  ['rotationY (angle °)', 'rotationY'], ['rotationX (angle °)', 'rotationX'], ['rotationZ (angle °)', 'rotationZ'],
+];
+const CAM_3D_MODES = [
+  ['3e personne', 'third-person'],
+  ['1re personne (FPS)', 'first-person'],
+  ['vue de dessus', 'top-down'],
+  ['isométrique', 'isometric'],
+  ['défilement 2.5D', 'side-scroll'],
+];
 const RAY_MODES = [['tuiles seulement', ''], ['tuiles + objets (sauf moi)', 'objs'], ['tuiles + objets (moi compris)', 'all']];
 const RAY_FIELDS = [
   ['touché ?', 'hit'], ['x (impact)', 'x'], ['y (impact)', 'y'], ['colonne tuile (tx)', 'tx'], ['ligne tuile (ty)', 'ty'],
@@ -84,7 +96,7 @@ function add(type, title, category, kind, tooltip, o = {}) {
   let outputs;
   if (kind === 'pure') outputs = [pin('out', o.out || 'any')];
   else outputs = [...(o.noThen ? [] : [THEN]), ...(o.exec || []), ...(o.outputs || [])];
-  const spec = { type, title, category, tooltip, kind, inputs, outputs, fields: o.fields || [] };
+  const spec = { type, title, category, tooltip, kind, inputs, outputs, fields: o.fields || [], dims: o.dims || ['2d', '3d'] };
   if (o.selfOnly) spec.selfOnly = true;
   if (o.keywords) spec.keywords = o.keywords;
   if (o.dynamic) spec.dynamic = o.dynamic;
@@ -187,6 +199,24 @@ pu('pf_atan2', 'Angle du vecteur', 'move', 'number', 'Angle en degrés (0 = droi
   { inputs: [num('DX', 'dx', 1), num('DY', 'dy', 0)], keywords: 'atan2' });
 pu('pf_blocked', 'Bloqué ?', 'move', 'boolean', 'Vrai si l\'objet est bloqué de ce côté par un mur, le sol ou une autre instance qui collide.',
   { fields: [dd('SIDE', 'côté', [['en bas', 'down'], ['en haut', 'up'], ['à gauche', 'left'], ['à droite', 'right']])], selfOnly: true });
+
+ex('pf_self_set_3d', 'Définir propriété 3D', 'move', 'Fixe une coordonnée ou vitesse 3D de cet objet.',
+  { inputs: [num('VALUE', 'valeur', 0)], fields: [dd('PROP', 'propriété', SET_PROPS_3D, 'vx')], selfOnly: true, dims: ['3d'], keywords: '3d position vitesse coordonnee' });
+pu('pf_self_get_3d', 'Lire propriété 3D', 'move', 'number', 'Lit une coordonnée ou vitesse 3D de cet objet.',
+  { fields: [dd('PROP', 'propriété', SET_PROPS_3D, 'x')], selfOnly: true, dims: ['3d'], keywords: '3d position vitesse coordonnee' });
+ex('pf_jump_3d', 'Sauter 3D', 'move', 'Fait sauter l\'objet vers le haut (+Y) s\'il touche le sol.',
+  { inputs: [num('FORCE', 'force', 10)], selfOnly: true, dims: ['3d'], keywords: '3d saut jump impulsion' });
+ex('pf_move_forward_3d', 'Avancer (direction regardée)', 'move', 'Avance dans la direction horizontale actuellement regardée.',
+  { inputs: [num('SPEED', 'vitesse', 5)], selfOnly: true, dims: ['3d'], keywords: '3d avancer forward vitesse' });
+ex('pf_move_right_3d', 'Déplacement latéral (strafe)', 'move', 'Déplacement latéral perpendiculaire à l\'angle de vue.',
+  { inputs: [num('SPEED', 'vitesse', 5)], selfOnly: true, dims: ['3d'], keywords: '3d strafe lateral droite gauche' });
+ex('pf_look_at_3d', 'Regarder vers 3D', 'move', 'Oriente l\'objet vers les coordonnées cibles.',
+  { inputs: [num('X', 'x', 0), num('Y', 'y', 0), num('Z', 'z', 0)], selfOnly: true, dims: ['3d'], keywords: '3d orientation regarder cibler' });
+ex('pf_rotate_y_3d', 'Pivoter horizontalement', 'move', 'Ajoute un angle à l\'orientation horizontale de l\'objet.',
+  { inputs: [num('ANGLE', 'angle (°)', 45)], selfOnly: true, dims: ['3d'], keywords: '3d tourner pivoter rotation' });
+pu('pf_distance_3d', 'Distance 3D', 'move', 'number', 'Calcule la distance euclidienne entre deux points dans l\'espace 3D.',
+  { inputs: [num('X1', 'x1', 0), num('Y1', 'y1', 0), num('Z1', 'z1', 0), num('X2', 'x2', 0), num('Y2', 'y2', 0), num('Z2', 'z2', 0)], dims: ['3d'], keywords: '3d distance euclidienne hypot' });
+
 ex('pf_tween_to', 'Animer vers', 'look', 'Anime l\'objet vers ces valeurs. Les entrées laissées vides ne changent pas. Pour un objet à gravité, coupe d\'abord la gravité.',
   { inputs: [any('X', 'x', undefined, { optional: true }), any('Y', 'y', undefined, { optional: true }),
     any('ALPHA', 'opacité', undefined, { optional: true }), any('ANGLE', 'angle', undefined, { optional: true }),
@@ -244,6 +274,10 @@ pu('pf_mouse_pos', 'Position souris', 'mouse', 'number', 'Position de la souris 
   { fields: [dd('PROP', 'valeur', [['x (monde)', 'mouseX'], ['y (monde)', 'mouseY'], ['x (écran)', 'mouseScreenX'], ['y (écran)', 'mouseScreenY']])] });
 pu('pf_mouse_down', 'Bouton souris maintenu ?', 'mouse', 'boolean', 'Vrai tant que le bouton de la souris est maintenu.', { fields: [dd('BTN', 'bouton', MOUSE_BTNS)] });
 pu('pf_mouse_just', 'Bouton souris pressé ?', 'mouse', 'boolean', 'Vrai seulement l\'image où le bouton est pressé.', { fields: [dd('BTN', 'bouton', MOUSE_BTNS)] });
+pu('pf_mouse_delta', 'Déplacement souris (Delta)', 'mouse', 'number', 'Déplacement de la souris depuis la dernière image (utile pour la vue FPS).',
+  { fields: [dd('AXIS', 'axe', [['horizontal (X)', 'x'], ['vertical (Y)', 'y']], 'x')], dims: ['2d', '3d'], keywords: 'souris delta mouse pointer fps' });
+ex('pf_pointer_lock', 'Verrouiller le curseur', 'mouse', 'Verrouille le curseur de la souris pour le contrôle FPS subjectif.',
+  { dims: ['2d', '3d'], keywords: 'souris pointer lock verrouiller fps' });
 
 // Tuiles & rayons --------------------------------------------------------------
 const layerField = () => fdyn('LAYER', 'calque', 'layer');
@@ -341,6 +375,10 @@ ex('pf_cam_deadzone', 'Caméra : zone morte', 'cam', 'Zone morte au centre de l\
   { inputs: [num('W', 'largeur', 40), num('H', 'hauteur', 30)], keywords: 'camera deadzone' });
 ex('pf_cam_offset', 'Caméra : décalage', 'cam', 'Décalage de la caméra par rapport à la cible suivie (px).', { inputs: [num('X', 'x', 0), num('Y', 'y', 0)], keywords: 'camera offset' });
 pu('pf_cam_pos', 'Position caméra', 'cam', 'number', 'Coin haut-gauche de la vue dans le monde.', { fields: [dd('PROP', 'valeur', [['x', 'x'], ['y', 'y']])], keywords: 'camera' });
+ex('pf_camera_mode_3d', 'Mode caméra 3D', 'cam', 'Définit le type de caméra 3D active (3e personne, 1re personne / FPS, dessus, isométrique, 2.5D).',
+  { fields: [dd('MODE', 'mode', CAM_3D_MODES, 'third-person')], dims: ['3d'], keywords: '3d camera mode fps vue' });
+ex('pf_camera_follow_3d', 'Suivre avec caméra 3D', 'cam', 'Fait suivre cet objet par la caméra 3D avec distance et hauteur.',
+  { inputs: [num('DIST', 'distance', 6), num('HEIGHT', 'hauteur', 3)], selfOnly: true, dims: ['3d'], keywords: '3d camera follow suivre vue' });
 
 // Logique ----------------------------------------------------------------------
 pu('logic_compare', 'Comparer', 'logic', 'boolean', 'Compare deux valeurs.',

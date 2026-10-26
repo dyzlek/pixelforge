@@ -1,7 +1,7 @@
 # Catalogue des nœuds Blueprint de PixelForge
 
 > Ce document est généré automatiquement par `node scripts/gen-nodes-doc.mjs`.
-> Total : **165 nœuds** répartis en **18 catégories**.
+> Total : **177 nœuds** répartis en **18 catégories**.
 
 ## Sommaire des catégories
 
@@ -9,16 +9,16 @@
 - [Flux (#flow)](#flow) (9 nœuds)
 - [Fonctions (#func)](#func) (4 nœuds)
 - [Variables (#var)](#var) (3 nœuds)
-- [Mouvement (#move)](#move) (16 nœuds)
+- [Mouvement (#move)](#move) (24 nœuds)
 - [Apparence (#look)](#look) (7 nœuds)
 - [Objet (#self)](#self) (23 nœuds)
 - [Entrée (#input)](#input) (2 nœuds)
-- [Souris (#mouse)](#mouse) (3 nœuds)
+- [Souris (#mouse)](#mouse) (5 nœuds)
 - [Tuiles & rayons (#tile)](#tile) (12 nœuds)
 - [Son (#sound)](#sound) (6 nœuds)
 - [Messages (#msg)](#msg) (3 nœuds)
 - [Jeu (#game)](#game) (24 nœuds)
-- [Caméra & texte (#cam)](#cam) (11 nœuds)
+- [Caméra & texte (#cam)](#cam) (13 nœuds)
 - [Logique (#logic)](#logic) (6 nœuds)
 - [Maths (#math)](#math) (11 nœuds)
 - [Texte (#text)](#text) (4 nœuds)
@@ -1065,6 +1065,185 @@ on('create', () => {
 });
 ```
 
+### `pf_self_set_3d` — Définir propriété 3D
+
+**Type de nœud** : Action  
+**Description** : Fixe une coordonnée ou vitesse 3D de cet objet.  
+**Mots-clés de recherche** : `3d position vitesse coordonnee`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `VALUE` | `number` | `0` | valeur |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `PROP` | `dropdown` | `"vx"` | `x`, `y`, `z`, `vx`, `vy`, `vz`, `rotationY`, `rotationX`, `rotationZ` |
+
+### `pf_self_get_3d` — Lire propriété 3D
+
+**Type de nœud** : Pur (expression)  
+**Description** : Lit une coordonnée ou vitesse 3D de cet objet.  
+**Mots-clés de recherche** : `3d position vitesse coordonnee`  
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `out` | `number` | out |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `PROP` | `dropdown` | `"x"` | `x`, `y`, `z`, `vx`, `vy`, `vz`, `rotationY`, `rotationX`, `rotationZ` |
+
+**Exemple de code JavaScript compilé :**
+
+```javascript
+on('create', () => {
+  game.log('Bonjour');
+});
+```
+
+### `pf_jump_3d` — Sauter 3D
+
+**Type de nœud** : Action  
+**Description** : Fait sauter l'objet vers le haut (+Y) s'il touche le sol.  
+**Mots-clés de recherche** : `3d saut jump impulsion`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `FORCE` | `number` | `10` | force |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_move_forward_3d` — Avancer (direction regardée)
+
+**Type de nœud** : Action  
+**Description** : Avance dans la direction horizontale actuellement regardée.  
+**Mots-clés de recherche** : `3d avancer forward vitesse`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `SPEED` | `number` | `5` | vitesse |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_move_right_3d` — Déplacement latéral (strafe)
+
+**Type de nœud** : Action  
+**Description** : Déplacement latéral perpendiculaire à l'angle de vue.  
+**Mots-clés de recherche** : `3d strafe lateral droite gauche`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `SPEED` | `number` | `5` | vitesse |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_look_at_3d` — Regarder vers 3D
+
+**Type de nœud** : Action  
+**Description** : Oriente l'objet vers les coordonnées cibles.  
+**Mots-clés de recherche** : `3d orientation regarder cibler`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `X` | `number` | `0` | x |
+| `Y` | `number` | `0` | y |
+| `Z` | `number` | `0` | z |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_rotate_y_3d` — Pivoter horizontalement
+
+**Type de nœud** : Action  
+**Description** : Ajoute un angle à l'orientation horizontale de l'objet.  
+**Mots-clés de recherche** : `3d tourner pivoter rotation`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `ANGLE` | `number` | `45` | angle (°) |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_distance_3d` — Distance 3D
+
+**Type de nœud** : Pur (expression)  
+**Description** : Calcule la distance euclidienne entre deux points dans l'espace 3D.  
+**Mots-clés de recherche** : `3d distance euclidienne hypot`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `X1` | `number` | `0` | x1 |
+| `Y1` | `number` | `0` | y1 |
+| `Z1` | `number` | `0` | z1 |
+| `X2` | `number` | `0` | x2 |
+| `Y2` | `number` | `0` | y2 |
+| `Z2` | `number` | `0` | z2 |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `out` | `number` | out |
+
+**Exemple de code JavaScript compilé :**
+
+```javascript
+on('create', () => {
+  game.log('Bonjour');
+});
+```
+
 ---
 
 ## <a id="look"></a>Apparence
@@ -1909,6 +2088,50 @@ on('create', () => {
   game.log('Bonjour');
 });
 ```
+
+### `pf_mouse_delta` — Déplacement souris (Delta)
+
+**Type de nœud** : Pur (expression)  
+**Description** : Déplacement de la souris depuis la dernière image (utile pour la vue FPS).  
+**Mots-clés de recherche** : `souris delta mouse pointer fps`  
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `out` | `number` | out |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `AXIS` | `dropdown` | `"x"` | `x`, `y` |
+
+**Exemple de code JavaScript compilé :**
+
+```javascript
+on('create', () => {
+  game.log('Bonjour');
+});
+```
+
+### `pf_pointer_lock` — Verrouiller le curseur
+
+**Type de nœud** : Action  
+**Description** : Verrouille le curseur de la souris pour le contrôle FPS subjectif.  
+**Mots-clés de recherche** : `souris pointer lock verrouiller fps`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
 
 ---
 
@@ -3252,6 +3475,50 @@ on('create', () => {
   game.log('Bonjour');
 });
 ```
+
+### `pf_camera_mode_3d` — Mode caméra 3D
+
+**Type de nœud** : Action  
+**Description** : Définit le type de caméra 3D active (3e personne, 1re personne / FPS, dessus, isométrique, 2.5D).  
+**Mots-clés de recherche** : `3d camera mode fps vue`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `MODE` | `dropdown` | `"third-person"` | `third-person`, `first-person`, `top-down`, `isometric`, `side-scroll` |
+
+### `pf_camera_follow_3d` — Suivre avec caméra 3D
+
+**Type de nœud** : Action  
+**Description** : Fait suivre cet objet par la caméra 3D avec distance et hauteur.  
+**Mots-clés de recherche** : `3d camera follow suivre vue`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `DIST` | `number` | `6` | distance |
+| `HEIGHT` | `number` | `3` | hauteur |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
 
 ---
 
