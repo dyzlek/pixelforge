@@ -303,6 +303,19 @@ export class DockManager {
         ],
       },
       {
+        id: 'edit',
+        label: 'Édition',
+        items: [
+          { label: 'Annuler', shortcut: 'Ctrl+Z', action: () => this.options.onUndo?.() },
+          { label: 'Rétablir', shortcut: 'Ctrl+Y', action: () => this.options.onRedo?.() },
+          { sep: true },
+          { label: 'Palette de commandes…', shortcut: 'Ctrl+Maj+P', action: () => this.options.onPalette?.() },
+          { label: 'Accès rapide aux ressources…', shortcut: 'Ctrl+P', action: () => this.options.onQuickOpen?.() },
+          { sep: true },
+          { label: 'Préférences Studio…', shortcut: 'Ctrl+,', action: () => this.options.onPrefs?.() },
+        ],
+      },
+      {
         id: 'view',
         label: 'Affichage',
         items: [

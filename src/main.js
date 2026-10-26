@@ -8,6 +8,8 @@ import { createSceneTree } from './ui/panels/scene-tree.js';
 import { createInspector } from './ui/inspector.js';
 import { createConsolePanel } from './ui/panels/console.js';
 import { createProblemsPanel } from './ui/panels/problems.js';
+import { CommandPalette } from './ui/command-palette.js';
+import { openPreferencesModal, getPreferences, applyPreferences } from './ui/preferences.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -60,6 +62,11 @@ export const dock = new DockManager({
     workspace.closeAll();
     workspace.open({ kind: 'library', title: 'Bibliothèque' });
   },
+  onUndo: () => store.undo(),
+  onRedo: () => store.redo(),
+  onPalette: () => palette.openCommands(),
+  onQuickOpen: () => palette.openQuickOpen(),
+  onPrefs: () => openPreferencesModal({ onThemeChange: (t) => applyTheme(t) }),
 });
 
 dock.mount(appEl);
@@ -90,6 +97,14 @@ export const workspace = new DocumentWorkspace({
   tabbar: tabsEl,
   view,
   store,
+});
+
+// Initialisation de la Palette de Commandes (A8)
+export const palette = new CommandPalette({
+  store,
+  workspace,
+  dock,
+  onOpenPrefs: () => openPreferencesModal({ onThemeChange: (t) => applyTheme(t) }),
 });
 
 // Écoute des boutons d'ouverture rapide
@@ -232,6 +247,7 @@ window.addEventListener('keydown', (e) => {
 
 (async () => {
   initTheme();
+  applyPreferences(getPreferences());
   try {
     await store.init();
   } catch (e) {
