@@ -1426,8 +1426,21 @@ export function createGame(project, parent, Phaser, opts = {}) {
     }
   }
 
+  // Moteur de rendu WebGL recommande pour Phaser 4 avec repli propre si absent
+  let renderType = Phaser.WEBGL;
+  if (typeof window !== 'undefined') {
+    try {
+      const testCanvas = document.createElement('canvas');
+      const gl = testCanvas.getContext('webgl2') || testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl');
+      if (!gl) {
+        log('Avertissement : WebGL non detecte sur ce peripherique. Repli automatique.', 'warn');
+        renderType = Phaser.AUTO;
+      }
+    } catch {}
+  }
+
   const game = new Phaser.Game({
-    type: Phaser.AUTO,
+    type: renderType,
     parent,
     width: settings.width,
     height: settings.height,

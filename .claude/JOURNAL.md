@@ -1,5 +1,14 @@
 # Journal — PixelForge
 
+## 2026-10-26 (44) — [Phase E] E1 : passer le moteur 2D et l'export a Phaser 4.2.1 (Issue #66)
+- **Fait** :
+  - `package.json` & `package-lock.json` : mise a niveau de `"phaser"` vers `"4.2.1"`.
+  - `src/runtime/engine.js` : configuration par defaut du renderer en `Phaser.WEBGL` optimise, avec detection et repli transparent en cas d'absence de contexte WebGL sur le peripherique.
+  - `src/runtime/export-template.js` : mise a jour du gabarit d'export autonome vers le CDN `phaser@4.2.1`.
+  - `e2e/studio.spec.js` : ajout d'un test E2E Playwright de validation specifique sous Phaser 4 pour le jeu 2D plateforme (`exemple-plateforme-qiqv`), verifiant le chargement, le rendu WebGL, un framerate `>= 30 FPS` stable et le deplacement au sol de l'entite joueur.
+- **Verifie** : `npm run test:e2e` (5 tests verts en 5.3s), `npm test`, `npm run check:doc`, `npm run build`, validation des 5 jeux.
+- **Etat** : Branche `feat/phaser-4-engine-migration`, Closes #66.
+
 ## 2026-10-26 (43) — [Phase E] E0 : inventaire des API Phaser touchees par Phaser 4 (Issue #65)
 - **Fait** :
   - Creation de `docs/PHASER4.md` : inventaire exhaustif et analyse d'impact de chaque interface et sous-systeme Phaser utilise dans `src/runtime/engine.js`, `src/runtime/play.js`, `src/runtime/export-template.js` et `src/library/thumbnail.js`.

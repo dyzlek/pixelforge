@@ -26,7 +26,7 @@ export function buildStandaloneHTML(project, engineSource, chipSource = '') {
 <body>
 <div id="game"></div>
 <div id="errors"></div>
-<script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"><\/script>
+<script src="https://cdn.jsdelivr.net/npm/phaser@4.2.1/dist/phaser.min.js"><\/script>
 ${chip ? `<script>\n${chip}\n<\/script>` : ''}
 <script>
 ${engine}
