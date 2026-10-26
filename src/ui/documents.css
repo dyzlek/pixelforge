@@ -1,0 +1,97 @@
+/* ==========================================================================
+   PixelForge Studio — Onglets de documents ouverts (Multi-document workspace)
+   ========================================================================== */
+
+.pf-doc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+}
+.pf-doc-tabs::-webkit-scrollbar { display: none; }
+
+.pf-doc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  color: var(--fg-1);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  max-width: 180px;
+  position: relative;
+  transition: background-color .1s, color .1s;
+}
+
+.pf-doc-tab:hover {
+  background: var(--bg-3);
+  color: var(--fg-0);
+}
+
+.pf-doc-tab.active {
+  background: var(--bg-0);
+  color: var(--fg-0);
+  border-color: var(--border);
+  box-shadow: inset 0 2px 0 var(--accent);
+  font-weight: 600;
+}
+
+.pf-doc-tab-icon {
+  font-size: 13px;
+  line-height: 1;
+  flex: none;
+}
+
+.pf-doc-tab-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-doc-tab-dirty {
+  color: var(--warning);
+  font-size: 10px;
+  line-height: 1;
+  margin-left: 2px;
+  flex: none;
+}
+
+.pf-doc-tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: var(--fg-2);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  flex: none;
+  margin-left: 2px;
+}
+
+.pf-doc-tab-close:hover {
+  background: var(--danger);
+  color: #ffffff;
+}
+
+.pf-document-view {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow: hidden;
+}

@@ -2,6 +2,7 @@ import './style.css';
 import { store } from './core/store.js';
 import { exportStandaloneHTML } from './runtime/play.js';
 import { DockManager } from './ui/dock.js';
+import { DocumentWorkspace } from './ui/documents.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -31,35 +32,21 @@ function initTheme() {
   applyTheme(current);
 }
 
-const TABS = [
-  { id: 'library', label: 'Bibliothèque', load: () => import('./library/index.js') },
-  { id: 'pixel', label: 'Pixel art', load: () => import('./editors/pixel/index.js') },
-  { id: 'map', label: 'Cartes', load: () => import('./editors/map/index.js') },
-  { id: 'objects', label: 'Objets & code', load: () => import('./editors/objects/index.js') },
-  { id: 'sound', label: 'Sons', load: () => import('./editors/sound/index.js') },
-  { id: 'play', label: '▶ Jouer', load: () => import('./runtime/play.js') },
-];
-
-let previousNonPlayTab = 'pixel';
-let current = null; // { id, module, container }
-let switching = Promise.resolve();
-
 const appEl = document.getElementById('app') || document.body;
 
 // Initialisation du Dock Manager (A1)
 export const dock = new DockManager({
   onPlay: () => {
-    if (current?.id !== 'play') previousNonPlayTab = current?.id || 'pixel';
-    location.hash = 'play';
+    workspace.open({ kind: 'play', title: '▶ Jouer' });
   },
   onPlayCurrent: () => {
-    if (current?.id !== 'play') previousNonPlayTab = current?.id || 'pixel';
-    location.hash = 'play';
+    workspace.open({ kind: 'play', title: '▶ Jouer' });
   },
   onStop: () => {
     dock.setPlayingState(false);
-    if (current?.id === 'play') {
-      location.hash = previousNonPlayTab || 'map';
+    const playDoc = workspace.docs.find((d) => d.kind === 'play');
+    if (playDoc) {
+      workspace.close(playDoc.id);
     }
   },
   onExport: () => triggerExport(),
@@ -71,8 +58,15 @@ dock.mount(appEl);
 const centerBody = dock.getAreaBody('center');
 centerBody.innerHTML = `
   <div style="display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;">
-    <div id="pf-center-tabbar" style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg-1);border-bottom:1px solid var(--border);flex-shrink:0;">
-      <nav id="tabs" style="display:flex;gap:4px;flex:1;overflow-x:auto;"></nav>
+    <div id="pf-center-tabbar" style="display:flex;align-items:center;background:var(--bg-1);border-bottom:1px solid var(--border);flex-shrink:0;padding:2px 6px 0;">
+      <nav id="tabs" style="display:flex;align-items:center;flex:1;overflow-x:auto;"></nav>
+      <div id="pf-quick-tabs" style="display:flex;align-items:center;gap:4px;margin-left:8px;padding-bottom:2px;">
+        <button class="pf-dock-btn" data-open-kind="map" title="Ouvrir l'éditeur de cartes">🗺️ Carte</button>
+        <button class="pf-dock-btn" data-open-kind="pixel" title="Ouvrir le pixel art">🎨 Sprite</button>
+        <button class="pf-dock-btn" data-open-kind="objects" title="Ouvrir objets & scripts">📜 Objet</button>
+        <button class="pf-dock-btn" data-open-kind="sound" title="Ouvrir les sons">🔊 Son</button>
+        <button class="pf-dock-btn" data-open-kind="library" title="Ouvrir la bibliothèque">📚 Projets</button>
+      </div>
     </div>
     <main id="view" style="flex:1;min-height:0;position:relative;overflow:hidden;"></main>
   </div>
@@ -80,6 +74,21 @@ centerBody.innerHTML = `
 
 const view = document.getElementById('view');
 const tabsEl = document.getElementById('tabs');
+
+// Initialisation du Document Workspace (A2)
+export const workspace = new DocumentWorkspace({
+  tabbar: tabsEl,
+  view,
+  store,
+});
+
+// Écoute des boutons d'ouverture rapide
+document.getElementById('pf-quick-tabs')?.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-open-kind]');
+  if (btn) {
+    workspace.open({ kind: btn.dataset.openKind });
+  }
+});
 
 // Éléments de la barre supérieure droite (Godot style)
 const topRightEl = document.getElementById('pf-topright');
@@ -102,7 +111,7 @@ if (themeBtn) {
   };
 }
 
-// Panneaux par défaut pour les docks
+// Panneaux par défaut pour les docks latéraux
 dock.registerPanel({
   id: 'resources',
   title: 'Ressources',
@@ -112,7 +121,7 @@ dock.registerPanel({
     container.innerHTML = `
       <div style="padding:10px;font-size:12px;color:var(--fg-1);">
         <div style="font-weight:600;margin-bottom:6px;color:var(--fg-0);">Explorateur de projet</div>
-        <p style="margin:0;font-size:11px;color:var(--fg-2);">Arborescence des sprites, cartes, objets et sons.</p>
+        <p style="margin:0;font-size:11px;color:var(--fg-2);">Double-cliquez sur une ressource pour l'ouvrir dans un onglet.</p>
       </div>
     `;
   },
@@ -150,50 +159,6 @@ dock.registerPanel({
   unmount: () => {},
 });
 
-function readHash() {
-  const id = location.hash.slice(1);
-  if (!TABS.some((t) => t.id === id)) return store.currentId ? 'pixel' : 'library';
-  return id !== 'library' && !store.currentId ? 'library' : id;
-}
-
-async function showTab(id, force = false) {
-  if (id !== 'library' && !store.currentId) id = 'library';
-  if (current?.id === id && !force) return;
-  if (current) {
-    try { current.module.unmount?.(); } catch (e) { console.error(e); }
-    current.container.remove();
-    current = null;
-  }
-  const tab = TABS.find((t) => t.id === id);
-  for (const b of tabsEl.children) b.classList.toggle('active', b.dataset.tab === id);
-  const container = document.createElement('div');
-  container.className = 'tab-view';
-  view.appendChild(container);
-  const module = await tab.load();
-  current = { id, module, container };
-  module.mount(container, store);
-
-  dock.setPlayingState(id === 'play');
-}
-
-function openTab(id) {
-  switching = switching.then(() => showTab(id)).catch((e) => console.error(e));
-  return switching;
-}
-
-function remountCurrent() {
-  switching = switching.then(() => (current ? showTab(current.id, true) : null)).catch((e) => console.error(e));
-}
-
-for (const t of TABS) {
-  const b = document.createElement('button');
-  b.textContent = t.label;
-  b.dataset.tab = t.id;
-  b.onclick = () => { location.hash = t.id; };
-  tabsEl.appendChild(b);
-}
-window.addEventListener('hashchange', () => openTab(readHash()));
-
 const syncName = () => {
   nameInput.value = store.currentId ? store.project.name : '';
   nameInput.disabled = !store.currentId;
@@ -205,15 +170,19 @@ nameInput.addEventListener('input', () => store.update((p) => { p.name = nameInp
 store.on('load', () => {
   syncName();
   setStatus('');
-  if (!store.currentId && current?.id !== 'library') location.hash = 'library';
-  remountCurrent();
 });
 store.on('change', (reason) => {
   if (reason === 'rename' && document.activeElement !== nameInput) syncName();
-  if (store.currentId) setStatus('…');
+  if (store.currentId) {
+    setStatus('…');
+    if (workspace.activeId) workspace.markDirty(workspace.activeId, true);
+  }
 });
 store.on('saving', () => setStatus('Sauvegarde…'));
-store.on('saved', () => setStatus('Sauvegardé'));
+store.on('saved', () => {
+  setStatus('Sauvegardé');
+  for (const doc of workspace.docs) workspace.markDirty(doc.id, false);
+});
 store.on('save-error', (e) => setStatus('Erreur de sauvegarde', String(e?.message || e)));
 
 // Toast discret
@@ -238,7 +207,7 @@ function download(filename, content, type) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const slug = () => (store.project.name || 'jeu').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'jeu';
+const slug = () => (store.project?.name || 'jeu').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'jeu';
 
 function triggerExport() {
   if (!store.currentId) { toast('Ouvrez un jeu depuis la bibliothèque pour l\'exporter'); return; }
@@ -262,6 +231,10 @@ window.addEventListener('keydown', (e) => {
     toast('Bibliothèque indisponible : ' + (e.message || e));
   }
   syncName();
-  if (!location.hash || !TABS.some((t) => t.id === location.hash.slice(1))) location.hash = store.currentId ? 'pixel' : 'library';
-  openTab(readHash());
+
+  if (store.currentId) {
+    workspace.loadSavedDocs();
+  } else {
+    workspace.open({ kind: 'library', title: 'Bibliothèque' });
+  }
 })();
