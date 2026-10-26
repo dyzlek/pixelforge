@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER_GAIN } from '../chip.js';
 import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../editors/music/pianoroll.js';
+import { encodeWav } from '../wav-encoder.js';
+import { parseMidi, midiToSong } from '../midi-parser.js';
 
 function createMockAudioContext() {
   const scheduledValues = [];
@@ -274,5 +276,53 @@ assert.ok(arrangeCtrl);
 assert.equal(arrangeCtrl.isPlaying(), true);
 arrangeCtrl.stop();
 assert.equal(arrangeCtrl.isPlaying(), false);
+
+// 11. Test de l'encodeur WAV PCM 16-bit
+const mockBuffer = {
+  numberOfChannels: 2,
+  sampleRate: 44100,
+  length: 100,
+  getChannelData: () => new Float32Array(100)
+};
+const wavBytes = encodeWav(mockBuffer);
+assert.ok(wavBytes instanceof Uint8Array);
+assert.equal(wavBytes.length, 44 + 100 * 2 * 2); // 44 header + 400 data
+const headerStr = String.fromCharCode(...wavBytes.slice(0, 4)) + String.fromCharCode(...wavBytes.slice(8, 12));
+assert.equal(headerStr, 'RIFFWAVE');
+
+// 12. Test du parseur Standard MIDI et conversion en morceau PixelForge
+// Construction d'un fichier SMF minimal valide en memoire : Format 0, 1 piste, 480 ticks/beat
+const smfBytes = [
+  // MThd
+  0x4D, 0x54, 0x68, 0x64, // 'MThd'
+  0x00, 0x00, 0x00, 0x06, // length = 6
+  0x00, 0x00,             // format 0
+  0x00, 0x01,             // 1 track
+  0x01, 0xE0,             // division = 480
+  // MTrk
+  0x4D, 0x54, 0x72, 0x6B, // 'MTrk'
+  0x00, 0x00, 0x00, 0x1B, // chunk length = 27 octets
+  // Delta 0, Tempo Meta (120 BPM = 500000 us/beat -> 0x07A120)
+  0x00, 0xFF, 0x51, 0x03, 0x07, 0xA1, 0x20,
+  // Delta 0, Note On: Ch 0, Note 60 (C4), Vel 100
+  0x00, 0x90, 0x3C, 0x64,
+  // Delta 480 (1 beat = 4 pas), Note Off: Ch 0, Note 60, Vel 0
+  0x83, 0x60, 0x80, 0x3C, 0x00,
+  // Delta 0, End of track
+  0x00, 0xFF, 0x2F, 0x00
+];
+
+const midiArrayBuffer = new Uint8Array(smfBytes).buffer;
+const parsedMidi = parseMidi(midiArrayBuffer);
+assert.equal(parsedMidi.numTracks, 1);
+assert.equal(parsedMidi.bpm, 120);
+
+const convertedMidiSong = midiToSong(midiArrayBuffer, 'Test MIDI');
+assert.equal(convertedMidiSong.name, 'Test MIDI');
+assert.equal(convertedMidiSong.bpm, 120);
+assert.equal(convertedMidiSong.channels.length, 1);
+assert.equal(convertedMidiSong.patterns[0].notes.length, 1);
+assert.equal(convertedMidiSong.patterns[0].notes[0].pitch, 'C4');
+assert.equal(convertedMidiSong.patterns[0].notes[0].len, 4);
 
 console.log('Tests chip.js reussis avec succes.');

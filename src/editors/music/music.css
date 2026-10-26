@@ -783,3 +783,142 @@
   background: rgba(255, 255, 255, 0.6);
   border-radius: 1px;
 }
+
+
+/* ---------------------------------------------------- */
+/* Mixeur audio et vumetres (B5)                        */
+/* ---------------------------------------------------- */
+
+.pf-mixer-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-dark, #0d0f18);
+  overflow: hidden;
+}
+
+.pf-mixer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-surface, #141724);
+  border-bottom: 1px solid var(--border, #262a3f);
+  flex-shrink: 0;
+}
+
+.pf-mixer-strips {
+  display: flex;
+  flex: 1;
+  padding: 16px;
+  gap: 12px;
+  overflow-x: auto;
+  align-items: stretch;
+}
+
+.pf-mixer-strip {
+  width: 90px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface, #141724);
+  border: 1px solid var(--border, #262a3f);
+  border-radius: 6px;
+  padding: 8px;
+  gap: 8px;
+  align-items: center;
+}
+
+.pf-mixer-strip.master {
+  background: #111422;
+  border-color: #3b5dc9;
+}
+
+.pf-strip-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  text-align: center;
+}
+
+.pf-strip-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.pf-strip-mutesolo {
+  display: flex;
+  gap: 4px;
+}
+
+.pf-strip-pan {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Vumetre vertical */
+.pf-strip-meter {
+  width: 10px;
+  height: 90px;
+  background: #090b12;
+  border: 1px solid #1c2033;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column-reverse;
+}
+
+.pf-meter-fill {
+  width: 100%;
+  background: linear-gradient(to top, #38b764 0%, #ffcd75 75%, #ef7d57 90%, #b13e53 100%);
+  border-radius: 2px;
+  transition: height 0.1s ease;
+}
+
+/* Fader vertical */
+.pf-strip-slider-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+}
+
+.pf-fader-slider {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  width: 8px;
+  height: 100%;
+  -webkit-appearance: none;
+  background: #23273c;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+.pf-fader-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 24px;
+  height: 12px;
+  border-radius: 3px;
+  background: #41a6f6;
+  border: 1px solid #73eff7;
+  cursor: pointer;
+  box-shadow: 0 0 4px rgba(65, 166, 246, 0.5);
+}
+
+.pf-strip-foot {
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text-dim, #717791);
+}

@@ -5,6 +5,7 @@ import { createChipAudio, MASTER_GAIN } from '../../audio/chip.js';
 import { renderChannelRack } from './rack.js';
 import { renderPianoRoll } from './pianoroll.js';
 import { renderPlaylist } from './playlist.js';
+import { renderMixer } from './mixer.js';
 import { getIconSvg } from '../../ui/icons.js';
 
 let sharedAudioCtx = null;
@@ -145,21 +146,33 @@ export function mount(container, store, { refId = null } = {}) {
   btnViewList.textContent = 'PLAYLIST';
   btnViewList.title = 'Vue Playlist (Arrangement)';
 
+  const btnViewMixer = document.createElement('button');
+  btnViewMixer.className = 'pf-transport-btn';
+  btnViewMixer.style.width = 'auto';
+  btnViewMixer.style.padding = '0 8px';
+  btnViewMixer.style.fontSize = '11px';
+  btnViewMixer.style.fontWeight = 'bold';
+  btnViewMixer.textContent = 'MIXER';
+  btnViewMixer.title = 'Vue Console de mixage & Export';
+
   const setView = (v) => {
     activeView = v;
     btnViewRack.classList.toggle('active', v === 'rack');
     btnViewRoll.classList.toggle('active', v === 'pianoroll');
     btnViewList.classList.toggle('active', v === 'playlist');
+    btnViewMixer.classList.toggle('active', v === 'mixer');
     render();
   };
 
   btnViewRack.onclick = () => setView('rack');
   btnViewRoll.onclick = () => setView('pianoroll');
   btnViewList.onclick = () => setView('playlist');
+  btnViewMixer.onclick = () => setView('mixer');
 
   viewGroup.appendChild(btnViewRack);
   viewGroup.appendChild(btnViewRoll);
   viewGroup.appendChild(btnViewList);
+  viewGroup.appendChild(btnViewMixer);
   transport.appendChild(viewGroup);
 
   const sep1 = document.createElement('div');
@@ -389,10 +402,36 @@ export function mount(container, store, { refId = null } = {}) {
     }
   }
 
-  // Rendu du Channel Rack, Piano Roll ou Playlist
+  // Rendu du Channel Rack, Piano Roll, Playlist ou Mixeur
   function render() {
     updateLenSelectValue();
     refreshPatternSelect();
+
+    if (activeView === 'mixer') {
+      renderMixer(mainArea, {
+        song,
+        chip: getSharedChip(),
+        onChannelChange(chId, patch) {
+          store.update((p) => {
+            const curSong = (p.songs || []).find((s) => s.id === song.id);
+            const curCh = (curSong?.channels || []).find((c) => c.id === chId);
+            if (curCh) Object.assign(curCh, patch);
+          }, 'song:channel_patch');
+          render();
+        },
+        onSongImport(importedSong) {
+          store.update((p) => {
+            p.songs = p.songs || [];
+            p.songs.push(importedSong);
+          }, 'song:import_midi');
+          song = importedSong;
+          activePatternId = importedSong.patterns?.[0]?.id || null;
+          selectedChannelId = importedSong.channels?.[0]?.id || null;
+          render();
+        }
+      });
+      return;
+    }
 
     if (activeView === 'playlist') {
       renderPlaylist(mainArea, {
