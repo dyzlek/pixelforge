@@ -127,31 +127,41 @@ export function mount(container, store) {
   async function loadSampleGames() {
     const baseUrl = import.meta.env?.BASE_URL || '/';
     const cleanBase = baseUrl.replace(/\/+$/, '');
-    let loaded = 0;
+    // Télécharge d'abord tous les jeux, pour pouvoir demander avant d'écraser
+    const projects = [];
     try {
-      const manifestUrl = cleanBase + '/games/index.json';
-      const res = await fetch(manifestUrl);
+      const res = await fetch(cleanBase + '/games/index.json');
       if (res.ok) {
-        const list = await res.json();
-        for (const item of list) {
-          const gameUrl = cleanBase + '/games/' + item.file;
-          const gr = await fetch(gameUrl);
-          if (gr.ok) {
-            const p = normalizeProject(await gr.json());
-            if (!p.meta.thumbnail) p.meta.thumbnail = await renderThumbnail(p).catch(() => null);
-            await saveGame(p);
-            loaded++;
-          }
+        for (const item of await res.json()) {
+          const gr = await fetch(cleanBase + '/games/' + item.file);
+          if (gr.ok) projects.push(normalizeProject(await gr.json()));
         }
       }
     } catch (e) {
       console.warn('Impossible de charger games/index.json', e);
     }
-    if (loaded === 0) {
-      await addSample();
-    } else {
-      await render();
+    if (!projects.length) { await addSample(); return; }
+
+    // Jeux déjà présents (même id) : les remplacer seulement si l'utilisateur le confirme
+    const existing = new Map((await listGames()).map((g) => [g.id, g.name]));
+    const clashes = projects.filter((p) => existing.has(p.meta.id));
+    let replace = false;
+    if (clashes.length) {
+      replace = confirm('Ces jeux existent déjà dans votre bibliothèque :\n\n'
+        + clashes.map((p) => '• ' + (existing.get(p.meta.id) || p.name)).join('\n')
+        + '\n\nOK : les remplacer par la version d\'origine (vos modifications seront perdues).\n'
+        + 'Annuler : les garder et ne charger que les jeux manquants.');
     }
+    let reopenId = null;
+    for (const p of projects) {
+      if (existing.has(p.meta.id) && !replace) continue;
+      // Jeu ouvert remplacé : on le ferme d'abord pour que sa sauvegarde automatique ne réécrive pas l'ancienne version
+      if (p.meta.id === store.currentId) { store.closeGame(); reopenId = p.meta.id; }
+      if (!p.meta.thumbnail) p.meta.thumbnail = await renderThumbnail(p).catch(() => null);
+      await saveGame(p);
+    }
+    if (reopenId) await store.openGame(reopenId);
+    await render();
   }
 
   async function duplicateGame(g) {

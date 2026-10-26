@@ -7,6 +7,16 @@
 
 ---
 
+## 2026-10-26 (16) — « Charger les jeux d'exemple » demande avant d'écraser
+- **Fait (Opus)** : src/library/index.js — télécharge tous les jeux d'abord ; si des ids existent déjà, confirm() qui les liste : OK = remplacer, Annuler = ne charger que les manquants ; le jeu ouvert est fermé avant d'être remplacé puis rouvert (sinon sa sauvegarde auto réécrivait l'ancienne version) ; repli sur l'exemple intégré seulement si games/index.json est introuvable.
+- **Vérifié** : build Pages servi en statique : Annuler → rien d'écrasé, OK → remplacés, jeu ouvert rouvert, aucune erreur ; build, npm test.
+- **État** : main, commit « Demande avant d'écraser… », poussé.
+
+## 2026-10-26 (15) — Relecture (Opus) du travail P0 + P1.1 + P1.7
+- **Vérifié** : build, build Pages, npm test, check:doc, validate ×3, CI verte ; Ctrl+Z / Ctrl+Y du graphe testés dans le navigateur (suppression → annuler → rétablir, pas de double annulation avec le store) ; build Pages servi en statique sous /pixelforge/ : « Charger les jeux d'exemple » fonctionne.
+- **Problèmes relevés** : déploiement Pages en échec (Pages pas activé dans les réglages du dépôt → lien démo du README mort) ; « Charger les jeux d'exemple » écrase sans prévenir les jeux du même id ; commit « miniature de Tetris » contient aussi des changements de sons et de positions de nœuds.
+- **État** : rien corrigé, rien commité (seul updatedAt de l'exemple a bougé pendant le test).
+
 ## 2026-10-26 (14) — P1.1 Annuler / rétablir dans le graphe (Ctrl+Z / Ctrl+Y)
 - **Fait** : pile d'historique locale dans src/editors/objects/graph-editor.js (limite 100 snapshots), pushHistory appelé à chaque action (création, liaison, suppression, déplacement, champ), annulation/rétablissement via Ctrl+Z, Ctrl+Maj+Z et Ctrl+Y ; exclusion du capture store.js sur .bp-canvas et .bp-root.
 - **Décisions** : historique isolé au graphe pour une annulation granulaire et fiable de chaque manipulation de nœuds/fils.
