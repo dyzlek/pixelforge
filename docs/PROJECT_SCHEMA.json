@@ -100,6 +100,7 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string", "description": "Unique." },
+        "folder": { "type": "string", "description": "Optional virtual folder for organization." },
         "width": { "type": "integer", "minimum": 1 },
         "height": { "type": "integer", "minimum": 1 },
         "frames": {
@@ -126,6 +127,7 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
+        "folder": { "type": "string", "description": "Optional virtual folder for organization." },
         "kind": { "enum": ["sfx", "file"] },
         "sfx": {
           "type": "object",
@@ -145,6 +147,7 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string", "description": "Unique, case-sensitive; used in scripts (game.spawn('Coin'), on('collide','Coin'))." },
+        "folder": { "type": "string", "description": "Optional virtual folder for organization." },
         "spriteId": { "type": ["string", "null"] },
         "defaultAnim": { "type": ["string", "null"] },
         "hitbox": {
@@ -186,6 +189,7 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string", "description": "Unique; used by game.goToMap(name)." },
+        "folder": { "type": "string", "description": "Optional virtual folder for organization." },
         "width": { "type": "integer", "minimum": 1, "description": "In tiles." },
         "height": { "type": "integer", "minimum": 1, "description": "In tiles." },
         "tileSize": { "type": "integer", "minimum": 4, "description": "Should equal settings.tileSize and the tileset sprite's frame size." },

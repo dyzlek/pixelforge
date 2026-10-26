@@ -118,15 +118,16 @@ export function normalizeProject(p) {
   p.settings = { ...base.settings, ...(p.settings || {}) };
   p.palette = p.palette?.length ? p.palette : base.palette;
   p.meta = { ...base.meta, ...(p.meta || {}) };
-  p.sprites = p.sprites || [];
-  p.sounds = p.sounds || [];
+  p.sprites = (p.sprites || []).map((s) => ({ folder: '', ...s }));
+  p.sounds = (p.sounds || []).map((s) => ({ folder: '', ...s }));
   p.objects = (p.objects || []).map((o) => {
-    const obj = { ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };
+    const obj = { folder: '', ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };
     obj.script = normalizeScript(o.script, false);
     return obj;
   });
   p.maps = p.maps?.length ? p.maps : base.maps;
   for (const m of p.maps) {
+    if (m.folder === undefined) m.folder = '';
     for (const l of m.layers || []) {
       l.depth = l.depth || 'below';
       if (l.oneWay === undefined) l.oneWay = false;

@@ -7,6 +7,18 @@
 
 ---
 
+## 2026-10-26 (22) — [Phase A] A3 : Panneau « Ressources » (FileSystem façon Godot)
+- **Fait** :
+  - Support du champ `folder` pour les dossiers virtuels dans `src/core/project.js` (`normalizeProject`) et `docs/PROJECT_SCHEMA.json`.
+  - Création de `src/ui/panels/resources.js` et `resources.css` : explorateur d'arborescence des ressources avec catégories (scènes, objets, sprites, sons).
+  - Filtrage et recherche rapide en temps réel.
+  - Miniatures graphiques dynamiques pour les sprites et objets.
+  - Double-clic pour ouvrir n'importe quelle ressource dans un onglet du workspace.
+  - Glisser-déposer (`dragstart`) avec payload structuré `application/pixelforge-resource`.
+  - Actions d'ajout, duplication, et suppression avec détection préventive des dépendances (objets placés dans les cartes, sprites utilisés par les objets/tuiles).
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #4.
+
 ## 2026-10-26 (21) — [Phase A] A2 : Documents ouverts en onglets (Multi-document workspace)
 - **Fait** :
   - Création de `src/ui/documents.js` et `src/ui/documents.css` : gestionnaire d'onglets de documents ouverts (scènes, sprites, scripts, sons, jouer, bibliothèque).
