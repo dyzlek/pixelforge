@@ -4,6 +4,7 @@ import { createSong, uid } from '../../core/project.js';
 import { createChipAudio, MASTER_GAIN } from '../../audio/chip.js';
 import { renderChannelRack } from './rack.js';
 import { renderPianoRoll } from './pianoroll.js';
+import { renderPlaylist } from './playlist.js';
 import { getIconSvg } from '../../ui/icons.js';
 
 let sharedAudioCtx = null;
@@ -113,7 +114,7 @@ export function mount(container, store, { refId = null } = {}) {
   modeGroup.appendChild(btnSongMode);
   transport.appendChild(modeGroup);
 
-  // Vue Rack / Piano Roll
+  // Vue Rack / Piano Roll / Playlist
   const viewGroup = document.createElement('div');
   viewGroup.className = 'pf-transport-btn-group';
 
@@ -135,22 +136,30 @@ export function mount(container, store, { refId = null } = {}) {
   btnViewRoll.textContent = 'PIANO ROLL';
   btnViewRoll.title = 'Vue Piano Roll interactif';
 
-  btnViewRack.onclick = () => {
-    activeView = 'rack';
-    btnViewRack.classList.add('active');
-    btnViewRoll.classList.remove('active');
+  const btnViewList = document.createElement('button');
+  btnViewList.className = 'pf-transport-btn';
+  btnViewList.style.width = 'auto';
+  btnViewList.style.padding = '0 8px';
+  btnViewList.style.fontSize = '11px';
+  btnViewList.style.fontWeight = 'bold';
+  btnViewList.textContent = 'PLAYLIST';
+  btnViewList.title = 'Vue Playlist (Arrangement)';
+
+  const setView = (v) => {
+    activeView = v;
+    btnViewRack.classList.toggle('active', v === 'rack');
+    btnViewRoll.classList.toggle('active', v === 'pianoroll');
+    btnViewList.classList.toggle('active', v === 'playlist');
     render();
   };
 
-  btnViewRoll.onclick = () => {
-    activeView = 'pianoroll';
-    btnViewRoll.classList.add('active');
-    btnViewRack.classList.remove('active');
-    render();
-  };
+  btnViewRack.onclick = () => setView('rack');
+  btnViewRoll.onclick = () => setView('pianoroll');
+  btnViewList.onclick = () => setView('playlist');
 
   viewGroup.appendChild(btnViewRack);
   viewGroup.appendChild(btnViewRoll);
+  viewGroup.appendChild(btnViewList);
   transport.appendChild(viewGroup);
 
   const sep1 = document.createElement('div');
@@ -286,7 +295,7 @@ export function mount(container, store, { refId = null } = {}) {
   container.appendChild(root);
 
   // Fonctions de controle de lecture
-  function startPlayback() {
+  function startPlayback(seekStep = 0) {
     const chip = getSharedChip();
     if (!chip) return;
     if (sharedAudioCtx && sharedAudioCtx.state !== 'running') {
@@ -299,28 +308,33 @@ export function mount(container, store, { refId = null } = {}) {
     btnPlay.innerHTML = getIconSvg('pause', 14);
 
     let songObj = song;
+    let pLen = 16;
     if (playMode === 'pattern') {
       const curPat = (song.patterns || []).find((p) => p.id === activePatternId) || song.patterns?.[0];
+      pLen = curPat?.length || 16;
       songObj = {
         ...song,
         patterns: [curPat],
         playlist: [{ pattern: curPat?.id || 'p0', start: 0, track: 0 }],
         loop: true
       };
+    } else {
+      pLen = Math.max(16, ...((song.playlist || []).map((it) => {
+        const pat = (song.patterns || []).find((p) => p.id === it.pattern);
+        return (it.start || 0) + (pat?.length || 16);
+      })));
     }
 
     activeController = chip.playSong(songObj, {
       loop: true,
       volume: 1,
+      startStep: seekStep,
       onBeat(beat) {
         if (metronome && sharedChipAudio) {
           sharedChipAudio.playSfx('blip', 0, 0.3, beat % 4 === 0 ? 1.5 : 1);
         }
       }
     });
-
-    const pat = (song.patterns || []).find((p) => p.id === activePatternId);
-    const pLen = pat?.length || 16;
 
     const trackSweep = () => {
       if (!isPlaying || !activeController) return;
@@ -352,7 +366,7 @@ export function mount(container, store, { refId = null } = {}) {
 
   btnPlay.onclick = () => {
     if (isPlaying) stopPlayback();
-    else startPlayback();
+    else startPlayback(0);
   };
 
   btnStop.onclick = () => stopPlayback();
@@ -360,16 +374,56 @@ export function mount(container, store, { refId = null } = {}) {
   function updateCursorInDOM(step) {
     const allStepButtons = mainArea.querySelectorAll('.pf-step-btn');
     allStepButtons.forEach((btn) => btn.classList.remove('cursor-now'));
+    const playhead = mainArea.querySelector('.pf-playlist-playhead');
+    if (playhead) {
+      if (step >= 0) {
+        playhead.style.display = 'block';
+        playhead.style.left = (step * 12) + 'px';
+      } else {
+        playhead.style.display = 'none';
+      }
+    }
     if (step >= 0) {
-      const activeStepButtons = mainArea.querySelectorAll(`.pf-step-ruler-num:nth-child(${step + 1}), .pf-rack-steps button:nth-child(${step + 1})`);
+      const activeStepButtons = mainArea.querySelectorAll(`.pf-step-ruler-num:nth-child(${step + 1}), .pf-rack-steps button:nth-child(${step + 1}), .pf-pianoroll-col:nth-child(${step + 1})`);
       activeStepButtons.forEach((btn) => btn.classList.add('cursor-now'));
     }
   }
 
-  // Rendu du Channel Rack ou Piano Roll
+  // Rendu du Channel Rack, Piano Roll ou Playlist
   function render() {
     updateLenSelectValue();
     refreshPatternSelect();
+
+    if (activeView === 'playlist') {
+      renderPlaylist(mainArea, {
+        song,
+        activePatternId,
+        currentStep,
+        onPlaylistChange() {
+          store.update((p) => {
+            const cur = (p.songs || []).find((s) => s.id === song.id);
+            if (cur) {
+              cur.playlist = song.playlist;
+              cur.loopStart = song.loopStart;
+            }
+          }, 'song:playlist');
+        },
+        onPatternSelect(patId) {
+          activePatternId = patId;
+          refreshPatternSelect();
+        },
+        onSeek(step) {
+          currentStep = step;
+          if (isPlaying) {
+            stopPlayback();
+            startPlayback(step);
+          } else {
+            updateCursorInDOM(step);
+          }
+        }
+      });
+      return;
+    }
 
     if (activeView === 'pianoroll') {
       renderPianoRoll(mainArea, {
@@ -403,10 +457,7 @@ export function mount(container, store, { refId = null } = {}) {
       selectedChannelId,
       onChannelSelect(chId) {
         selectedChannelId = chId;
-        activeView = 'pianoroll';
-        btnViewRoll.classList.add('active');
-        btnViewRack.classList.remove('active');
-        render();
+        setView('pianoroll');
       },
       onStepToggle(chId, stepIndex, pitch, active) {
         store.update((p) => {

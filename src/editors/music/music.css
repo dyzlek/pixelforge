@@ -567,3 +567,219 @@
 .pf-note-resize-handle:hover {
   background: #fff;
 }
+
+
+/* ---------------------------------------------------- */
+/* Playlist (Arrangement des patterns) (B4)            */
+/* ---------------------------------------------------- */
+
+.pf-playlist-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-dark, #0d0f18);
+  overflow: hidden;
+}
+
+.pf-playlist-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-surface, #141724);
+  border-bottom: 1px solid var(--border, #262a3f);
+  flex-shrink: 0;
+}
+
+.pf-playlist-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* En-tetes de pistes a gauche */
+.pf-playlist-track-headers {
+  width: 90px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: #11131f;
+  border-right: 1px solid var(--border, #262a3f);
+  z-index: 2;
+}
+
+.pf-playlist-corner {
+  height: 24px;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  font-size: 10px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--text-dim, #717791);
+  border-bottom: 1px solid var(--border, #262a3f);
+  background: #141726;
+}
+
+.pf-playlist-track-head {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim, #8b90a8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  box-sizing: border-box;
+}
+
+/* Timeline scrollable */
+.pf-playlist-scroll {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  background: #090a10;
+}
+
+.pf-playlist-content {
+  position: relative;
+  box-sizing: border-box;
+}
+
+.pf-playlist-ruler {
+  height: 24px;
+  background: #121422;
+  border-bottom: 1px solid var(--border, #262a3f);
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.pf-playlist-bar-num {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text-dim, #717791);
+  border-left: 1px solid var(--border, #262a3f);
+  box-sizing: border-box;
+}
+
+.pf-playlist-loop-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid #a7f070;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.pf-loop-flag {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 9px;
+  font-weight: bold;
+  font-family: monospace;
+  background: #a7f070;
+  color: #1a1c2c;
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+/* Grille des pistes */
+.pf-playlist-tracks-area {
+  position: relative;
+  box-sizing: border-box;
+}
+
+.pf-playlist-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.01);
+  box-sizing: border-box;
+}
+
+.pf-playlist-lane.alt {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Tete de lecture */
+.pf-playlist-playhead {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #ff7d57;
+  box-shadow: 0 0 8px #ff7d57;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/* Blocs de patterns places */
+.pf-playlist-blocks-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.pf-playlist-block {
+  position: absolute;
+  pointer-events: auto;
+  background: #257179;
+  border: 1px solid #73eff7;
+  border-radius: 4px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  padding: 3px 6px;
+  cursor: grab;
+  box-shadow: 0 0 6px rgba(37, 113, 121, 0.4);
+  overflow: hidden;
+  transition: filter 0.1s ease;
+}
+
+.pf-playlist-block:hover {
+  filter: brightness(1.2);
+}
+
+.pf-playlist-block:active {
+  cursor: grabbing;
+}
+
+.pf-playlist-block-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+.pf-playlist-miniview {
+  position: relative;
+  flex: 1;
+  margin-top: 2px;
+  pointer-events: none;
+}
+
+.pf-playlist-minidot {
+  position: absolute;
+  top: 2px;
+  width: 3px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 1px;
+}

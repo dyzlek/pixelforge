@@ -430,7 +430,7 @@ export function createChipAudio(ctx, destination) {
       playlist = [{ pattern: song.patterns[0].id, start: 0, track: 0 }];
     }
 
-    let maxStep = 0;
+    let maxStep = typeof song.loopEnd === 'number' && song.loopEnd > 0 ? song.loopEnd : 0;
     const eventsByStep = {};
 
     playlist.forEach((item) => {
@@ -438,7 +438,7 @@ export function createChipAudio(ctx, destination) {
       if (!pat) return;
       const startStep = item.start || 0;
       const pLen = pat.length || 16;
-      if (startStep + pLen > maxStep) maxStep = startStep + pLen;
+      if (startStep + pLen > maxStep && (!song.loopEnd || song.loopEnd <= 0)) maxStep = startStep + pLen;
 
       (pat.notes || []).forEach((note) => {
         const step = startStep + (note.step || 0);
@@ -454,7 +454,7 @@ export function createChipAudio(ctx, destination) {
 
     if (maxStep <= 0) maxStep = 16;
 
-    let currentStep = 0;
+    let currentStep = typeof options.startStep === 'number' ? Math.max(0, options.startStep) : 0;
     let nextStepTime = ctx.currentTime + 0.05;
     let timerId = null;
     let stopped = false;
@@ -505,7 +505,7 @@ export function createChipAudio(ctx, destination) {
 
         if (currentStep >= maxStep) {
           if (loop) {
-            currentStep = 0;
+            currentStep = (typeof song.loopStart === 'number' && song.loopStart >= 0 && song.loopStart < maxStep) ? song.loopStart : 0;
           } else {
             stopped = true;
             clearInterval(timerId);
