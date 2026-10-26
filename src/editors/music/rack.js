@@ -1,5 +1,6 @@
 // PixelForge Music Studio — Channel Rack (FL Studio style)
 import { getIconSvg } from '../../ui/icons.js';
+import { DRUM_PATTERNS } from '../../audio/presets/drums.js';
 
 const DRUM_KIT_VOICES = [
   { id: 'kick', name: 'Grosse caisse (Kick)', pitch: 'C3' },
@@ -29,7 +30,8 @@ export function renderChannelRack(container, opts) {
     onAddChannel,
     onDeleteChannel,
     onChannelSelect,
-    selectedChannelId = null
+    selectedChannelId = null,
+    onApplyDrumPattern = null
   } = opts;
 
   container.innerHTML = '';
@@ -203,8 +205,38 @@ export function renderChannelRack(container, opts) {
       row.appendChild(stepsDiv);
       rack.appendChild(row);
     } else {
-      // Drum Kit : rangée principale + 5 sous-pistes
+      // Drum Kit : rangée principale + barre de modèles + 5 sous-pistes
       rack.appendChild(row);
+
+      const tmplBar = document.createElement('div');
+      tmplBar.className = 'pf-drum-subrow';
+      tmplBar.style.padding = '4px 10px';
+      tmplBar.style.background = '#151827';
+      tmplBar.style.display = 'flex';
+      tmplBar.style.alignItems = 'center';
+      tmplBar.style.gap = '8px';
+
+      const tmplLabel = document.createElement('span');
+      tmplLabel.style.fontSize = '11px';
+      tmplLabel.style.color = '#8b90a8';
+      tmplLabel.textContent = 'Modèle rythmique :';
+      tmplBar.appendChild(tmplLabel);
+
+      const tmplSelect = document.createElement('select');
+      tmplSelect.className = 'pf-transport-val';
+      tmplSelect.style.fontSize = '11px';
+      tmplSelect.style.padding = '2px 6px';
+      tmplSelect.innerHTML = '<option value="" disabled selected>Appliquer un modèle (1-clic)...</option>'
+        + Object.values(DRUM_PATTERNS).map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+
+      tmplSelect.onchange = (e) => {
+        const patternId = e.target.value;
+        if (!patternId) return;
+        onApplyDrumPattern?.(patternId, ch.id);
+        tmplSelect.selectedIndex = 0;
+      };
+      tmplBar.appendChild(tmplSelect);
+      rack.appendChild(tmplBar);
 
       DRUM_KIT_VOICES.forEach((voice) => {
         const subRow = document.createElement('div');
