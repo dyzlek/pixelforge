@@ -4,6 +4,9 @@ import engineSource from './engine.js?raw';
 import chipSource from '../audio/chip.js?raw';
 import { createChipAudio } from '../audio/chip.js';
 import { buildStandaloneHTML } from './export-template.js';
+import { createGame3D } from '../runtime3d/engine3d.js';
+import engine3dSource from '../runtime3d/engine3d.js?raw';
+import { buildStandaloneHTML3D } from '../runtime3d/export-template-3d.js';
 
 let ctx = null; // état de l'onglet monté { game, ro, ... }
 
@@ -64,6 +67,29 @@ export function mount(container, store) {
   async function start() {
     stop();
     const token = state.token;
+    const is3D = store.project?.settings?.dimension === '3d';
+
+    if (is3D) {
+      let THREE;
+      try {
+        THREE = await import('three');
+      } catch (e) {
+        addLog('Impossible de charger Three.js : ' + e.message, 'error');
+        return;
+      }
+      if (state.dead || token !== state.token) return;
+      try {
+        state.game = createGame3D(structuredClone(store.project), screen, THREE, {
+          onLog: addLog,
+          chip: createChipAudio,
+        });
+      } catch (e) {
+        addLog('Impossible de lancer le jeu 3D : ' + e.message, 'error');
+        console.error(e);
+      }
+      return;
+    }
+
     let Phaser;
     try {
       Phaser = (await import('phaser')).default;
@@ -135,6 +161,9 @@ export function unmount() {
 
 // HTML autonome : voir export-template.js (fonction pure, aussi utilisee par le serveur MCP)
 export function exportStandaloneHTML(project) {
+  if (project?.settings?.dimension === '3d') {
+    return buildStandaloneHTML3D(project, engine3dSource, chipSource);
+  }
   return buildStandaloneHTML(project, engineSource, chipSource);
 }
 
