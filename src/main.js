@@ -3,6 +3,7 @@ import { store } from './core/store.js';
 import { exportStandaloneHTML } from './runtime/play.js';
 import { DockManager } from './ui/dock.js';
 import { DocumentWorkspace } from './ui/documents.js';
+import { createResourcesPanel } from './ui/panels/resources.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -117,14 +118,7 @@ dock.registerPanel({
   title: 'Ressources',
   icon: '📁',
   area: 'left',
-  mount: (container) => {
-    container.innerHTML = `
-      <div style="padding:10px;font-size:12px;color:var(--fg-1);">
-        <div style="font-weight:600;margin-bottom:6px;color:var(--fg-0);">Explorateur de projet</div>
-        <p style="margin:0;font-size:11px;color:var(--fg-2);">Double-cliquez sur une ressource pour l'ouvrir dans un onglet.</p>
-      </div>
-    `;
-  },
+  mount: (container) => createResourcesPanel(container, store, workspace),
   unmount: () => {},
 });
 
