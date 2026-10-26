@@ -187,5 +187,23 @@ function copyGamesPlugin() {
 export default defineConfig({
   base: process.env.GITHUB_PAGES ? '/pixelforge/' : '/',
   plugins: [gamesPlugin(), copyGamesPlugin()],
+  build: {
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/phaser')) {
+            return 'vendor-phaser';
+          }
+          if (id.includes('node_modules/three')) {
+            return 'vendor-three';
+          }
+          if (id.includes('node_modules/@codemirror') || id.includes('node_modules/codemirror')) {
+            return 'vendor-codemirror';
+          }
+        },
+      },
+    },
+  },
 });
 

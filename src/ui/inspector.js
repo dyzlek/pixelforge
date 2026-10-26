@@ -108,6 +108,19 @@ export function createInspector(container, store) {
 
     const groupsEl = container.querySelector('.pf-insp-groups');
 
+    if (target.type === 'settings') {
+      try {
+        const bytes = JSON.stringify(store.project).length;
+        if (bytes > 10 * 1024 * 1024) {
+          const mb = (bytes / (1024 * 1024)).toFixed(1);
+          const warnEl = document.createElement('div');
+          warnEl.style.cssText = 'margin:8px;padding:8px 12px;background:#b13e5333;border:1px solid #b13e53;border-radius:4px;color:#ef7d57;font-size:11px;line-height:1.4;';
+          warnEl.innerHTML = `<strong>Attention :</strong> Projet volumineux (${mb} Mo > 10 Mo). Pensez a compresser vos modeles ou reduire les grilles.`;
+          groupsEl.appendChild(warnEl);
+        }
+      } catch {}
+    }
+
     for (const g of schema.groups) {
       const groupEl = document.createElement('div');
       const isCollapsed = collapsedGroups.has(g.id);

@@ -48,6 +48,19 @@ export function createProblemsPanel(container, store, workspace) {
       }
     }
 
+    // Alerte taille volumineuse (> 10 Mo)
+    try {
+      const approxBytes = JSON.stringify(p).length;
+      if (approxBytes > 10 * 1024 * 1024) {
+        const mb = (approxBytes / (1024 * 1024)).toFixed(1);
+        issues.push({
+          level: 'warn',
+          text: `Taille du projet élevée (${mb} Mo > 10 Mo) : envisagez de compresser ou nettoyer les modèles 3D.`,
+          kind: 'settings',
+        });
+      }
+    } catch {}
+
     // Validation des objets
     for (const obj of p.objects || []) {
       if (obj.spriteId && !p.sprites?.some((s) => s.id === obj.spriteId)) {

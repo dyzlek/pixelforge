@@ -1,5 +1,6 @@
 // Schéma du projet : voir docs/ARCHITECTURE.md
 import { compileGraph, blocklyToGraph } from '../graph/index.js';
+import { unpackProjectVoxels } from './compression.js';
 
 export const PROJECT_VERSION = 1;
 
@@ -262,6 +263,7 @@ export function normalizeProject(p) {
   p.models = Array.isArray(p.models) ? p.models.map((m) => ({ folder: '', ...m })) : [];
   p.materials = Array.isArray(p.materials) ? p.materials : [];
   p.scenes3d = Array.isArray(p.scenes3d) ? p.scenes3d.map((s) => ({ folder: '', gridmap: {}, entities: [], ...s })) : [];
+  unpackProjectVoxels(p);
   p.environment = { ...base.environment, ...(p.environment || {}) };
   p.objects = (p.objects || []).map((o) => {
     const obj = { folder: '', exportedProps: [], ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };

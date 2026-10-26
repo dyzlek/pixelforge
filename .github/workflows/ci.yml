@@ -39,3 +39,9 @@ jobs:
           npm run pf -- validate cube-runner
           npm run pf -- validate donjon-3d
 
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E tests
+        run: npm run test:e2e
+
