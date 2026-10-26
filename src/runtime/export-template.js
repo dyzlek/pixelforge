@@ -4,9 +4,10 @@
 
 const escHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-export function buildStandaloneHTML(project, engineSource) {
-  // On retire uniquement le mot-clé d'export placé en début de ligne dans engine.js
-  const engine = String(engineSource).replace(/^export\s+/gm, '').replace(/<\/script/gi, '<\\/script');
+export function buildStandaloneHTML(project, engineSource, chipSource = '') {
+  // On retire uniquement le mot-cle d'export place en debut de ligne dans engine.js et chip.js
+  const chip = String(chipSource || '').replace(/^export\s+/gm, '').replace(/<\/script/gi, '<\\/script');
+  const engine = String(engineSource || '').replace(/^export\s+/gm, '').replace(/<\/script/gi, '<\\/script');
   const data = JSON.stringify(project).replace(/</g, '\\u003c');
   const title = escHtml((project && project.name) || 'Jeu');
   return `<!doctype html>
@@ -26,6 +27,7 @@ export function buildStandaloneHTML(project, engineSource) {
 <div id="game"></div>
 <div id="errors"></div>
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"><\/script>
+${chip ? `<script>\n${chip}\n<\/script>` : ''}
 <script>
 ${engine}
 </script>

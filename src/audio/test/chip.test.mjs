@@ -1,0 +1,185 @@
+// Test unitaire du moteur audio chiptune (chip.js).
+import assert from 'node:assert/strict';
+import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER_GAIN } from '../chip.js';
+
+function createMockAudioContext() {
+  const scheduledValues = [];
+  const nodes = [];
+
+  function createParam(defaultVal = 0) {
+    return {
+      value: defaultVal,
+      setValueAtTime(v, t) { scheduledValues.push({ type: 'set', v, t }); },
+      linearRampToValueAtTime(v, t) { scheduledValues.push({ type: 'linear', v, t }); },
+      exponentialRampToValueAtTime(v, t) { scheduledValues.push({ type: 'exp', v, t }); }
+    };
+  }
+
+  const mockCtx = {
+    currentTime: 0,
+    sampleRate: 44100,
+    state: 'running',
+    destination: { tag: 'destination' },
+    createGain() {
+      const g = { gain: createParam(1), connect() {}, disconnect() {} };
+      nodes.push(g);
+      return g;
+    },
+    createOscillator() {
+      const o = {
+        type: 'sine',
+        frequency: createParam(440),
+        setPeriodicWave() {},
+        connect() {},
+        start() {},
+        stop() {}
+      };
+      nodes.push(o);
+      return o;
+    },
+    createBufferSource() {
+      const s = {
+        buffer: null,
+        loop: false,
+        playbackRate: createParam(1),
+        connect() {},
+        start() {},
+        stop() {}
+      };
+      nodes.push(s);
+      return s;
+    },
+    createBiquadFilter() {
+      const f = {
+        type: 'lowpass',
+        frequency: createParam(350),
+        Q: createParam(1),
+        connect() {}
+      };
+      nodes.push(f);
+      return f;
+    },
+    createBuffer(channels, length, rate) {
+      const data = new Float32Array(length);
+      return {
+        numberOfChannels: channels,
+        length,
+        sampleRate: rate,
+        getChannelData: () => data
+      };
+    },
+    createPeriodicWave() {
+      return { tag: 'PeriodicWave' };
+    }
+  };
+
+  return { mockCtx, nodes, scheduledValues };
+}
+
+// 1. Constantes de base
+assert.equal(MASTER_GAIN, 0.6);
+assert.equal(PRESETS.length, 8);
+assert.ok(INSTRUMENTS.includes('pulse12'));
+assert.ok(INSTRUMENTS.includes('pulse25'));
+assert.ok(INSTRUMENTS.includes('pulse50'));
+
+// 2. Calculs de frequence (noteFreq)
+assert.equal(Math.round(noteFreq('A4')), 440);
+assert.equal(Math.round(noteFreq('A3')), 220);
+assert.equal(Math.round(noteFreq('C4')), 262);
+assert.equal(Math.round(noteFreq(69)), 440);
+assert.equal(noteFreq(440), 440);
+assert.equal(noteFreq('-'), 0);
+assert.equal(noteFreq(''), 0);
+assert.equal(noteFreq(null), 0);
+
+// 3. Conversion chiptune vers song
+const legacyTrack = {
+  bpm: 150,
+  notes: ['C4', 'E4', 'G4', 'C5'],
+  durations: [1, 1, 1, 2]
+};
+const converted = chiptuneToSong(legacyTrack);
+assert.equal(converted.bpm, 150);
+assert.equal(converted.channels.length, 1);
+assert.equal(converted.channels[0].instrument, 'pulse50');
+assert.equal(converted.patterns.length, 1);
+assert.equal(converted.patterns[0].notes.length, 4);
+assert.equal(converted.patterns[0].length, 5); // 1 + 1 + 1 + 2
+
+// 4. Creation du moteur audio chiptune
+const { mockCtx } = createMockAudioContext();
+const chip = createChipAudio(mockCtx);
+
+assert.ok(typeof chip.playSfx === 'function');
+assert.ok(typeof chip.scheduleNote === 'function');
+assert.ok(typeof chip.playSong === 'function');
+assert.ok(typeof chip.stopSong === 'function');
+assert.ok(typeof chip.playChiptuneTrack === 'function');
+assert.ok(typeof chip.renderOffline === 'function');
+
+// 5. Presets sonores (durees et declenchements)
+assert.equal(chip.playSfx('jump'), 0.2);
+assert.equal(chip.playSfx('coin'), 0.35);
+assert.equal(chip.playSfx('hit'), 0.25);
+assert.equal(chip.playSfx('powerup'), 0.5);
+assert.equal(chip.playSfx('explosion'), 0.75);
+assert.equal(chip.playSfx('laser'), 0.25);
+assert.equal(chip.playSfx('blip'), 0.08);
+assert.equal(chip.playSfx('portal'), 0.65);
+assert.equal(chip.playSfx('inconnu'), 0);
+
+// Options object
+assert.equal(chip.playSfx({ preset: 'jump', volume: 0.5 }), 0.2);
+
+// 6. Planification de notes
+const notePulse = chip.scheduleNote({ instrument: 'pulse25', pitch: 'C4', duration: 0.2 });
+assert.ok(notePulse);
+notePulse.stop();
+
+const noteNoise = chip.scheduleNote({ instrument: 'noise', duration: 0.1 });
+assert.ok(noteNoise);
+noteNoise.stop();
+
+const noteDrum = chip.scheduleNote({ instrument: 'noise', drumKit: true, pitch: 'kick', duration: 0.1 });
+assert.ok(noteDrum);
+noteDrum.stop();
+
+// 7. Lecture de morceau complet
+const song = {
+  id: 'test_song',
+  name: 'Test',
+  bpm: 120,
+  stepsPerBeat: 4,
+  loop: false,
+  channels: [
+    { id: 'lead', name: 'Lead', instrument: 'pulse50', volume: 0.8 }
+  ],
+  patterns: [
+    {
+      id: 'p1',
+      name: 'P1',
+      length: 16,
+      notes: [
+        { ch: 'lead', step: 0, pitch: 'C4', len: 2 },
+        { ch: 'lead', step: 4, pitch: 'E4', len: 2 }
+      ]
+    }
+  ],
+  playlist: [
+    { pattern: 'p1', start: 0, track: 0 }
+  ]
+};
+
+const ctrl = chip.playSong(song, { loop: false });
+assert.ok(ctrl);
+assert.equal(typeof ctrl.stop, 'function');
+assert.equal(typeof ctrl.getCurrentStep, 'function');
+assert.equal(typeof ctrl.isPlaying, 'function');
+assert.equal(ctrl.isPlaying(), true);
+ctrl.stop();
+assert.equal(ctrl.isPlaying(), false);
+
+chip.stopSong();
+
+console.log('Tests chip.js reussis avec succes.');

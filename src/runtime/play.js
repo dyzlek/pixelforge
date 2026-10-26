@@ -1,6 +1,8 @@
 import './style.css';
 import { createGame } from './engine.js';
 import engineSource from './engine.js?raw';
+import chipSource from '../audio/chip.js?raw';
+import { createChipAudio } from '../audio/chip.js';
 import { buildStandaloneHTML } from './export-template.js';
 
 let ctx = null; // état de l'onglet monté { game, ro, ... }
@@ -71,7 +73,11 @@ export function mount(container, store) {
     }
     if (state.dead || token !== state.token) return;
     try {
-      state.game = createGame(structuredClone(store.project), screen, Phaser, { mapId: runMap.value, onLog: addLog });
+      state.game = createGame(structuredClone(store.project), screen, Phaser, {
+        mapId: runMap.value,
+        onLog: addLog,
+        createChipAudio
+      });
     } catch (e) {
       addLog('Impossible de lancer le jeu : ' + e.message, 'error');
       console.error(e);
@@ -126,9 +132,9 @@ export function unmount() {
   ctx = null;
 }
 
-// HTML autonome : voir export-template.js (fonction pure, aussi utilisée par le serveur MCP)
+// HTML autonome : voir export-template.js (fonction pure, aussi utilisee par le serveur MCP)
 export function exportStandaloneHTML(project) {
-  return buildStandaloneHTML(project, engineSource);
+  return buildStandaloneHTML(project, engineSource, chipSource);
 }
 
 export function getDebugSnapshot() {
