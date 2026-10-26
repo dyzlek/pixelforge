@@ -7,6 +7,16 @@
 
 ---
 
+## 2026-10-26 (27) — [Phase A] A8 : Palette de commandes, raccourcis et préférences
+- **Fait** :
+  - Création de `src/ui/shortcuts.js` : registre central des raccourcis clavier studio avec écoute globale.
+  - Création de `src/ui/command-palette.js` et `command-palette.css` : palette de commandes flottante façon VS Code / Godot 4 (`Ctrl+Maj+P`) et recherche rapide de ressources (`Ctrl+P`).
+  - Navigation au clavier dans la liste avec flèches haut/bas et exécution par Entrée.
+  - Création de `src/ui/preferences.js` : boîte de dialogue de réglages Studio (thème sombre/clair, échelle d'affichage de 90 % à 150 %, langue, grille par défaut) avec persistance dans `localStorage`.
+  - Intégration dans le menu Édition (Palette, Accès rapide, Préférences) et raccordement à la barre de dock.
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #9.
+
 ## 2026-10-26 (26) — [Phase A] A7 : Gestionnaire de projets (Project Manager)
 - **Fait** :
   - Création de `src/ui/project-manager.js` et `project-manager.css` : écran d'accueil dédié façon Project Manager de Godot 4.
