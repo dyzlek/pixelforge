@@ -135,7 +135,13 @@ export function normalizeProject(p) {
       if (l.oneWay === undefined) l.oneWay = false;
       if (l.scrollFactor === undefined) l.scrollFactor = 1;
     }
-    for (const e of m.entities || []) e.props = e.props || {};
+    for (const e of m.entities || []) {
+      e.props = e.props || {};
+      if (e.angle === undefined) e.angle = 0;
+      if (e.scale === undefined) e.scale = 1;
+      if (e.locked === undefined) e.locked = false;
+      if (e.visible === undefined) e.visible = true;
+    }
   }
   p.globalScript = normalizeScript(p.globalScript, true);
   if (!p.maps.some((m) => m.id === p.settings.startMapId)) p.settings.startMapId = p.maps[0].id;

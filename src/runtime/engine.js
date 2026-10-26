@@ -677,7 +677,11 @@ export function createGame(project, parent, Phaser, opts = {}) {
       for (const e of map.entities || []) {
         const obj = objectsById[e.objectId];
         if (!obj) { warnOnce('Carte « ' + map.name + ' » : une entité référence un objet supprimé.'); continue; }
-        this.spawnInstance(obj, e.x, e.y, e.props);
+        const inst = this.spawnInstance(obj, e.x, e.y, e.props);
+        if (inst && inst.self) {
+          if (e.angle != null) inst.self.angle = e.angle;
+          if (e.scale != null) inst.self.scale = e.scale;
+        }
       }
       this.global = this.newHolder('Script global');
       const gs = project.globalScript;
