@@ -4,12 +4,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](package.json)
 [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
-[![Phaser 3](https://img.shields.io/badge/Phaser-3.90-orange)](https://phaser.io)
+[![Phaser 4](https://img.shields.io/badge/Phaser-4.2.1-orange)](https://phaser.io)
 
 > **[Essayer la démo en ligne dans votre navigateur](https://dyzlek.github.io/pixelforge/)**  
 > Read this in English: **[README.en.md](README.en.md)**
 
-**PixelForge** est un environnement complet de création de jeux vidéo 2D rétro directement dans le navigateur, propulsé par **Phaser 3**.
+**PixelForge** est un environnement complet de création de jeux vidéo 2D rétro directement dans le navigateur, propulsé par **Phaser 4**.
 Dessinez vos sprites en pixel art, composez vos cartes en tuiles, programmez vos entités à l'aide de **Blueprints visuels** (graphes de nœuds inspirés d'Unreal Engine) ou directement en JavaScript, testez instantanément et exportez votre jeu en une seule page HTML autonome et partageable.
 
 Un jeu = **un seul fichier JSON** (`games/<id>.pixelforge.json`). L'éditeur surveille le dossier `games/` et applique les modifications à chaud : vous, un script CLI ou une IA connectée en MCP pouvez concevoir ou modifier un jeu en direct !
@@ -59,7 +59,7 @@ flowchart TD
     end
 
     subgraph Moteur["Runtime & Export"]
-        Engine["Moteur PixelForge<br/>(Phaser 3 + Audio Synth + Raycast)"]
+        Engine["Moteur PixelForge<br/>(Phaser 4 + Audio Synth + Raycast)"]
         HTML["Export HTML Autonome<br/>(exports/&lt;jeu&gt;.html)"]
         Pages["Démo Web<br/>(GitHub Pages / IndexedDB)"]
     end
@@ -205,7 +205,7 @@ src/
                                  - compile.js (compilation graphe -> JavaScript)
                                  - fromBlockly.js (migration d'anciens blocs vers graphes)
   library/                       Bibliothèque de projets (stockage disque en dev, IndexedDB sur le web)
-  runtime/                       Moteur d'exécution Phaser 3 (engine.js sans import) et export HTML
+  runtime/                       Moteur d'exécution Phaser 4 (engine.js sans import) et export HTML
 mcp/                             Serveur MCP (server.js), CLI (cli.js), utilitaires et tests e2e
 games/                           Jeux au format JSON : Tetris rétro, Monde 1-1, Exemple plateforme
 docs/                            Spécifications techniques : ARCHITECTURE.md, BLUEPRINTS.md, SCRIPT_API.md

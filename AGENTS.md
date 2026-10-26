@@ -1,6 +1,6 @@
 # PixelForge - guide for AI agents
 
-PixelForge is a 2D game editor + engine that runs in the browser (Vite, vanilla JS, Phaser 3, Blueprint node graphs). A game is **one JSON file**:
+PixelForge is a 2D game editor + engine that runs in the browser (Vite, vanilla JS, Phaser 4, Blueprint node graphs). A game is **one JSON file**:
 `games/<meta.id>.pixelforge.json` (indented 2 spaces). The web editor watches `games/` and reloads when a file changes, so you can
 build a game from the terminal and see it live. You can create a complete game without opening the editor.
 

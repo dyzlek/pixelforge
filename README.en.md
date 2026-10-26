@@ -4,12 +4,12 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](package.json)
 [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
-[![Phaser 3](https://img.shields.io/badge/Phaser-3.90-orange)](https://phaser.io)
+[![Phaser 4](https://img.shields.io/badge/Phaser-4.2.1-orange)](https://phaser.io)
 
 > **[Try the live web demo in your browser](https://dyzlek.github.io/pixelforge/)**  
 > Version française : **[README.md](README.md)**
 
-**PixelForge** is a complete, browser-based 2D retro game engine and editor powered by **Phaser 3**.
+**PixelForge** is a complete, browser-based 2D retro game engine and editor powered by **Phaser 4**.
 Create pixel art sprites, build tilemap levels, program entity logic using **visual Blueprint node graphs** (inspired by Unreal Engine) or JavaScript, test immediately with zero build steps, and export standalone single-file HTML games.
 
 One game = **one JSON file** (`games/<id>.pixelforge.json`). The web editor hot-reloads whenever disk files change: humans, CLI scripts, and AI agents over MCP can build and tweak games live!
@@ -59,7 +59,7 @@ flowchart TD
     end
 
     subgraph Runtime["Engine & Export"]
-        Engine["PixelForge Runtime<br/>(Phaser 3 + WebAudio Synth + Raycasting)"]
+        Engine["PixelForge Runtime<br/>(Phaser 4 + WebAudio Synth + Raycasting)"]
         HTML["Standalone HTML Export<br/>(exports/&lt;id&gt;.html)"]
         Pages["Web Demo<br/>(GitHub Pages / IndexedDB)"]
     end

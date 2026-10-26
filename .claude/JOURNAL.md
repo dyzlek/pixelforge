@@ -1,5 +1,16 @@
 # Journal — PixelForge
 
+## 2026-10-26 (46) — [Phase E] E3 : nettoyage apres la migration Phaser 4 (Issue #68)
+- **Fait** :
+  - Nettoyage et mise a jour globale de toutes les mentions de version dans la documentation :
+    - `package.json` : description mise a jour vers « moteur Phaser 4 ».
+    - `AGENTS.md` : mise a jour du moteur de jeu et des capacites d'agents vers Phaser 4.
+    - `README.md` et `README.en.md` : badges de version mis a jour (`Phaser-4.2.1-orange`), architecture et diagrammes Mermaid alignes sur Phaser 4.
+    - `docs/ARCHITECTURE.md` : presentation du moteur mise a jour vers Phaser 4.
+  - Verification rigoureuse de l'absence de references obsoletes a Phaser 3 (hors CHANGELOG historique et guide de migration `docs/PHASER4.md`).
+- **Verifie** : `npm test` (2563 verifs), `npm run check:doc`, `npm run build`, `npm run test:e2e` (5 tests Playwright verts), validation de tous les jeux.
+- **Etat** : Branche `feat/phaser-4-cleanup`, Closes #68.
+
 ## 2026-10-26 (45) — [Phase E] E2 : filtres Phaser 4 dans les scripts et les Blueprints (Issue #67)
 - **Fait** :
   - `src/runtime/engine.js` :
