@@ -248,6 +248,17 @@
   - Ajout de la suite de tests unitaires `src/audio/test/chip.test.mjs` integree a `npm test`.
 - **Verifie** : `npm run build`, `npm test` (avec tests chip.js et e2e export_html), `npm run check:doc`, validation des 3 jeux (tetris, exemple-plateforme-qiqv, monde-1-1). Zero emoji, zero import dans `chip.js` et `engine.js`.
 
+## 2026-10-26 (13) — [Phase B] B2 : Channel rack et sequenceur pas a pas (Closes #13)
+- **Fait** :
+  - Creation de l'editeur de studio musical chiptune `src/editors/music/` (index.js, rack.js, music.css) inspire de FL Studio.
+  - Interface Channel Rack avec lignes de canaux (Mute, Solo, instrument NES/chiptune, volume, pan, suppression).
+  - Sequenceur pas a pas interactif (16, 32, 64 pas) avec coloration 4-temps, activation clic gauche, effacement clic droit, trace par glisser.
+  - Mode Drum Kit specialise pour le canal Noise : separation en sous-pistes Grosse caisse (Kick), Caisse claire (Snare), Charleston ferme/ouvert (Hi-hat) et Tom.
+  - Barre de transport complete : Play / Pause / Stop (raccourcis Espace et Echap), commutateur mode Pattern / Song, reglage BPM interactif, metronome sonore (TIC), selection et ajout de patterns.
+  - Raccordement du type de document `song` dans `src/ui/documents.js` permettant l'ouverture directe d'une musique depuis l'explorateur ou la palette de commandes.
+- **Verifie** : `npm run build`, `npm test` (tests de batterie a 180 BPM reussis), `npm run check:doc`, validation des 3 jeux avec 0 erreur. Zero emoji dans tout le code et l'interface.
+
+
 
 
 

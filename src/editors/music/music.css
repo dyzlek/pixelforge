@@ -1,0 +1,366 @@
+/* PixelForge Music Studio — Channel Rack & Step Sequencer (FL Studio style) */
+
+.pf-music-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-dark, #0d0f18);
+  color: var(--text, #d0d4e4);
+  font-family: inherit;
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Barre de transport superieure */
+.pf-music-transport {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-surface, #141724);
+  border-bottom: 1px solid var(--border, #262a3f);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.pf-transport-btn-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-dark, #0d0f18);
+  padding: 2px;
+  border-radius: 6px;
+  border: 1px solid var(--border, #262a3f);
+}
+
+.pf-transport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim, #8b90a8);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pf-transport-btn:hover {
+  background: var(--bg-hover, #202438);
+  color: var(--text, #fff);
+}
+
+.pf-transport-btn.active {
+  background: var(--accent, #41a6f6);
+  color: #fff;
+}
+
+.pf-transport-btn.playing {
+  background: #38b764;
+  color: #fff;
+}
+
+.pf-transport-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim, #8b90a8);
+}
+
+.pf-transport-val {
+  background: var(--bg-dark, #0d0f18);
+  border: 1px solid var(--border, #262a3f);
+  color: var(--text, #fff);
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-family: monospace;
+  text-align: center;
+  outline: none;
+}
+
+.pf-transport-val:focus {
+  border-color: var(--accent, #41a6f6);
+}
+
+.pf-transport-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--border, #262a3f);
+  margin: 0 4px;
+}
+
+/* Zone principale de travail */
+.pf-music-main {
+  display: flex;
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  flex-direction: column;
+}
+
+/* Channel Rack */
+.pf-music-rack {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  gap: 6px;
+  min-width: fit-content;
+}
+
+.pf-rack-header {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-dim, #717791);
+  letter-spacing: 0.5px;
+}
+
+.pf-rack-col-info {
+  width: 240px;
+  flex-shrink: 0;
+}
+
+.pf-rack-col-steps {
+  display: flex;
+  flex: 1;
+  gap: 4px;
+}
+
+.pf-step-ruler {
+  display: flex;
+  gap: 4px;
+}
+
+.pf-step-ruler-num {
+  width: 22px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text-dim, #616680);
+}
+
+.pf-step-ruler-num.beat-head {
+  color: var(--accent, #41a6f6);
+  font-weight: bold;
+}
+
+/* Ligne de canal */
+.pf-rack-row {
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface, #141724);
+  border: 1px solid var(--border, #262a3f);
+  border-radius: 6px;
+  padding: 4px 8px;
+  gap: 8px;
+  transition: border-color 0.15s ease;
+}
+
+.pf-rack-row:hover {
+  border-color: #383e5c;
+}
+
+.pf-rack-row.active {
+  border-color: var(--accent, #41a6f6);
+}
+
+.pf-channel-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 240px;
+  flex-shrink: 0;
+}
+
+.pf-btn-mute, .pf-btn-solo {
+  width: 20px;
+  height: 20px;
+  font-size: 10px;
+  font-weight: bold;
+  border-radius: 3px;
+  border: 1px solid var(--border, #262a3f);
+  background: var(--bg-dark, #0d0f18);
+  color: var(--text-dim, #8b90a8);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.pf-btn-mute.active {
+  background: #b13e53;
+  color: #fff;
+  border-color: #b13e53;
+}
+
+.pf-btn-solo.active {
+  background: #ffcd75;
+  color: #1a1c2c;
+  border-color: #ffcd75;
+}
+
+.pf-channel-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  flex: 1;
+}
+
+.pf-channel-inst {
+  font-size: 10px;
+  font-family: monospace;
+  padding: 2px 5px;
+  background: #202438;
+  color: #73eff7;
+  border-radius: 3px;
+  border: 1px solid #2d334e;
+}
+
+.pf-channel-knobs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-mini-slider {
+  width: 44px;
+  height: 4px;
+  -webkit-appearance: none;
+  background: #262a3f;
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.pf-mini-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent, #41a6f6);
+  cursor: pointer;
+}
+
+/* Grille de pas */
+.pf-rack-steps {
+  display: flex;
+  gap: 4px;
+}
+
+.pf-step-btn {
+  width: 22px;
+  height: 28px;
+  border-radius: 3px;
+  border: 1px solid #23273a;
+  background: #171a2a;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.1s ease;
+  position: relative;
+}
+
+.pf-step-btn.beat-alt {
+  background: #20243a;
+  border-color: #2b314d;
+}
+
+.pf-step-btn:hover {
+  filter: brightness(1.2);
+}
+
+.pf-step-btn.active {
+  background: #ff7d57;
+  border-color: #ffaa88;
+  box-shadow: 0 0 6px rgba(255, 125, 87, 0.5);
+}
+
+.pf-step-btn.active.inst-pulse {
+  background: #41a6f6;
+  border-color: #73eff7;
+  box-shadow: 0 0 6px rgba(65, 166, 246, 0.5);
+}
+
+.pf-step-btn.active.inst-triangle {
+  background: #a7f070;
+  border-color: #d2f9b0;
+  box-shadow: 0 0 6px rgba(167, 240, 112, 0.5);
+}
+
+.pf-step-btn.active.inst-saw {
+  background: #ffcd75;
+  border-color: #ffe6b0;
+  box-shadow: 0 0 6px rgba(255, 205, 117, 0.5);
+}
+
+.pf-step-btn.active.inst-noise {
+  background: #ef7d57;
+  border-color: #ffa388;
+  box-shadow: 0 0 6px rgba(239, 125, 87, 0.5);
+}
+
+.pf-step-btn.cursor-now {
+  outline: 2px solid #fff;
+  outline-offset: -1px;
+}
+
+/* Sous-lignes drumkit */
+.pf-drum-subrow {
+  display: flex;
+  align-items: center;
+  padding: 2px 8px 2px 24px;
+  gap: 8px;
+  background: #10121d;
+  border-left: 2px solid #ef7d57;
+  margin-top: -2px;
+}
+
+.pf-drum-label {
+  width: 224px;
+  font-size: 11px;
+  color: var(--text-dim, #8b90a8);
+}
+
+/* Bouton d'ajout de canal */
+.pf-rack-add-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.pf-btn-add-channel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--bg-surface, #141724);
+  border: 1px dashed var(--border, #262a3f);
+  color: var(--text-dim, #8b90a8);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pf-btn-add-channel:hover {
+  background: var(--bg-hover, #202438);
+  color: var(--text, #fff);
+  border-color: var(--accent, #41a6f6);
+}

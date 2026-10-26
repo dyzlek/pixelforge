@@ -1,0 +1,452 @@
+// PixelForge Music Studio — Editeur musical Chiptune (FL Studio style)
+import './music.css';
+import { createSong, uid } from '../../core/project.js';
+import { createChipAudio, MASTER_GAIN } from '../../audio/chip.js';
+import { renderChannelRack } from './rack.js';
+import { getIconSvg } from '../../ui/icons.js';
+
+let sharedAudioCtx = null;
+let sharedMasterGain = null;
+let sharedChipAudio = null;
+
+function getSharedChip() {
+  if (sharedChipAudio) return sharedChipAudio;
+  const AC = typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext);
+  if (!AC) return null;
+  try {
+    sharedAudioCtx = new AC();
+    sharedMasterGain = sharedAudioCtx.createGain();
+    sharedMasterGain.gain.value = MASTER_GAIN;
+    sharedMasterGain.connect(sharedAudioCtx.destination);
+    sharedChipAudio = createChipAudio(sharedAudioCtx, sharedMasterGain);
+  } catch (e) {
+    return null;
+  }
+  return sharedChipAudio;
+}
+
+export function mount(container, store, { refId = null } = {}) {
+  const cleanups = [];
+  container.innerHTML = '';
+
+  const songs = () => store.project.songs || (store.project.songs = []);
+  let song = (refId && songs().find((s) => s.id === refId)) || songs()[0];
+
+  if (!song) {
+    song = createSong('Musique 1');
+    songs().push(song);
+    store.update((p) => { p.songs = songs(); }, 'song:create');
+  }
+
+  let activePatternId = song.patterns?.[0]?.id || null;
+  let selectedChannelId = song.channels?.[0]?.id || null;
+  let isPlaying = false;
+  let playMode = 'pattern'; // 'pattern' ou 'song'
+  let currentStep = -1;
+  let metronome = false;
+  let activeController = null;
+  let cursorAnimFrame = null;
+
+  const root = document.createElement('div');
+  root.className = 'pf-music-root';
+
+  // 1. Barre de transport
+  const transport = document.createElement('div');
+  transport.className = 'pf-music-transport';
+
+  const btnGroup = document.createElement('div');
+  btnGroup.className = 'pf-transport-btn-group';
+
+  const btnPlay = document.createElement('button');
+  btnPlay.className = 'pf-transport-btn';
+  btnPlay.innerHTML = getIconSvg('play', 14);
+  btnPlay.title = 'Lire / Mettre en pause (Espace)';
+
+  const btnStop = document.createElement('button');
+  btnStop.className = 'pf-transport-btn';
+  btnStop.innerHTML = getIconSvg('stop', 14);
+  btnStop.title = 'Arreter (Echap)';
+
+  btnGroup.appendChild(btnPlay);
+  btnGroup.appendChild(btnStop);
+  transport.appendChild(btnGroup);
+
+  // Mode Pattern / Song
+  const modeGroup = document.createElement('div');
+  modeGroup.className = 'pf-transport-btn-group';
+
+  const btnPatMode = document.createElement('button');
+  btnPatMode.className = 'pf-transport-btn active';
+  btnPatMode.style.width = 'auto';
+  btnPatMode.style.padding = '0 8px';
+  btnPatMode.style.fontSize = '11px';
+  btnPatMode.style.fontWeight = 'bold';
+  btnPatMode.textContent = 'PAT';
+  btnPatMode.title = 'Mode Pattern';
+
+  const btnSongMode = document.createElement('button');
+  btnSongMode.className = 'pf-transport-btn';
+  btnSongMode.style.width = 'auto';
+  btnSongMode.style.padding = '0 8px';
+  btnSongMode.style.fontSize = '11px';
+  btnSongMode.style.fontWeight = 'bold';
+  btnSongMode.textContent = 'SONG';
+  btnSongMode.title = 'Mode Morceau complet (Playlist)';
+
+  btnPatMode.onclick = () => {
+    playMode = 'pattern';
+    btnPatMode.classList.add('active');
+    btnSongMode.classList.remove('active');
+    if (isPlaying) { stopPlayback(); startPlayback(); }
+  };
+
+  btnSongMode.onclick = () => {
+    playMode = 'song';
+    btnSongMode.classList.add('active');
+    btnPatMode.classList.remove('active');
+    if (isPlaying) { stopPlayback(); startPlayback(); }
+  };
+
+  modeGroup.appendChild(btnPatMode);
+  modeGroup.appendChild(btnSongMode);
+  transport.appendChild(modeGroup);
+
+  const sep1 = document.createElement('div');
+  sep1.className = 'pf-transport-sep';
+  transport.appendChild(sep1);
+
+  // BPM
+  const bpmItem = document.createElement('div');
+  bpmItem.className = 'pf-transport-item';
+  bpmItem.innerHTML = '<span>BPM</span>';
+
+  const bpmInput = document.createElement('input');
+  bpmInput.type = 'number';
+  bpmInput.className = 'pf-transport-val';
+  bpmInput.style.width = '50px';
+  bpmInput.min = '30';
+  bpmInput.max = '300';
+  bpmInput.value = String(song.bpm || 140);
+  bpmInput.onchange = (e) => {
+    const v = Math.max(30, Math.min(300, parseInt(e.target.value, 10) || 140));
+    bpmInput.value = String(v);
+    store.update((p) => {
+      const cur = (p.songs || []).find((s) => s.id === song.id);
+      if (cur) cur.bpm = v;
+    }, 'song:bpm');
+    if (isPlaying) { stopPlayback(); startPlayback(); }
+  };
+
+  bpmItem.appendChild(bpmInput);
+  transport.appendChild(bpmItem);
+
+  // Metronome
+  const btnMetro = document.createElement('button');
+  btnMetro.className = 'pf-transport-btn';
+  btnMetro.textContent = 'TIC';
+  btnMetro.style.fontSize = '10px';
+  btnMetro.style.fontWeight = 'bold';
+  btnMetro.title = 'Activer / Desactiver le metronome';
+  btnMetro.onclick = () => {
+    metronome = !metronome;
+    btnMetro.classList.toggle('active', metronome);
+  };
+  transport.appendChild(btnMetro);
+
+  const sep2 = document.createElement('div');
+  sep2.className = 'pf-transport-sep';
+  transport.appendChild(sep2);
+
+  // Pattern selector
+  const patItem = document.createElement('div');
+  patItem.className = 'pf-transport-item';
+  patItem.innerHTML = '<span>Pattern</span>';
+
+  const patSelect = document.createElement('select');
+  patSelect.className = 'pf-transport-val';
+
+  const refreshPatternSelect = () => {
+    patSelect.innerHTML = '';
+    (song.patterns || []).forEach((p) => {
+      const opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name || 'Pattern';
+      opt.selected = p.id === activePatternId;
+      patSelect.appendChild(opt);
+    });
+  };
+  refreshPatternSelect();
+
+  patSelect.onchange = (e) => {
+    activePatternId = e.target.value;
+    render();
+    if (isPlaying && playMode === 'pattern') { stopPlayback(); startPlayback(); }
+  };
+  patItem.appendChild(patSelect);
+
+  // Bouton ajouter pattern
+  const btnAddPat = document.createElement('button');
+  btnAddPat.className = 'pf-transport-btn';
+  btnAddPat.innerHTML = getIconSvg('plus', 12);
+  btnAddPat.title = 'Nouveau pattern';
+  btnAddPat.onclick = () => {
+    const newId = uid();
+    const count = (song.patterns || []).length + 1;
+    const newPat = { id: newId, name: 'Pattern ' + count, length: 16, notes: [] };
+    store.update((p) => {
+      const cur = (p.songs || []).find((s) => s.id === song.id);
+      if (cur) {
+        cur.patterns = cur.patterns || [];
+        cur.patterns.push(newPat);
+      }
+    }, 'song:add_pattern');
+    activePatternId = newId;
+    refreshPatternSelect();
+    render();
+  };
+  patItem.appendChild(btnAddPat);
+
+  // Selecteur de longueur de pas (16, 32, 64)
+  const lenSelect = document.createElement('select');
+  lenSelect.className = 'pf-transport-val';
+  [16, 32, 64].forEach((len) => {
+    const opt = document.createElement('option');
+    opt.value = String(len);
+    opt.textContent = len + ' pas';
+    lenSelect.appendChild(opt);
+  });
+
+  const updateLenSelectValue = () => {
+    const curPat = (song.patterns || []).find((p) => p.id === activePatternId);
+    lenSelect.value = String(curPat?.length || 16);
+  };
+  updateLenSelectValue();
+
+  lenSelect.onchange = (e) => {
+    const len = parseInt(e.target.value, 10);
+    store.update((p) => {
+      const cur = (p.songs || []).find((s) => s.id === song.id);
+      const pat = (cur?.patterns || []).find((pt) => pt.id === activePatternId);
+      if (pat) pat.length = len;
+    }, 'song:pattern_length');
+    render();
+  };
+  patItem.appendChild(lenSelect);
+
+  transport.appendChild(patItem);
+
+  root.appendChild(transport);
+
+  // 2. Zone principale
+  const mainArea = document.createElement('div');
+  mainArea.className = 'pf-music-main';
+  root.appendChild(mainArea);
+  container.appendChild(root);
+
+  // Fonctions de controle de lecture
+  function startPlayback() {
+    const chip = getSharedChip();
+    if (!chip) return;
+    if (sharedAudioCtx && sharedAudioCtx.state !== 'running') {
+      sharedAudioCtx.resume();
+    }
+    stopPlayback();
+
+    isPlaying = true;
+    btnPlay.classList.add('playing');
+    btnPlay.innerHTML = getIconSvg('pause', 14);
+
+    let songObj = song;
+    if (playMode === 'pattern') {
+      const curPat = (song.patterns || []).find((p) => p.id === activePatternId) || song.patterns?.[0];
+      songObj = {
+        ...song,
+        patterns: [curPat],
+        playlist: [{ pattern: curPat?.id || 'p0', start: 0, track: 0 }],
+        loop: true
+      };
+    }
+
+    activeController = chip.playSong(songObj, {
+      loop: true,
+      volume: 1,
+      onBeat(beat) {
+        if (metronome && sharedChipAudio) {
+          sharedChipAudio.playSfx('blip', 0, 0.3, beat % 4 === 0 ? 1.5 : 1);
+        }
+      }
+    });
+
+    const pat = (song.patterns || []).find((p) => p.id === activePatternId);
+    const pLen = pat?.length || 16;
+
+    const trackSweep = () => {
+      if (!isPlaying || !activeController) return;
+      const step = activeController.getCurrentStep() % pLen;
+      if (step !== currentStep) {
+        currentStep = step;
+        updateCursorInDOM(currentStep);
+      }
+      cursorAnimFrame = requestAnimationFrame(trackSweep);
+    };
+    cursorAnimFrame = requestAnimationFrame(trackSweep);
+  }
+
+  function stopPlayback() {
+    isPlaying = false;
+    currentStep = -1;
+    if (cursorAnimFrame) {
+      cancelAnimationFrame(cursorAnimFrame);
+      cursorAnimFrame = null;
+    }
+    if (activeController) {
+      activeController.stop();
+      activeController = null;
+    }
+    btnPlay.classList.remove('playing');
+    btnPlay.innerHTML = getIconSvg('play', 14);
+    updateCursorInDOM(-1);
+  }
+
+  btnPlay.onclick = () => {
+    if (isPlaying) stopPlayback();
+    else startPlayback();
+  };
+
+  btnStop.onclick = () => stopPlayback();
+
+  function updateCursorInDOM(step) {
+    const allStepButtons = mainArea.querySelectorAll('.pf-step-btn');
+    allStepButtons.forEach((btn) => btn.classList.remove('cursor-now'));
+    if (step >= 0) {
+      const activeStepButtons = mainArea.querySelectorAll(`.pf-step-ruler-num:nth-child(${step + 1}), .pf-rack-steps button:nth-child(${step + 1})`);
+      activeStepButtons.forEach((btn) => btn.classList.add('cursor-now'));
+    }
+  }
+
+  // Rendu du Channel Rack
+  function render() {
+    updateLenSelectValue();
+    refreshPatternSelect();
+
+    renderChannelRack(mainArea, {
+      song,
+      activePatternId,
+      currentStep,
+      selectedChannelId,
+      onChannelSelect(chId) {
+        selectedChannelId = chId;
+        render();
+      },
+      onStepToggle(chId, stepIndex, pitch, active) {
+        store.update((p) => {
+          const curSong = (p.songs || []).find((s) => s.id === song.id);
+          const curPat = (curSong?.patterns || []).find((pt) => pt.id === activePatternId);
+          if (!curPat) return;
+          curPat.notes = curPat.notes || [];
+
+          if (active) {
+            const exists = curPat.notes.some((n) => n.ch === chId && n.step === stepIndex && (!pitch || n.pitch === pitch));
+            if (!exists) {
+              curPat.notes.push({
+                ch: chId,
+                step: stepIndex,
+                len: 1,
+                pitch: pitch || 'C4',
+                vel: 1
+              });
+            }
+          } else {
+            curPat.notes = curPat.notes.filter((n) => !(n.ch === chId && n.step === stepIndex && (!pitch || n.pitch === pitch)));
+          }
+        }, 'song:step_toggle');
+
+        // Apercu sonore de la note activee
+        if (active && sharedChipAudio) {
+          const ch = (song.channels || []).find((c) => c.id === chId);
+          if (ch) {
+            sharedChipAudio.scheduleNote({
+              time: sharedAudioCtx.currentTime,
+              duration: 0.1,
+              instrument: ch.instrument,
+              pitch: pitch || ch.defaultPitch || 'C4',
+              volume: (ch.volume != null ? ch.volume : 0.8) * 0.7,
+              drumKit: ch.drumKit
+            });
+          }
+        }
+        render();
+      },
+      onChannelChange(chId, patch) {
+        store.update((p) => {
+          const curSong = (p.songs || []).find((s) => s.id === song.id);
+          const curCh = (curSong?.channels || []).find((c) => c.id === chId);
+          if (curCh) Object.assign(curCh, patch);
+        }, 'song:channel_patch');
+        render();
+      },
+      onAddChannel(instrument, name) {
+        const newId = uid();
+        const ch = {
+          id: newId,
+          name,
+          instrument,
+          volume: 0.8,
+          pan: 0,
+          mute: false,
+          solo: false,
+          env: { a: 0.005, d: 0.08, s: 0.6, r: 0.05 }
+        };
+        if (instrument === 'noise') ch.drumKit = true;
+
+        store.update((p) => {
+          const curSong = (p.songs || []).find((s) => s.id === song.id);
+          if (curSong) {
+            curSong.channels = curSong.channels || [];
+            curSong.channels.push(ch);
+          }
+        }, 'song:add_channel');
+        selectedChannelId = newId;
+        render();
+      },
+      onDeleteChannel(chId) {
+        store.update((p) => {
+          const curSong = (p.songs || []).find((s) => s.id === song.id);
+          if (curSong) {
+            curSong.channels = (curSong.channels || []).filter((c) => c.id !== chId);
+            (curSong.patterns || []).forEach((pt) => {
+              pt.notes = (pt.notes || []).filter((n) => n.ch !== chId);
+            });
+          }
+        }, 'song:delete_channel');
+        if (selectedChannelId === chId) {
+          selectedChannelId = song.channels?.[0]?.id || null;
+        }
+        render();
+      }
+    });
+  }
+
+  // Raccourcis clavier (Espace pour Play/Stop)
+  const handleKeyDown = (e) => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.code === 'Space') {
+      e.preventDefault();
+      if (isPlaying) stopPlayback();
+      else startPlayback();
+    } else if (e.code === 'Escape') {
+      e.preventDefault();
+      stopPlayback();
+    }
+  };
+  window.addEventListener('keydown', handleKeyDown);
+  cleanups.push(() => window.removeEventListener('keydown', handleKeyDown));
+
+  render();
+
+  return () => {
+    stopPlayback();
+    for (const fn of cleanups) fn();
+    if (mainArea.cleanups) for (const fn of mainArea.cleanups) fn();
+  };
+}
