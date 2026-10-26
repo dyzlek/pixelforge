@@ -167,6 +167,19 @@
             "collideWorld": { "type": "boolean", "default": true, "description": "Blocked by the map borders." }
           }
         },
+        "exportedProps": {
+          "type": "array",
+          "description": "Custom instance variables (@export) with types and default values.",
+          "items": {
+            "type": "object",
+            "required": ["name", "type"],
+            "properties": {
+              "name": { "type": "string" },
+              "type": { "enum": ["number", "string", "boolean", "color"] },
+              "default": {}
+            }
+          }
+        },
         "script": { "$ref": "#/$defs/script" }
       }
     },

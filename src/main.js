@@ -4,6 +4,7 @@ import { exportStandaloneHTML } from './runtime/play.js';
 import { DockManager } from './ui/dock.js';
 import { DocumentWorkspace } from './ui/documents.js';
 import { createResourcesPanel } from './ui/panels/resources.js';
+import { createInspector } from './ui/inspector.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -127,14 +128,7 @@ dock.registerPanel({
   title: 'Inspecteur',
   icon: '🔍',
   area: 'right',
-  mount: (container) => {
-    container.innerHTML = `
-      <div style="padding:10px;font-size:12px;color:var(--fg-1);">
-        <div style="font-weight:600;margin-bottom:6px;color:var(--fg-0);">Propriétés</div>
-        <p style="margin:0;font-size:11px;color:var(--fg-2);">Sélectionnez un élément pour afficher ses options.</p>
-      </div>
-    `;
-  },
+  mount: (container) => createInspector(container, store),
   unmount: () => {},
 });
 

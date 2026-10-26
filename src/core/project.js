@@ -68,6 +68,7 @@ export function createObject(name = 'Objet', spriteId = null) {
     id: uid('obj'), name, spriteId, defaultAnim: 'idle', hitbox: null,
     physics: { enabled: true, gravity: true, immovable: false, bounce: 0, collideMap: true, collideWorld: true },
     script: emptyScript(),
+    exportedProps: [],
   };
 }
 
@@ -121,8 +122,9 @@ export function normalizeProject(p) {
   p.sprites = (p.sprites || []).map((s) => ({ folder: '', ...s }));
   p.sounds = (p.sounds || []).map((s) => ({ folder: '', ...s }));
   p.objects = (p.objects || []).map((o) => {
-    const obj = { folder: '', ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };
+    const obj = { folder: '', exportedProps: [], ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };
     obj.script = normalizeScript(o.script, false);
+    obj.exportedProps = Array.isArray(o.exportedProps) ? o.exportedProps : [];
     return obj;
   });
   p.maps = p.maps?.length ? p.maps : base.maps;

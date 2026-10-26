@@ -7,6 +7,17 @@
 
 ---
 
+## 2026-10-26 (23) — [Phase A] A4 : Inspecteur unifié piloté par schéma
+- **Fait** :
+  - Création de `src/ui/inspector-schemas.js` : déclarations de schémas par type (objets, entités, cartes, sons, réglages) avec groupes repliables (Général, Physique, Hitbox, Transform, Props).
+  - Création de `src/ui/inspector.js` et `src/ui/inspector.css` : inspecteur unifié dans le dock droit.
+  - Scrubbing horizontal à la souris sur les champs numériques pour ajuster rapidement les valeurs.
+  - Bouton `↺` de réinitialisation automatique à la valeur par défaut pour les champs modifiés.
+  - Support des variables d'instance personnalisées `exportedProps: [{ name, type, default }]` façon `@export` Godot dans `src/core/project.js` et `docs/PROJECT_SCHEMA.json`.
+  - Intégration de la sélection via `store.ui.selection` et `store.setSelection()`.
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #5.
+
 ## 2026-10-26 (22) — [Phase A] A3 : Panneau « Ressources » (FileSystem façon Godot)
 - **Fait** :
   - Support du champ `folder` pour les dossiers virtuels dans `src/core/project.js` (`normalizeProject`) et `docs/PROJECT_SCHEMA.json`.
