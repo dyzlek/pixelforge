@@ -733,11 +733,13 @@ function onPointerDown(e) {
     els.canvas.setPointerCapture(e.pointerId);
     if (hit) {
       S.entityId = hit.id;
+      store.setSelection({ type: 'entity', id: hit.id, mapId: map.id });
       renderInstance();
       S.gesture = { type: 'ent', id: hit.id, offX: hv.wx - hit.x, offY: hv.wy - hit.y, x: hit.x, y: hit.y, ox: hit.x, oy: hit.y };
     } else {
       const obj = findById(store.project.objects, store.ui.selectedObjectId);
       S.entityId = null;
+      store.setSelection({ type: 'map', id: map.id });
       renderInstance();
       if (!obj) { setMsg('Choisissez d\'abord un objet dans la liste « Objets ».'); }
       else {
@@ -1483,6 +1485,39 @@ export function mount(container, st) {
   canvas.addEventListener('wheel', onWheel, { passive: false });
   canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   canvas.addEventListener('auxclick', (e) => e.preventDefault());
+  canvas.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+  });
+  canvas.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const raw = e.dataTransfer?.getData('application/pixelforge-resource');
+    if (!raw) return;
+    try {
+      const data = JSON.parse(raw);
+      if (data.kind === 'objects' && data.id) {
+        const rect = canvas.getBoundingClientRect();
+        const screenX = e.clientX - rect.left;
+        const screenY = e.clientY - rect.top;
+        const [worldX, worldY] = screenToWorld(screenX, screenY);
+        const ts = curMap()?.tileSize || 16;
+        const tx = e.altKey ? Math.round(worldX) : Math.floor(worldX / ts) * ts;
+        const ty = e.altKey ? Math.round(worldY) : Math.floor(worldY / ts) * ts;
+        store.update(() => {
+          const m = curMap();
+          if (m) {
+            const newEnt = { id: uid('ent'), objectId: data.id, x: tx, y: ty, angle: 0, scale: 1, locked: false, visible: true, props: {} };
+            m.entities = m.entities || [];
+            m.entities.push(newEnt);
+            store.setSelection({ type: 'entity', id: newEnt.id, mapId: m.id });
+          }
+        }, 'map');
+        refresh();
+      }
+    } catch (err) {
+      console.error('Erreur au drop:', err);
+    }
+  });
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   const onBlur = () => { S.space = false; updateCursor(); };

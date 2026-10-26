@@ -1,0 +1,118 @@
+/* ==========================================================================
+   PixelForge Studio — Arbre de scène (Scene Tree façon Godot 4)
+   ========================================================================== */
+
+.pf-scene-tree {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-1);
+  color: var(--fg-0);
+  font-size: 12px;
+  overflow: hidden;
+}
+
+.pf-st-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+}
+
+.pf-st-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px;
+}
+
+.pf-st-group {
+  margin-bottom: 6px;
+}
+
+.pf-st-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: var(--fg-2);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  user-select: none;
+}
+.pf-st-group-head:hover {
+  background: var(--bg-2);
+  color: var(--fg-1);
+}
+
+.pf-st-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  color: var(--fg-0);
+}
+.pf-st-item:hover {
+  background: var(--bg-2);
+}
+.pf-st-item.selected {
+  background: var(--bg-3);
+  border-color: var(--accent);
+}
+.pf-st-item.locked {
+  opacity: .6;
+}
+
+.pf-st-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pf-st-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: .6;
+}
+.pf-st-item:hover .pf-st-actions,
+.pf-st-item.selected .pf-st-actions {
+  opacity: 1;
+}
+
+.pf-st-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-1);
+  padding: 1px 3px;
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+.pf-st-action-btn:hover {
+  background: var(--bg-3);
+  color: var(--fg-0);
+}
+.pf-st-action-btn.off {
+  opacity: .35;
+}
+
+.pf-st-empty {
+  padding: 8px;
+  color: var(--fg-2);
+  font-style: italic;
+  font-size: 11px;
+}

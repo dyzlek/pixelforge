@@ -4,6 +4,7 @@ import { exportStandaloneHTML } from './runtime/play.js';
 import { DockManager } from './ui/dock.js';
 import { DocumentWorkspace } from './ui/documents.js';
 import { createResourcesPanel } from './ui/panels/resources.js';
+import { createSceneTree } from './ui/panels/scene-tree.js';
 import { createInspector } from './ui/inspector.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
@@ -120,6 +121,15 @@ dock.registerPanel({
   icon: '📁',
   area: 'left',
   mount: (container) => createResourcesPanel(container, store, workspace),
+  unmount: () => {},
+});
+
+dock.registerPanel({
+  id: 'scene-tree',
+  title: 'Scène',
+  icon: '🌳',
+  area: 'left',
+  mount: (container) => createSceneTree(container, store),
   unmount: () => {},
 });
 

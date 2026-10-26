@@ -218,6 +218,10 @@
               "objectId": { "type": "string" },
               "x": { "type": "number", "description": "px, top-left corner of the sprite frame." },
               "y": { "type": "number" },
+              "angle": { "type": "number", "default": 0, "description": "Rotation in degrees." },
+              "scale": { "type": "number", "default": 1, "description": "Scale factor." },
+              "locked": { "type": "boolean", "default": false },
+              "visible": { "type": "boolean", "default": true },
               "props": { "type": "object", "description": "Per-instance values, read in scripts as self.props." }
             }
           }

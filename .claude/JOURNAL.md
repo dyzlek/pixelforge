@@ -7,6 +7,17 @@
 
 ---
 
+## 2026-10-26 (24) — [Phase A] A5 : Éditeur de scène 2D et arbre de scène (Scene Tree)
+- **Fait** :
+  - Support de `angle`, `scale`, `locked`, `visible` sur les entités de scène dans `docs/PROJECT_SCHEMA.json`, `src/core/project.js` (`normalizeProject`) et `src/runtime/engine.js` (sans aucun import).
+  - Création de `src/ui/panels/scene-tree.js` et `scene-tree.css` : panneau Arbre de scène dans le dock gauche avec gestion des calques et des entités.
+  - Bascule de visibilité 👁 et verrouillage 🔒 individuels par calque et par entité.
+  - Glisser-déposer d'objets depuis l'explorateur de ressources directement sur la vue 2D pour instanciation rapide alignée sur la grille (ou pixel par pixel avec Alt).
+  - Raccourci `Ctrl+D` pour dupliquer l'entité sélectionnée.
+  - Synchronisation bidirectionnelle de sélection entre la scène 2D et l'inspecteur unifié.
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #6.
+
 ## 2026-10-26 (23) — [Phase A] A4 : Inspecteur unifié piloté par schéma
 - **Fait** :
   - Création de `src/ui/inspector-schemas.js` : déclarations de schémas par type (objets, entités, cartes, sons, réglages) avec groupes repliables (Général, Physique, Hitbox, Transform, Props).
