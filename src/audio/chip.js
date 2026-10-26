@@ -469,13 +469,14 @@ export function createChipAudio(ctx, destination) {
     // Chaine de gain et panoramique
     const noteGain = ctx.createGain();
     let panNode = null;
+    const noteDest = opts.destination || dest;
     if (typeof ctx.createStereoPanner === 'function') {
       panNode = ctx.createStereoPanner();
       panNode.pan.setValueAtTime(pan, time);
       noteGain.connect(panNode);
-      panNode.connect(dest);
+      panNode.connect(noteDest);
     } else {
-      noteGain.connect(dest);
+      noteGain.connect(noteDest);
     }
 
     // Automatisation ADSR
@@ -675,6 +676,16 @@ export function createChipAudio(ctx, destination) {
     let stopped = false;
     const activeNotes = [];
 
+    const songGain = ctx.createGain();
+    const targetVol = masterVol;
+    if (options.fadeIn && options.fadeIn > 0) {
+      songGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+      songGain.gain.linearRampToValueAtTime(targetVol, ctx.currentTime + options.fadeIn);
+    } else {
+      songGain.gain.setValueAtTime(targetVol, ctx.currentTime);
+    }
+    songGain.connect(dest);
+
     const SCHEDULE_INTERVAL_MS = 25;
     const LOOKAHEAD_SEC = 0.1;
 
@@ -698,13 +709,14 @@ export function createChipAudio(ctx, destination) {
               instrument: ch.instrument,
               pitch: n.pitch,
               vel: n.vel,
-              volume: (ch.volume != null ? ch.volume : 0.8) * masterVol,
+              volume: ch.volume != null ? ch.volume : 0.8,
               pan: ch.pan || 0,
               env: ch.env,
               vibrato: ch.vibrato,
               arp: ch.arp,
               drumKit: ch.drumKit,
-              waveTable: ch.waveTable
+              waveTable: ch.waveTable,
+              destination: songGain
             });
             if (handle) activeNotes.push(handle);
           });
@@ -739,12 +751,27 @@ export function createChipAudio(ctx, destination) {
     scheduleAhead();
 
     const controller = {
-      stop() {
+      setVolume(v, rampTime = 0) {
+        const val = Math.max(0, Math.min(1, typeof v === 'number' ? v : 1));
+        if (rampTime > 0) {
+          songGain.gain.linearRampToValueAtTime(val, ctx.currentTime + rampTime);
+        } else {
+          songGain.gain.setValueAtTime(val, ctx.currentTime);
+        }
+      },
+      stop(stopOpts = {}) {
         if (stopped) return;
+        const fadeOut = stopOpts && stopOpts.fadeOut > 0 ? stopOpts.fadeOut : 0;
+        if (fadeOut > 0) {
+          songGain.gain.linearRampToValueAtTime(0.0001, ctx.currentTime + fadeOut);
+          setTimeout(() => { controller.stop({ fadeOut: 0 }); }, fadeOut * 1000);
+          return;
+        }
         stopped = true;
         if (timerId) { clearInterval(timerId); timerId = null; }
         for (const n of activeNotes) n.stop();
         activeNotes.length = 0;
+        try { songGain.disconnect(); } catch (e) {}
         if (activeSong && activeSong.controller === controller) activeSong = null;
       },
       getCurrentStep() {
@@ -759,10 +786,16 @@ export function createChipAudio(ctx, destination) {
     return controller;
   }
 
-  function stopSong() {
+  function stopSong(opts) {
     if (activeSong) {
-      activeSong.controller.stop();
-      activeSong = null;
+      activeSong.controller.stop(opts);
+      if (!opts || !opts.fadeOut) activeSong = null;
+    }
+  }
+
+  function setSongVolume(v, rampTime = 0) {
+    if (activeSong && activeSong.controller) {
+      activeSong.controller.setVolume(v, rampTime);
     }
   }
 
@@ -799,6 +832,7 @@ export function createChipAudio(ctx, destination) {
     scheduleNote,
     playSong,
     stopSong,
+    setSongVolume,
     playChiptuneTrack,
     renderOffline,
     generateSfxr,

@@ -131,6 +131,19 @@ tool('add_sound', `Add or update a synthesized sound effect. Presets: ${pf.SOUND
   game: gameArg, name: z.string(), preset: z.enum(pf.SOUND_PRESETS), pitch: z.number().optional(), volume: z.number().optional(),
 }, ({ game, ...a }) => write(game, null, (p) => pf.addSound(p, a)));
 
+tool('upsert_song', 'Add or update a chiptune song using compact tracker ASCII notation or direct JSON object. Perfect for composing game music.', {
+  game: gameArg,
+  name: z.string().describe('Unique name of the song'),
+  text: z.string().optional().describe('Tracker ASCII notation (BPM, CHANNELS, PATTERN, PLAYLIST)'),
+  song: z.any().optional().describe('Direct song JSON object'),
+  bpm: z.number().optional().describe('Song tempo in BPM')
+}, ({ game, ...a }) => write(game, null, (p) => pf.upsertSong(p, a)));
+
+tool('get_song', 'Get a song by name or id as tracker ASCII text notation.', {
+  game: gameArg,
+  song: z.string().describe('Name or id of the song')
+}, ({ game, song }) => pf.getSongText(pf.loadGame(game), song));
+
 tool('validate_game', 'Check a game: references, layer sizes, script syntax, unknown events/keys/object names. Returns the list of issues.', { game: gameArg }, ({ game }) => pf.formatIssues(pf.validateProject(pf.loadGame(game))));
 
 tool('export_html', 'Export the game as a standalone HTML file in exports/<id>.html (Phaser loaded from a CDN). Returns the path.', { game: gameArg }, async ({ game }) => {

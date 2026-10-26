@@ -7,7 +7,7 @@ import { dataURLToBuffer, pngSize } from './png.js';
 import { compileGraph } from '../../src/graph/index.js';
 import { checkGraph, describeIssue } from './graph.js';
 
-const BASE_EVENTS = ['create', 'update', 'collide', 'overlap', 'overlapStart', 'overlapEnd', 'keydown', 'timer', 'destroy', 'hitTile', 'click', 'mousedown', 'message'];
+const BASE_EVENTS = ['create', 'update', 'collide', 'overlap', 'overlapStart', 'overlapEnd', 'keydown', 'timer', 'destroy', 'hitTile', 'click', 'mousedown', 'message', 'beat'];
 const BASE_KEYS = ['LEFT', 'RIGHT', 'UP', 'DOWN', 'SPACE', 'ENTER', 'SHIFT', 'Z', 'X', 'C', 'A', 'W', 'S', 'D', 'Q', 'E'];
 
 const read = (...p) => { try { return fs.readFileSync(path.join(ROOT, ...p), 'utf8'); } catch { return ''; } };
@@ -127,6 +127,10 @@ export function validateProject(p) {
     const sounds = [...(p.sounds || []).map((x) => x.name), 'jump', 'coin', 'hit', 'powerup', 'explosion', 'laser', 'blip', 'portal', 'tetris', 'korobeiniki', 'adventure', 'action'];
     for (const m of src.matchAll(/\bgame\.play(?:Sound|Music)\(\s*(['"`])([^'"`]*)\1/g)) {
       if (!sounds.includes(m[2])) add('warning', where, `game.play...("${m[2]}"): no such sound or preset` + nameHint(m[2], sounds));
+    }
+    const songs = (p.songs || []).map((x) => x.name);
+    for (const m of src.matchAll(/\bgame\.playSong\(\s*(['"`])([^'"`]*)\1/g)) {
+      if (!songs.includes(m[2])) add('warning', where, `game.playSong("${m[2]}"): no such song` + nameHint(m[2], songs));
     }
     const keyRe = [/\bon\(\s*['"`]keydown['"`]\s*,\s*(['"`])([^'"`]*)\1/g, /\binput\.(?:isDown|justPressed)\(\s*(['"`])([^'"`]*)\1/g];
     for (const re of keyRe) for (const m of src.matchAll(re)) if (!keys.has(m[2])) add('error', where, `unknown key "${m[2]}" (keys: ${[...keys].join(' ')})`);

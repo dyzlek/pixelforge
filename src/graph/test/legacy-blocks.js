@@ -17,7 +17,7 @@ const HUE = { event: 45, move: 210, look: 290, self: 165, input: 330, game: 20, 
 // Contexte de l'éditeur courant (objet édité) : les listes déroulantes lisent le projet à l'affichage.
 let ctx = { getProject: () => null, objectId: null, isGlobal: false };
 // Valeurs lues dans un script sauvegardé mais absentes du projet (objet supprimé…) : on les garde dans les listes.
-const extras = { OBJ: new Set(), MAP: new Set(), ANIM: new Set(), LAYER: new Set(), SOUND: new Set() };
+const extras = { OBJ: new Set(), MAP: new Set(), ANIM: new Set(), LAYER: new Set(), SOUND: new Set(), SONG: new Set() };
 
 export function setBlocksContext(c) {
   ctx = { ...ctx, ...c };
@@ -68,6 +68,8 @@ const fObj = () => new Blockly.FieldDropdown(() => dynOptions('OBJ', objectNames
 const fMap = () => new Blockly.FieldDropdown(() => dynOptions('MAP', mapNames()));
 const fAnim = () => new Blockly.FieldDropdown(() => dynOptions('ANIM', animNames()));
 const fSound = () => new Blockly.FieldDropdown(() => dynOptions('SOUND', soundNames()));
+const songNames = () => (ctx.getProject()?.songs || []).map((x) => x.name).filter(Boolean);
+const fSong = () => new Blockly.FieldDropdown(() => dynOptions('SONG', songNames()));
 const fLayer = (withTile = true) => new Blockly.FieldDropdown(() => {
   const list = [['(premier calque solide)', '']];
   if (withTile) list.push(['(calque de la tuile touchée)', '@tile']);
@@ -384,6 +386,7 @@ event('pf_on_hit_tile', 'Au début du contact avec une tuile solide (l\'objet do
 event('pf_on_click', 'Clic ou toucher sur cet objet.', (b) => b.appendDummyInput().appendField('quand on clique sur moi'));
 event('pf_on_mousedown', 'Bouton de souris pressé n\'importe où.', (b) =>
   b.appendDummyInput().appendField('quand bouton souris').appendField(new Blockly.FieldDropdown([['gauche', 'LEFT'], ['droit', 'RIGHT']]), 'BTN').appendField('pressé'));
+event('pf_on_beat', 'Au battement', (b) => b.appendDummyInput().appendField('au battement'));
 event('pf_on_message', 'Un objet a diffusé ce message. « données du message » donne ce qui a été envoyé.', (b) =>
   b.appendDummyInput().appendField('quand le message').appendField(new Blockly.FieldTextInput('porte'), 'NAME').appendField('est reçu'));
 value('pf_tile_info', HUE.event, 'Information sur la tuile touchée (dans « quand une tuile solide est touchée »). Le côté est celui de l\'objet qui touche.', (b) =>
@@ -559,6 +562,23 @@ stmt('pf_play_sound', HUE.sound, 'Joue un son du projet ou un preset (volume 0-1
 });
 stmt('pf_play_music', HUE.sound, 'Joue en boucle (relancer la même musique ne fait rien).', (b) =>
   b.appendDummyInput().appendField('jouer la musique').appendField(fSound(), 'SOUND'));
+stmt('pf_play_song', HUE.sound, 'Lance la lecture d\'un morceau chiptune.', (b) => {
+  b.appendDummyInput().appendField('jouer le morceau').appendField(fSong(), 'SONG');
+  num(b, 'VOL', 'volume');
+  num(b, 'LOOP', 'boucle', 'Boolean');
+  num(b, 'FADE_IN', 'fondu entrant (s)');
+  b.setInputsInline(true);
+});
+stmt('pf_stop_song', HUE.sound, 'Arrête la lecture du morceau actuel.', (b) => {
+  b.appendDummyInput().appendField('arrêter le morceau');
+  num(b, 'FADE_OUT', 'fondu sortant (s)');
+  b.setInputsInline(true);
+});
+stmt('pf_set_song_volume', HUE.sound, 'Modifie le volume du morceau.', (b) => {
+  b.appendDummyInput().appendField('volume du morceau');
+  num(b, 'VOL', 'volume');
+  b.setInputsInline(true);
+});
 stmt('pf_stop_music', HUE.sound, 'Arrête la musique.', (b) => b.appendDummyInput().appendField('arrêter la musique'));
 
 // ---- v1.1 : divers --------------------------------------------------------------
@@ -689,6 +709,7 @@ G.forBlock.pf_on_destroy = (b) => handler(q('destroy'), '', b);
 G.forBlock.pf_on_hit_tile = (b) => handler(q('hitTile'), 'tile', b);
 G.forBlock.pf_on_click = (b) => handler(q('click'), '', b);
 G.forBlock.pf_on_mousedown = (b) => handler(`${q('mousedown')}, ${q(b.getFieldValue('BTN'))}`, '', b);
+G.forBlock.pf_on_beat = (b) => handler(q('beat'), 'beat', b);
 G.forBlock.pf_on_message = (b) => handler(`${q('message')}, ${q(b.getFieldValue('NAME'))}`, 'data', b);
 
 G.forBlock.pf_dt = (b) => (inScope(b) ? ['dt', Order.ATOMIC] : ['0', Order.ATOMIC]);
@@ -837,6 +858,9 @@ G.forBlock.pf_play_sound = (b) =>
   `game.playSound(${q(b.getFieldValue('SOUND'))}, ${val(b, 'VOL', Order.NONE, '1')}, ${val(b, 'PITCH', Order.NONE, '1')});\n`;
 G.forBlock.pf_play_music = (b) => `game.playMusic(${q(b.getFieldValue('SOUND'))});\n`;
 G.forBlock.pf_stop_music = () => 'game.stopMusic();\n';
+G.forBlock.pf_play_song = (b) => `game.playSong(${q(b.getFieldValue('SONG'))}, { loop: ${val(b, 'LOOP', Order.NONE, 'true')}, volume: ${val(b, 'VOL', Order.NONE, '1')}, fadeIn: ${val(b, 'FADE_IN', Order.NONE, '0')} });\n`;
+G.forBlock.pf_stop_song = (b) => `game.stopSong({ fadeOut: ${val(b, 'FADE_OUT', Order.NONE, '0')} });\n`;
+G.forBlock.pf_set_song_volume = (b) => `game.setSongVolume(${val(b, 'VOL', Order.NONE, '1')});\n`;
 
 const spawnCall = (b) => {
   const p = G.valueToCode(b, 'PROPS', Order.NONE);

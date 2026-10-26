@@ -145,6 +145,7 @@ const EVENT_HEAD = {
   pf_on_click: () => [q('click'), ''],
   pf_on_mousedown: (c) => [`${q('mousedown')}, ${q(c.f('BTN'))}`, ''],
   pf_on_message: (c) => [`${q('message')}, ${q(c.f('NAME'))}`, 'data'],
+  pf_on_beat: () => [q('beat'), 'beat'],
 };
 const COLLIDE_EVENTS = ['pf_on_collide', 'pf_on_overlap', 'pf_on_overlap_start', 'pf_on_overlap_end'];
 
@@ -360,6 +361,9 @@ PURE.pf_side = (c) => [q(c.f('SIDE')), O.ATOMIC];
 GEN.pf_play_sound = (c) => `game.playSound(${q(c.f('SOUND'))}, ${c.v('VOL', O.NONE, '1')}, ${c.v('PITCH', O.NONE, '1')});\n`;
 GEN.pf_play_music = (c) => `game.playMusic(${q(c.f('SOUND'))});\n`;
 GEN.pf_stop_music = () => 'game.stopMusic();\n';
+GEN.pf_play_song = (c) => `game.playSong(${q(c.f('SONG'))}, { loop: ${c.v('LOOP', O.NONE, 'true')}, volume: ${c.v('VOL', O.NONE, '1')}, fadeIn: ${c.v('FADE_IN', O.NONE, '0')} });\n`;
+GEN.pf_stop_song = (c) => `game.stopSong({ fadeOut: ${c.v('FADE_OUT', O.NONE, '0')} });\n`;
+GEN.pf_set_song_volume = (c) => `game.setSongVolume(${c.v('VOL', O.NONE, '1')});\n`;
 
 // -- Messages
 GEN.pf_broadcast = (c) => {

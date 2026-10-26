@@ -4,6 +4,7 @@ import { createObject, createMap, createLayer, uid } from '../../src/core/projec
 import { textToFrames, framesToText } from './sprites.js';
 import { checkSyntax } from './validate.js';
 import { buildGraphScript } from './graph.js';
+import { parseSongText, songToText } from './song-text.js';
 
 export const SOUND_PRESETS = ['jump', 'coin', 'hit', 'powerup', 'explosion', 'laser', 'blip', 'portal', 'tetris', 'korobeiniki', 'adventure', 'action'];
 const list = (arr) => arr.join(', ') || 'none';
@@ -282,3 +283,43 @@ export function addSound(p, a) {
   s.sfx = { preset: a.preset, seed: s.sfx?.seed ?? 0, volume: a.volume ?? 0.5, pitch: a.pitch ?? 1 };
   return `${isNew ? 'Added' : 'Updated'} sound "${a.name}" (${a.preset}, volume ${s.sfx.volume}, pitch ${s.sfx.pitch}).`;
 }
+
+// ---------- musiques (songs) ----------
+export function upsertSong(p, a) {
+  if (!a.name) throw new Error('song name is required');
+  p.songs ||= [];
+  let songData;
+  if (a.text) {
+    songData = parseSongText(a.text, a.name);
+    if (a.name) songData.name = a.name;
+    if (a.bpm) songData.bpm = a.bpm;
+  } else if (a.song) {
+    songData = Object.assign({}, a.song, { name: a.name });
+  } else {
+    songData = parseSongText('', a.name);
+    if (a.bpm) songData.bpm = a.bpm;
+  }
+
+  let existing = p.songs.find((s) => s.name === a.name || (s.id && s.id === a.id));
+  const isNew = !existing;
+  if (existing) {
+    songData.id = existing.id;
+    const idx = p.songs.indexOf(existing);
+    p.songs[idx] = songData;
+  } else {
+    if (!songData.id) songData.id = uid('sng');
+    p.songs.push(songData);
+  }
+
+  const numChannels = (songData.channels || []).length;
+  const numPatterns = (songData.patterns || []).length;
+  return `${isNew ? 'Created' : 'Updated'} song "${songData.name}" (BPM ${songData.bpm}, ${numChannels} channels, ${numPatterns} patterns).`;
+}
+
+export function getSongText(p, nameOrId) {
+  p.songs ||= [];
+  const s = p.songs.find((x) => x.name === nameOrId || x.id === nameOrId);
+  if (!s) throw new Error(`song "${nameOrId}" not found`);
+  return songToText(s);
+}
+

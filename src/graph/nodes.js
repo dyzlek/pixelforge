@@ -119,6 +119,8 @@ ev('pf_on_mousedown', 'Bouton souris pressé', 'Bouton de souris pressé n\'impo
   { fields: [dd('BTN', 'bouton', MOUSE_BTNS)], keywords: 'mousedown clic' });
 ev('pf_on_message', 'Message reçu', 'Un objet a diffusé ce message. « données » donne ce qui a été envoyé.',
   { fields: [txt('NAME', 'message', 'porte')], outputs: [pin('data', 'any', 'données')], keywords: 'message broadcast recevoir' });
+ev('pf_on_beat', 'Au battement (rythme)', 'Déclenché à chaque battement / temps musical de la musique en cours.',
+  { outputs: [num('beat', 'temps')], keywords: 'beat rythme bpm pulsation musique' });
 
 // Flux ---------------------------------------------------------------------
 add('flow_branch', 'Branche', 'flow', 'exec', 'Exécute « Vrai » ou « Faux » selon la condition, puis la suite.',
@@ -274,6 +276,12 @@ ex('pf_play_sound', 'Jouer un son', 'sound', 'Joue un son du projet ou un preset
   { inputs: [num('VOL', 'volume', 1), num('PITCH', 'pitch', 1)], fields: [fdyn('SOUND', 'son', 'sound')], keywords: 'sound audio' });
 ex('pf_play_music', 'Jouer la musique', 'sound', 'Joue en boucle (relancer la même musique ne fait rien).', { fields: [fdyn('SOUND', 'son', 'sound')], keywords: 'music' });
 ex('pf_stop_music', 'Arrêter la musique', 'sound', 'Arrête la musique.');
+ex('pf_play_song', 'Jouer un morceau', 'sound', 'Lance la lecture d\'un morceau chiptune avec options de volume et fondu.',
+  { inputs: [num('VOL', 'volume', 1), bool('LOOP', 'boucle', true), num('FADE_IN', 'fondu entrant (s)', 0)], fields: [fdyn('SONG', 'morceau', 'song')], keywords: 'song music chiptune' });
+ex('pf_stop_song', 'Arrêter le morceau', 'sound', 'Arrête la lecture du morceau actuel avec option de fondu sortant.',
+  { inputs: [num('FADE_OUT', 'fondu sortant (s)', 0)], keywords: 'stop song music' });
+ex('pf_set_song_volume', 'Volume du morceau', 'sound', 'Modifie le volume du morceau en cours de lecture.',
+  { inputs: [num('VOL', 'volume', 1)], keywords: 'volume song music' });
 
 // Messages ---------------------------------------------------------------------
 ex('pf_broadcast', 'Diffuser un message', 'msg', 'Envoie un message à tous les objets qui l\'écoutent. Les données sont facultatives.',
@@ -517,6 +525,10 @@ export function fieldOptions(field, ctx = {}) {
     case 'sound': {
       const out = (project?.sounds || []).map((x) => x.name).filter(Boolean);
       for (const p of SOUND_PRESETS) if (!out.includes(p)) out.push(p);
+      return dyn(out);
+    }
+    case 'song': {
+      const out = (project?.songs || []).map((x) => x.name).filter(Boolean);
       return dyn(out);
     }
     case 'layer': {
