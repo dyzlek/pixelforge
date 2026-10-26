@@ -269,6 +269,19 @@
   - Commutateur de vue Rack / Piano Roll dans la barre de transport et ouverture directe sur selection d'un canal.
 - **Verifie** : `npm run build`, `npm test` (tests unitaires des conversions MIDI, gammes et accords integres), `npm run check:doc`, validation des 3 jeux. Zero emoji.
 
+## 2026-10-26 (15) — [Phase B] B4 : Playlist (Arrangement des patterns) (Closes #15)
+- **Fait** :
+  - Creation de `src/editors/music/playlist.js` : timeline multipiste permettant d'arranger librement les patterns d'un morceau sur 8 pistes horizontales.
+  - Pose de blocs de patterns au clic avec aimantation parametrable (1 mesure / 16 pas, 1/2 mesure, 1 temps, libre).
+  - Deplacement horizontal (temps) et vertical (changement de piste) au glisser, duplication rapide par Ctrl+glisser.
+  - Apercu miniature des notes et nom du pattern au sein de chaque bloc colore.
+  - Gestion des boucles de jeu video : marqueur visuel et configuration de `song.loopStart` (permettant de jouer l'intro une seule fois puis de boucler indefiniment sur le couplet/refrain).
+  - Prise en charge du bouclage avec `loopStart` et du seek temporel dans le moteur audio `src/audio/chip.js`.
+  - Tete de lecture globale synchronisee en temps reel avec defilement sur la reglette temporelle.
+  - Integration de l'onglet [PLAYLIST] dans la barre de transport du studio musical.
+- **Verifie** : `npm run build`, `npm test` (test unitaire de boucle Intro -> Couplet/Refrain avec loopStart), `npm run check:doc`, validation des 3 jeux avec 0 erreur. Zero emoji.
+
+
 
 
 

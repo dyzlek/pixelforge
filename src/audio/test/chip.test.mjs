@@ -248,4 +248,31 @@ assert.deepEqual(CHORDS.maj.semitones, [0, 4, 7]);
 assert.deepEqual(CHORDS.min.semitones, [0, 3, 7]);
 assert.deepEqual(CHORDS.maj7.semitones, [0, 4, 7, 11]);
 
+// 10. Test d'arrangement Playlist et marqueurs de boucle (Intro -> Boucle)
+const arrangedSong = {
+  id: 'arranged_song',
+  name: 'Arrangement Test',
+  bpm: 140,
+  stepsPerBeat: 4,
+  loop: true,
+  loopStart: 16, // Boucle a partir du pas 16 (apres l'intro 0..15)
+  channels: [
+    { id: 'lead', name: 'Lead', instrument: 'pulse50', volume: 0.8 }
+  ],
+  patterns: [
+    { id: 'intro', name: 'Intro', length: 16, notes: [{ ch: 'lead', step: 0, pitch: 'C4', len: 4 }] },
+    { id: 'couplet', name: 'Couplet', length: 16, notes: [{ ch: 'lead', step: 0, pitch: 'E4', len: 4 }] }
+  ],
+  playlist: [
+    { pattern: 'intro', start: 0, track: 0 },
+    { pattern: 'couplet', start: 16, track: 0 }
+  ]
+};
+
+const arrangeCtrl = chip.playSong(arrangedSong, { loop: true, startStep: 16 });
+assert.ok(arrangeCtrl);
+assert.equal(arrangeCtrl.isPlaying(), true);
+arrangeCtrl.stop();
+assert.equal(arrangeCtrl.isPlaying(), false);
+
 console.log('Tests chip.js reussis avec succes.');
