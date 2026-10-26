@@ -5,7 +5,7 @@
 - **Essayé** : vérification du mouvement dans le navigateur : impossible, panneau caché (pas de requestAnimationFrame) ; chargement et rendu de Cube Runner vérifiés.
 - **Refusé ou retiré** : l'utilisateur ne veut pas de sous-agents pour coder.
 - **Décisions** : gravité 3D = settings.gravity3d ou gravity/800*30 ; fin de boucle musicale = fin de l'arrangement (loop.end ignoré) ; cases 3D centrées sur les entiers ; cameras.js laissé tel quel.
-- **État** : main, non commité.
+- **État** : branche fix/phases-b-c-relecture, commit b767ffc, poussé (pas de PR).
 
 ## 2026-10-26 (38) — Relecture (Opus) des phases B et C → correction.md
 - **Fait** : build, npm test, check:doc, validate x5 : tout passe. 5 relecteurs Sonnet (audio B, éditeur musical/MCP B, runtime 3D, éditeurs 3D, MCP/Blueprints/jeux 3D), constats critiques revérifiés par Opus. `correction.md` à la racine : 5 critiques 3D (gridmap non lue par le runtime → jeux 3D injouables, format gridmap de l'éditeur différent, modèles voxel jamais rendus, couleur 0 invisible, pas de collisions murales), majeurs B (batterie, solo, boucle, undo, fuites, song-text).
