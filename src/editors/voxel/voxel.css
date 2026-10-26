@@ -1,0 +1,138 @@
+/* PixelForge Studio — Editeur de modeles Voxel 3D */
+
+.pf-voxel-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: var(--font-ui);
+  overflow: hidden;
+  user-select: none;
+}
+
+.pf-voxel-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pf-voxel-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-voxel-tool-btn {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--fg-1);
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pf-voxel-tool-btn:hover {
+  background: var(--bg-3);
+  color: var(--fg-0);
+}
+
+.pf-voxel-tool-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+}
+
+.pf-voxel-workspace {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.pf-voxel-viewport-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(circle at center, #232838 0%, #151821 100%);
+}
+
+.pf-voxel-viewport-container canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.pf-voxel-sidebar {
+  width: 220px;
+  background: var(--bg-1);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  gap: 12px;
+  padding: 10px;
+  flex-shrink: 0;
+}
+
+.pf-voxel-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  background: var(--bg-0);
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+.pf-voxel-color-swatch {
+  aspect-ratio: 1;
+  border-radius: 3px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform 0.1s;
+}
+
+.pf-voxel-color-swatch:hover {
+  transform: scale(1.1);
+}
+
+.pf-voxel-color-swatch.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+.pf-voxel-info-card {
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 11px;
+  color: var(--fg-2);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pf-voxel-hint-overlay {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--fg-2);
+  pointer-events: none;
+}
