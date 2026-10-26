@@ -187,8 +187,15 @@ export function createGame(project, parent, Phaser, opts = {}) {
         if (r.snd && r.snd.kind === 'file') {
           playBuffer(r.snd, vol * (num(r.snd.volume) !== null ? r.snd.volume : 1), pit);
         } else if (chip) {
-          if (r.snd) chip.playSfx(r.preset, r.snd.sfx.seed, (num(r.snd.sfx.volume) !== null ? r.snd.sfx.volume : 0.5) * vol, (r.snd.sfx.pitch || 1) * pit);
-          else chip.playSfx(r.preset, 0, 0.5 * vol, pit);
+          if (r.snd) {
+            if (r.snd.sfx && r.snd.sfx.params) {
+              chip.playSfx({ params: r.snd.sfx.params, volume: (num(r.snd.sfx.volume) !== null ? r.snd.sfx.volume : 0.5) * vol, pitch: (r.snd.sfx.pitch || 1) * pit });
+            } else {
+              chip.playSfx(r.preset, r.snd.sfx.seed, (num(r.snd.sfx.volume) !== null ? r.snd.sfx.volume : 0.5) * vol, (r.snd.sfx.pitch || 1) * pit);
+            }
+          } else {
+            chip.playSfx(r.preset, 0, 0.5 * vol, pit);
+          }
         }
       } catch (e) { log('game.playSound : ' + errMsg(e), 'error'); }
     }

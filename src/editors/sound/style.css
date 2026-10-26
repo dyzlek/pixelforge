@@ -29,3 +29,91 @@
 .snd-varlist { display: flex; flex-direction: column; gap: 4px; }
 .snd-var { display: flex; align-items: center; gap: 6px; }
 .snd-var-seed { font: 12px var(--mono); width: 90px; color: var(--muted); }
+
+
+/* ---------------------------------------------------- */
+/* Generateur d'effets sonores avance sfxr (B6)         */
+/* ---------------------------------------------------- */
+
+.snd-sfxr-generators {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  max-width: 560px;
+  padding: 8px;
+  background: var(--bg-surface, #141724);
+  border: 1px solid var(--border, #262a3f);
+  border-radius: var(--radius, 6px);
+}
+
+.snd-sfxr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  background: #202438;
+  color: #fff;
+  border: 1px solid #2e3552;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.snd-sfxr-btn:hover {
+  background: var(--accent, #41a6f6);
+  border-color: #73eff7;
+  color: #fff;
+}
+
+.snd-sfxr-btn.primary-gen {
+  background: #3b5dc9;
+  border-color: #41a6f6;
+}
+
+.snd-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim, #8b90a8);
+  letter-spacing: 0.5px;
+  margin-top: 8px;
+  width: 100%;
+  border-bottom: 1px solid var(--border, #262a3f);
+  padding-bottom: 3px;
+}
+
+/* Historique des sons generes */
+.snd-history-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  max-width: 560px;
+}
+
+.snd-history-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.snd-history-pill {
+  padding: 3px 8px;
+  font-size: 10px;
+  font-family: monospace;
+  background: #141724;
+  border: 1px solid #262a3f;
+  color: #8b90a8;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.snd-history-pill:hover {
+  background: #23273c;
+  color: #fff;
+  border-color: var(--accent, #41a6f6);
+}
