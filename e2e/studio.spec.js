@@ -179,4 +179,53 @@ test.describe('PixelForge Studio E2E Tests', () => {
     const stoppedState = await page.evaluate(() => window.__pfMusicEditor.isPlaying());
     expect(stoppedState).toBe(false);
   });
+
+  test('jeu 2D plateforme sous Phaser 4 : verification du rendu WebGL, FPS et deplacement', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#app')).toBeVisible();
+
+    // Ouvrir le jeu 2D d'exemple plateforme
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('exemple-plateforme-qiqv');
+    });
+    await expect(page.locator('#project-name')).toHaveValue(/plateforme/i);
+
+    // Lancer le jeu 2D (F5)
+    await page.keyboard.press('F5');
+    await expect(page.locator('#tabs')).toContainText(/Jouer/i);
+
+    const canvas = page.locator('.play-stage canvas, canvas:visible').first();
+    await expect(canvas).toBeVisible({ timeout: 10000 });
+
+    // Attendre que le snapshot soit disponible et que le joueur soit au sol
+    await page.waitForFunction(() => {
+      const snap = window.__pfDebugSnapshot?.();
+      const p = snap?.instances?.find((i) => i.name === 'Player');
+      return p && p.onGround === true;
+    }, { timeout: 15000 });
+
+    const snapshot = await page.evaluate(() => window.__pfDebugSnapshot());
+    expect(snapshot.instances.length).toBeGreaterThan(0);
+    expect(snapshot.fps).toBeGreaterThanOrEqual(30);
+
+    const player = snapshot.instances.find((i) => i.name === 'Player');
+    expect(player).toBeDefined();
+    expect(player.onGround).toBe(true);
+
+    const startX = player.x;
+
+    // Deplacer le joueur vers la droite
+    await page.keyboard.down('ArrowRight');
+    await page.waitForTimeout(200);
+    await page.keyboard.up('ArrowRight');
+    await page.waitForTimeout(100);
+
+    const movedSnapshot = await page.evaluate(() => window.__pfDebugSnapshot());
+    const movedPlayer = movedSnapshot.instances.find((i) => i.name === 'Player');
+    expect(movedPlayer.x).toBeGreaterThan(startX + 5);
+
+    // Arreter le jeu
+    await page.keyboard.press('F8');
+    await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
+  });
 });
