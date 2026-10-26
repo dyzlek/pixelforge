@@ -6,6 +6,8 @@ import { DocumentWorkspace } from './ui/documents.js';
 import { createResourcesPanel } from './ui/panels/resources.js';
 import { createSceneTree } from './ui/panels/scene-tree.js';
 import { createInspector } from './ui/inspector.js';
+import { createConsolePanel } from './ui/panels/console.js';
+import { createProblemsPanel } from './ui/panels/problems.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -147,13 +149,16 @@ dock.registerPanel({
   title: 'Console',
   icon: '💬',
   area: 'bottom',
-  mount: (container) => {
-    container.innerHTML = `
-      <div style="padding:8px 12px;font-family:var(--font-mono);font-size:11px;color:var(--fg-1);height:100%;overflow:auto;">
-        <span style="color:var(--accent);">PixelForge Studio v3.0 initialisé.</span>
-      </div>
-    `;
-  },
+  mount: (container) => createConsolePanel(container, store, workspace),
+  unmount: () => {},
+});
+
+dock.registerPanel({
+  id: 'problems',
+  title: 'Problèmes',
+  icon: '⚠️',
+  area: 'bottom',
+  mount: (container) => createProblemsPanel(container, store, workspace),
   unmount: () => {},
 });
 

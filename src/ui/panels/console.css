@@ -1,0 +1,123 @@
+/* ==========================================================================
+   PixelForge Studio — Console & Débogage distant (Dock bas)
+   ========================================================================== */
+
+.pf-console-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-1);
+  color: var(--fg-0);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow: hidden;
+}
+
+.pf-con-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  user-select: none;
+}
+
+.pf-con-tabs {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pf-con-tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-1);
+  padding: 2px 6px;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.pf-con-tab-btn.active {
+  background: var(--bg-3);
+  color: var(--fg-0);
+  font-weight: 600;
+}
+
+.pf-con-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pf-con-search {
+  height: 20px;
+  padding: 1px 6px;
+  font-size: 11px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--fg-0);
+}
+
+.pf-con-log-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pf-con-line {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.4;
+  padding: 1px 0;
+}
+
+.pf-con-time {
+  color: var(--fg-2);
+  margin-right: 8px;
+  user-select: none;
+}
+
+.pf-con-info { color: var(--fg-0); }
+.pf-con-warn { color: var(--warning); }
+.pf-con-error { color: var(--danger); font-weight: 600; cursor: pointer; }
+.pf-con-sys { color: var(--accent); }
+
+/* Remote Inspector Table */
+.pf-con-remote-view {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px;
+}
+
+.pf-remote-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  text-align: left;
+}
+.pf-remote-table th {
+  padding: 4px 6px;
+  background: var(--bg-2);
+  color: var(--fg-2);
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+}
+.pf-remote-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-0);
+}
+.pf-remote-table tr:hover td {
+  background: var(--bg-2);
+}

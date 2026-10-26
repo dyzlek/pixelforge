@@ -43,9 +43,10 @@ export function mount(container, store) {
   $('.play-bar').addEventListener('keydown', (e) => e.stopPropagation());
 
   function addLog(msg, level = 'info') {
+    const t = new Date().toLocaleTimeString();
+    try { store.emit('log', { msg, level, time: t }); } catch {}
     const line = document.createElement('div');
     line.className = 'play-line play-' + level;
-    const t = new Date().toLocaleTimeString();
     line.innerHTML = `<span class="play-time">${t}</span>${esc(msg)}`;
     logEl.appendChild(line);
     while (logEl.childElementCount > 300) logEl.firstChild.remove();
@@ -128,4 +129,8 @@ export function unmount() {
 // HTML autonome : voir export-template.js (fonction pure, aussi utilisée par le serveur MCP)
 export function exportStandaloneHTML(project) {
   return buildStandaloneHTML(project, engineSource);
+}
+
+export function getDebugSnapshot() {
+  return ctx?.game?.__debugSnapshot?.() || null;
 }
