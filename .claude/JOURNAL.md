@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (8) — P0.3 Nettoyer le dépôt
+- **Fait** : suppression du doublon games-src/generate_tetris_blocks.mjs, ajout de .gitattributes (* text=auto eol=lf).
+- **Décisions** : conservation de tetris.mjs unique.
+- **État** : tests et build OK.
+
 ## 2026-10-26 (7) — P0.2 Compléter package.json
 - **Fait** : description, author, repository, homepage, bugs, keywords, engines, private: true, suppression de main.
 - **Décisions** : métadonnées alignées avec le dépôt GitHub dyzlek/pixelforge.
