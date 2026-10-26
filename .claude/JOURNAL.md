@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (5) — Feuille de route + dépôt public
+- **Fait** : ROADMAP.md (P0 public → P3, avec fichiers / comment / vérif, destiné à être exécuté par une autre IA) ; dépôt GitHub passé en public à la demande de l'utilisateur.
+- **Décisions** : pas de code ; licence non choisie (à demander, P0.1).
+- **État** : main, poussé.
+
 ## 2026-10-26 (4) — Blueprints (en cours)
 - **Fait (Opus)** : contrat du nouveau format graphe de nœuds façon Unreal dans docs/BLUEPRINTS.md ; `git init` + commit de base 429b2ba (.gitignore : node_modules, dist, exports) ; `npm install`.
 - **Fait (Sonnet)** : éditeur visuel src/editors/objects/graph-editor.js + graph.css, editor.js sans Blockly (modes Blueprint / Code), rewriteRefs parcourt aussi s.graph ; build OK. Limites : pas de Ctrl+Z propre au graphe, pas de reroute.
