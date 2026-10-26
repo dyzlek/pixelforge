@@ -182,4 +182,42 @@ assert.equal(ctrl.isPlaying(), false);
 
 chip.stopSong();
 
+// 8. Test de pattern de batterie chiptune a 180 BPM
+const drumSong = {
+  id: 'drum_song',
+  name: 'Drum Test',
+  bpm: 180,
+  stepsPerBeat: 4,
+  loop: false,
+  channels: [
+    { id: 'drums', name: 'Batterie', instrument: 'noise', drumKit: true, volume: 0.9 }
+  ],
+  patterns: [
+    {
+      id: 'p_drums',
+      name: 'Beat 180',
+      length: 16,
+      notes: [
+        { ch: 'drums', step: 0, pitch: 'kick', len: 1 },
+        { ch: 'drums', step: 4, pitch: 'snare', len: 1 },
+        { ch: 'drums', step: 8, pitch: 'kick', len: 1 },
+        { ch: 'drums', step: 12, pitch: 'snare', len: 1 },
+        { ch: 'drums', step: 2, pitch: 'hat_closed', len: 1 },
+        { ch: 'drums', step: 6, pitch: 'hat_closed', len: 1 },
+        { ch: 'drums', step: 10, pitch: 'hat_closed', len: 1 },
+        { ch: 'drums', step: 14, pitch: 'hat_open', len: 1 }
+      ]
+    }
+  ],
+  playlist: [
+    { pattern: 'p_drums', start: 0, track: 0 }
+  ]
+};
+
+const drumCtrl = chip.playSong(drumSong, { loop: false });
+assert.ok(drumCtrl);
+assert.equal(drumCtrl.isPlaying(), true);
+drumCtrl.stop();
+assert.equal(drumCtrl.isPlaying(), false);
+
 console.log('Tests chip.js reussis avec succes.');
