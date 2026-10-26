@@ -28,8 +28,12 @@ jobs:
       - name: Run test suite
         run: npm test
 
+      - name: Verify node documentation is up to date
+        run: npm run check:doc
+
       - name: Validate sample games
         run: |
           npm run pf -- validate tetris
           npm run pf -- validate exemple-plateforme-qiqv
           npm run pf -- validate monde-1-1
+

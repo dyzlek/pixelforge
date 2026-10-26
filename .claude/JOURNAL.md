@@ -7,6 +7,11 @@
 
 ---
 
+## 2026-10-26 (13) — P1.7 Documentation utilisateur des nœuds
+- **Fait** : scripts/gen-nodes-doc.mjs générant docs/NODES.md (161 nœuds, 18 catégories, entrées, sorties, champs, exemples de code compilé), scripts "doc:nodes" et "check:doc" dans package.json et vérification dans la CI ; bouton d'aide "?" dans l'en-tête de chaque nœud du graphe et dans son menu contextuel ouvrant une fiche d'aide.
+- **Décisions** : documentation générée automatiquement pour garantir l'absence de dérive avec le catalogue src/graph/nodes.js.
+- **État** : tests et build OK.
+
 ## 2026-10-26 (12) — P0.6 README présentable et version anglaise
 - **Fait** : refonte complète de README.md (badges CI/License/Node/Vite/Phaser, lien démo en ligne GitHub Pages, démarrage rapide en 5 min, architecture Mermaid, fonctionnalités détaillées, raccourcis Blueprints, guide MCP/CLI), création de README.en.md.
 - **Décisions** : documentation bilingue accessible à la communauté internationale.

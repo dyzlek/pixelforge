@@ -438,6 +438,15 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     if ((spec?.dynamic === 'call') && node.extra.name) title += ' ' + node.extra.name;
     head.appendChild(el('span', 'bp-title', title));
     head.title = spec?.tooltip || '';
+    if (spec) {
+      const helpBtn = el('button', 'bp-help-btn', '?');
+      helpBtn.title = 'Aide sur ce nœud : ' + spec.title;
+      helpBtn.onclick = (ev) => {
+        ev.stopPropagation();
+        openNodeDoc(spec, ev.clientX, ev.clientY);
+      };
+      head.appendChild(helpBtn);
+    }
     e.appendChild(head);
 
     if (spec) {
@@ -1401,6 +1410,55 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     input.focus();
   }
 
+  // ------------------------------------------------------------ documentation et aide des nœuds
+
+  let docPopup = null;
+  function closeNodeDoc() {
+    if (!docPopup) return;
+    document.removeEventListener('pointerdown', docPopup.outside, true);
+    docPopup.el.remove();
+    docPopup = null;
+  }
+
+  function openNodeDoc(spec, clientX, clientY) {
+    closeNodeDoc();
+    closeMenu();
+    closePalette();
+    const box = el('div', 'bp-doc-popup');
+    const head = el('div', 'bp-doc-head');
+    head.append(el('strong', null, spec.title), el('span', 'bp-doc-type', spec.type));
+    const closeBtn = el('button', 'bp-mini', '×');
+    closeBtn.onclick = () => closeNodeDoc();
+    head.appendChild(closeBtn);
+
+    const body = el('div', 'bp-doc-body');
+    if (spec.tooltip) body.appendChild(el('p', 'bp-doc-desc', spec.tooltip));
+    if (spec.inputs?.length) {
+      const sec = el('div', 'bp-doc-sec', 'Entrées :');
+      for (const p of spec.inputs) {
+        sec.appendChild(el('div', 'bp-doc-pin', `${p.name} (${TYPE_NAMES[p.type] || p.type})${p.default !== undefined ? ' = ' + JSON.stringify(p.default) : ''}`));
+      }
+      body.appendChild(sec);
+    }
+    if (spec.outputs?.length) {
+      const sec = el('div', 'bp-doc-sec', 'Sorties :');
+      for (const p of spec.outputs) {
+        sec.appendChild(el('div', 'bp-doc-pin', `${p.name} (${TYPE_NAMES[p.type] || p.type})`));
+      }
+      body.appendChild(sec);
+    }
+    box.append(head, body);
+    canvas.appendChild(box);
+    const r = canvas.getBoundingClientRect();
+    const x = clientX != null ? clientX - r.left : r.width / 2 - 140;
+    const y = clientY != null ? clientY - r.top : r.height / 2 - 100;
+    box.style.left = clamp(x, 8, Math.max(8, r.width - 290)) + 'px';
+    box.style.top = clamp(y, 8, Math.max(8, r.height - 240)) + 'px';
+
+    docPopup = { el: box, outside: (ev) => { if (!box.contains(ev.target)) closeNodeDoc(); } };
+    setTimeout(() => document.addEventListener('pointerdown', docPopup.outside, true), 10);
+  }
+
   // ------------------------------------------------------------ menu contextuel
 
   function closeMenu() {
@@ -1413,6 +1471,7 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
   function openMenu(clientX, clientY, items) {
     closeMenu();
     closePalette();
+    closeNodeDoc();
     const box = el('div', 'bp-menu');
     for (const it of items) {
       if (it.sep) { box.appendChild(el('div', 'bp-menu-sep')); continue; }
@@ -1433,7 +1492,7 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     e.preventDefault();
     mouse.x = e.clientX; mouse.y = e.clientY; mouse.inside = true;
     const t = e.target;
-    if (t.closest('.bp-palette, .bp-menu, .bp-toolbar, .bp-minimap')) return;
+    if (t.closest('.bp-palette, .bp-menu, .bp-toolbar, .bp-minimap, .bp-doc-popup')) return;
     if (panMoved) { panMoved = false; return; }
     const pinRow = !t.closest('.bp-lit') ? t.closest('.bp-pin') : null;
     if (pinRow?.__pin) {
@@ -1452,7 +1511,9 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     if (nodeEl) {
       const id = nodeEl.dataset.id;
       if (!selection.has(id)) selectOnly(id);
+      const spec = getSpec(nodeIndex.get(id)?.type);
       openMenu(e.clientX, e.clientY, [
+        ...(spec ? [{ label: `Fiche d'aide (?)`, fn: () => openNodeDoc(spec, e.clientX, e.clientY) }, { sep: true }] : []),
         { label: 'Dupliquer', fn: () => duplicate() },
         { label: 'Commenter la sélection', fn: () => commentSelection() },
         { label: 'Couper tous les liens', fn: () => cutNodeLinks([...selection].filter((x) => nodeIndex.has(x))) },
@@ -1839,7 +1900,7 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     if (!mouse.inside && !root.contains(ae)) return;
     const mod = e.ctrlKey || e.metaKey;
     const key = e.key;
-    if (key === 'Escape') { closeMenu(); closePalette(); return; }
+    if (key === 'Escape') { closeMenu(); closePalette(); closeNodeDoc(); return; }
     if (key === 'Delete' || key === 'Backspace') { e.preventDefault(); deleteSelection(); return; }
     if (mod && !e.altKey) {
       const k = key.toLowerCase();
@@ -1920,6 +1981,7 @@ export function createGraphEditor(host, { getGraph, onChange, ctx = {} } = {}) {
     disposed = true;
     closePalette();
     closeMenu();
+    closeNodeDoc();
     window.removeEventListener('pointermove', windowMove);
     window.removeEventListener('pointerup', windowUp);
     window.removeEventListener('pointercancel', windowUp);

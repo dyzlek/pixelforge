@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node src/graph/test/graph.test.mjs && node mcp/test/e2e.mjs",
+    "doc:nodes": "node scripts/gen-nodes-doc.mjs",
+    "check:doc": "node scripts/gen-nodes-doc.mjs --check",
     "mcp": "node mcp/server.js",
     "pf": "node mcp/cli.js"
   },
