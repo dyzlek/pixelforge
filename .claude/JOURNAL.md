@@ -7,6 +7,16 @@
 
 ---
 
+## 2026-10-26 (20) — [Phase A] A1 : Coque à panneaux ancrés (Dock layout)
+- **Fait** :
+  - Création de `src/ui/dock.js` et `src/ui/dock.css` : gestionnaire de dock inspiré de Godot 4 sans dépendance externe.
+  - Zones gauche, droite, bas et centre avec splitters redimensionnables à la souris et contraintes min/max.
+  - Panneaux repliables avec boutons chevrons et persistance dans `localStorage` (`pixelforge.layout`).
+  - Barre de menus (Jeu, Affichage, Aide) et barre de lancement (Jouer F5, Scène F6, Arrêter F8).
+  - Raccourcis clavier globaux F5, F6, F8.
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #2.
+
 ## 2026-10-26 (19) — [Phase A] A0 : Jetons de design et thème (Design tokens & Theme)
 - **Fait** :
   - Création de `src/ui/theme.css` avec les jetons Godot 4 complets : tokens de fond (`--bg-0` à `--bg-3`), texte (`--fg-0` à `--fg-2`), accents (`--accent`, `--danger`, `--warning`, `--success`), rayons, espacements, ombres et polices.

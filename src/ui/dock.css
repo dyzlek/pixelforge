@@ -1,0 +1,354 @@
+/* ==========================================================================
+   PixelForge Studio — Système de Dock & Coque (Godot 4 style)
+   ========================================================================== */
+
+.pf-studio-shell {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-0);
+  color: var(--fg-0);
+}
+
+/* --- Barre de menus supérieure (Godot style) --- */
+.pf-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 36px;
+  min-height: 36px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  padding: 0 var(--space-2);
+  gap: var(--space-2);
+  user-select: none;
+  z-index: 100;
+}
+
+.pf-top-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pf-brand-badge {
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: .5px;
+  color: var(--accent);
+  margin-right: 4px;
+}
+
+.pf-menu-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pf-menu-item {
+  position: relative;
+}
+
+.pf-menu-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--fg-1);
+  padding: 3px 8px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.pf-menu-btn:hover, .pf-menu-btn.open {
+  background: var(--bg-2);
+  color: var(--fg-0);
+  border-color: var(--border);
+}
+
+.pf-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 200px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  padding: 4px;
+  display: none;
+  flex-direction: column;
+  gap: 2px;
+  z-index: 200;
+}
+
+.pf-menu-dropdown.show {
+  display: flex;
+}
+
+.pf-menu-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  border: none;
+  color: var(--fg-0);
+  padding: 5px 8px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.pf-menu-action:hover {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.pf-menu-shortcut {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: .7;
+  margin-left: 12px;
+}
+
+.pf-menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 3px 0;
+}
+
+/* --- Barre d'outils de lancement centrale --- */
+.pf-top-center {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pf-playbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  color: var(--fg-0);
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all .12s;
+}
+
+.pf-playbar-btn:hover:not(:disabled) {
+  background: var(--bg-3);
+  border-color: var(--fg-2);
+}
+
+.pf-playbar-btn.play {
+  color: var(--success);
+}
+.pf-playbar-btn.play:hover:not(:disabled) {
+  background: rgba(56, 183, 100, 0.15);
+  border-color: var(--success);
+}
+.pf-playbar-btn.playing {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+
+.pf-playbar-btn.stop {
+  color: var(--danger);
+}
+.pf-playbar-btn.stop:hover:not(:disabled) {
+  background: rgba(255, 77, 94, 0.15);
+  border-color: var(--danger);
+}
+
+.pf-top-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* --- Coque Dock principale --- */
+.pf-dock-root {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-0);
+}
+
+.pf-dock-area {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  background: var(--bg-1);
+  position: relative;
+  overflow: hidden;
+}
+
+.pf-dock-left {
+  width: var(--dock-left-w, 250px);
+  border-right: 1px solid var(--border);
+}
+
+.pf-dock-right {
+  width: var(--dock-right-w, 280px);
+  border-left: 1px solid var(--border);
+}
+
+.pf-dock-center-col {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-0);
+}
+
+.pf-dock-center {
+  flex: 1;
+  min-height: 0;
+  background: var(--bg-0);
+}
+
+.pf-dock-bottom {
+  height: var(--dock-bottom-h, 170px);
+  border-top: 1px solid var(--border);
+}
+
+/* Splitters / Séparateurs */
+.pf-dock-splitter {
+  background: var(--border);
+  flex: none;
+  transition: background-color .15s;
+  z-index: 10;
+}
+
+.pf-dock-splitter-h {
+  width: 5px;
+  cursor: col-resize;
+}
+.pf-dock-splitter-h:hover, .pf-dock-splitter-h.active {
+  background: var(--accent);
+}
+
+.pf-dock-splitter-v {
+  height: 5px;
+  cursor: row-resize;
+}
+.pf-dock-splitter-v:hover, .pf-dock-splitter-v.active {
+  background: var(--accent);
+}
+
+/* En-tête de panneau ancré */
+.pf-dock-header {
+  height: 28px;
+  min-height: 28px;
+  background: var(--bg-2);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 0 8px;
+  gap: 4px;
+  user-select: none;
+}
+
+.pf-dock-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.pf-dock-tabs::-webkit-scrollbar { display: none; }
+
+.pf-dock-tab {
+  background: transparent;
+  border: none;
+  color: var(--fg-1);
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.pf-dock-tab:hover {
+  background: var(--bg-3);
+  color: var(--fg-0);
+}
+
+.pf-dock-tab.active {
+  background: var(--bg-1);
+  color: var(--fg-0);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.pf-dock-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pf-dock-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-2);
+  padding: 2px 4px;
+  font-size: 11px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.pf-dock-btn:hover {
+  background: var(--bg-3);
+  color: var(--fg-0);
+}
+
+/* Corps du panneau */
+.pf-dock-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  overflow: auto;
+}
+
+/* État replié */
+.pf-dock-area.collapsed {
+  width: 30px !important;
+  min-width: 30px !important;
+}
+
+.pf-dock-area.collapsed .pf-dock-body,
+.pf-dock-area.collapsed .pf-dock-tabs {
+  display: none !important;
+}
+
+.pf-dock-bottom.collapsed {
+  height: 28px !important;
+  min-height: 28px !important;
+}
+.pf-dock-bottom.collapsed .pf-dock-body {
+  display: none !important;
+}
+
+.pf-dock-area.collapsed .pf-dock-header {
+  padding: 0 4px;
+  justify-content: center;
+}
