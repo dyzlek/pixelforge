@@ -298,6 +298,8 @@ export class DockManager {
           { label: '■ Arrêter', shortcut: 'F8', action: () => this.triggerStop() },
           { sep: true },
           { label: 'Exporter HTML autonome…', shortcut: '', action: () => this.options.onExport?.() },
+          { sep: true },
+          { label: 'Fermer le projet / Retour aux projets', shortcut: '', action: () => this.options.onCloseProject?.() },
         ],
       },
       {

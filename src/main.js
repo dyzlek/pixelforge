@@ -55,6 +55,11 @@ export const dock = new DockManager({
     }
   },
   onExport: () => triggerExport(),
+  onCloseProject: () => {
+    store.currentId = null;
+    workspace.closeAll();
+    workspace.open({ kind: 'library', title: 'Bibliothèque' });
+  },
 });
 
 dock.mount(appEl);
