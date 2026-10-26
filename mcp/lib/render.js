@@ -82,3 +82,84 @@ export function renderMap(project, mapRef) {
   for (const [n, pos] of Object.entries(byName)) out.push(`  ${letters[n]} = ${n} x${pos.length}: ${pos.join(' ')}`);
   return out.join('\n');
 }
+
+export function renderScene3D(project, sceneRef) {
+  const scenes = project.scenes3d || [];
+  const sc = scenes.find((x) => x.name === sceneRef || x.id === sceneRef)
+    || scenes.find((x) => x.name.toLowerCase() === String(sceneRef).toLowerCase())
+    || scenes[0];
+  if (!sc) throw new Error(`scene 3D "${sceneRef}" not found (scenes: ${scenes.map((x) => x.name).join(', ') || 'none'})`);
+
+  const out = [];
+  out.push(`Scene 3D "${sc.name}": sky ${sc.environment?.skyColor || '#1a1c2c'}, fog ${sc.environment?.fog?.enabled ? 'on' : 'off'}`);
+
+  const blocks = sc.gridmap?.blocks || {};
+  const blockKeys = Object.keys(blocks);
+  const ents = sc.entities || [];
+
+  if (!blockKeys.length && !ents.length) {
+    out.push('(empty scene: no blocks, no entities)');
+    return out.join('\n');
+  }
+
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  let minZ = Infinity, maxZ = -Infinity;
+
+  for (const k of blockKeys) {
+    const [x, y, z] = k.split(',').map(Number);
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+    if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+  }
+  for (const e of ents) {
+    const x = Math.floor(e.x), y = Math.floor(e.y || 0), z = Math.floor(e.z || 0);
+    if (x < minX) minX = x; if (x > maxX) maxX = x;
+    if (y < minY) minY = y; if (y > maxY) maxY = y;
+    if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+  }
+  if (!Number.isFinite(minX)) { minX = 0; maxX = 10; minY = 0; maxY = 0; minZ = 0; maxZ = 10; }
+
+  out.push(`Bounds: X [${minX}..${maxX}], Y [${minY}..${maxY}], Z [${minZ}..${maxZ}], total ${blockKeys.length} blocks, ${ents.length} entities.`);
+
+  const objById = new Map((project.objects || []).map((o) => [o.id, o]));
+  const entLetters = entityLetters([...new Set(ents.map((e) => objById.get(e.objectId)?.name).filter(Boolean))]);
+
+  for (let y = maxY; y >= minY; y--) {
+    const entsAtY = ents.filter((e) => Math.floor(e.y || 0) === y);
+    const hasBlocks = blockKeys.some((k) => Number(k.split(',')[1]) === y);
+    if (!hasBlocks && !entsAtY.length) continue;
+
+    out.push('', `--- Level Y = ${y} ---`);
+    const width = maxX - minX + 1;
+    const pad = Math.max(String(maxZ).length + 1, 3);
+    const rulerLines = ruler(width, pad);
+    out.push(...rulerLines);
+
+    for (let z = minZ; z <= maxZ; z++) {
+      let row = '';
+      for (let x = minX; x <= maxX; x++) {
+        const ent = entsAtY.find((e) => Math.floor(e.x) === x && Math.floor(e.z || 0) === z);
+        if (ent) {
+          const o = objById.get(ent.objectId);
+          row += o ? entLetters[o.name] : '?';
+        } else {
+          const val = blocks[`${x},${y},${z}`];
+          if (val === undefined) row += '.';
+          else if (typeof val === 'number') row += val < 16 ? val.toString(16) : '#';
+          else row += '#';
+        }
+      }
+      out.push(String(z).padStart(pad - 1) + ' ' + row);
+    }
+
+    if (entsAtY.length) {
+      out.push(`Entities at Y=${y}: ` + entsAtY.map((e) => {
+        const o = objById.get(e.objectId);
+        return `${entLetters[o?.name] || '?'}=${o?.name || 'Unknown'} (${e.x}, ${e.y}, ${e.z})`;
+      }).join(', '));
+    }
+  }
+
+  return out.join('\n');
+}

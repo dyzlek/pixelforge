@@ -4,7 +4,7 @@ import * as pf from './lib/index.js';
 
 const [cmd, game, map] = process.argv.slice(2);
 const NL = String.fromCharCode(10);
-const usage = 'usage: node mcp/cli.js list | validate <game> | compile <game> | export <game> | render <game> <map> | show <game> | nodes [category|word]';
+const usage = 'usage: node mcp/cli.js list | validate <game> | compile <game> | export <game> | render <game> [map|scene] | render3d <game> [scene] | show <game> | nodes [category|word]';
 
 try {
   if (cmd === 'list') {
@@ -28,9 +28,14 @@ try {
   } else if (cmd === 'export' && game) {
     const { file, bytes } = await pf.exportGameHTML(pf.loadGame(game));
     console.log(`Exported ${file} (${Math.round(bytes / 1024)} KB)`);
-  } else if (cmd === 'render' && game) {
+  } else if ((cmd === 'render' || cmd === 'render3d') && game) {
     const p = pf.loadGame(game);
-    console.log(pf.renderMap(p, map || p.maps.find((m) => m.id === p.settings.startMapId).name));
+    if (cmd === 'render3d' || p.settings.dimension === '3d') {
+      const defaultScene = (p.scenes3d || []).find((s) => s.id === (p.settings.startScene3DId || p.settings.startMapId))?.name || (p.scenes3d || [])[0]?.name;
+      console.log(pf.renderScene3D(p, map || defaultScene));
+    } else {
+      console.log(pf.renderMap(p, map || p.maps.find((m) => m.id === p.settings.startMapId)?.name));
+    }
   } else if (cmd === 'show' && game) {
     console.log(pf.summarize(pf.loadGame(game)));
   } else {

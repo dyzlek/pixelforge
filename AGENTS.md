@@ -194,6 +194,81 @@ With a condition (data wire into `flow_branch.COND`, branch `true`): moving righ
 In the editor the user can switch a script between Blueprint and Code (the text keeps the compiled code; going back to the graph regenerates it). Old games saved with Blockly blocks
 (`mode: 'blocks'`) are converted automatically on load (`normalizeProject`): never write `mode: 'blocks'` yourself.
 
+## 3D Games (Retro Voxel / Three.js)
+
+PixelForge also supports 3D retro voxel games (`dimension: '3d'`). The game runs with Three.js (custom retro low-res pixelation, PS1 jitter, AABB physics).
+To create a 3D game: `create_game { name: 'my-3d-game', dimension: '3d', template: 'platformer3d' }`.
+
+### 3D Project Model & Tools
+- `upsert_model { game, name, width, height, depth, slices, legend }`: defines a voxel model by slices along the Y axis. `slices` is an array of Y levels (from Y=0 to Y=height-1), each an array of strings (rows along Z, chars along X). Characters: `.` = empty, `0-9a-f` = sweetie 16 palette color index. Or provide `gltf` base64 data URL.
+- `get_model { game, name }`: returns the model as ASCII slices.
+- `upsert_scene3d { game, name, environment, start }`: creates or updates a 3D scene (with skyColor, fog, ambient/directional lights).
+- `paint_gridmap { game, scene, level, rows, legend, x, z }`: paints solid voxel blocks on Y level `level` of the GridMap. Characters: `.` erases, ` ` leaves unchanged, `0-9a-f` = palette color block.
+- `place_entities { game, scene, entities: [{object, x, y, z}] }`: places 3D entity instances in the 3D scene.
+- `render_scene3d { game, scene }`: ASCII layer-by-layer render of a 3D scene (X/Z grid per Y level with block colors and entity letters).
+- `validate_game`: validates 3D models, scene gridmaps, entity coordinates, and start scene.
+
+### 3D Scripting & Golden Rules
+Full 3D scripting API: `docs/SCRIPT_API_3D.md`.
+1. **Coordinates**: Three.js Y-up system. X = right, Y = up, Z = forward/backward. Units are world blocks (1 block = 1x1x1 unit).
+2. **Movement**: Use `self.moveForward(speed)` and `self.moveRight(speed)` to move relative to current horizontal rotation `self.rotationY`. Or set `self.vx`, `self.vy`, `self.vz` directly.
+3. **Rotation**: Rotate with `self.rotateY(angle)` or orient with `self.lookAt(targetX, targetY, targetZ)`.
+4. **Jumping**: `self.jump(force)` adds positive vertical impulse to `self.vy` if `self.onGround` is true.
+5. **Cameras**: Set camera mode with `game.camera.setMode('third-person'|'first-person'|'top-down'|'isometric'|'side-scroll')`. Follow player with `game.camera.follow(self, { distance: 6, height: 3 })`.
+
+### 3D Recipes
+
+3D Third-person Platformer Player:
+```js
+on('create', () => {
+  game.camera.setMode('third-person');
+  game.camera.follow(self, { distance: 6, height: 3 });
+  game.setText('hud', 'Score: ' + game.score, 8, 8);
+});
+on('update', () => {
+  let speed = 0;
+  if (input.isDown('UP') || input.isDown('W')) speed = 6;
+  if (input.isDown('DOWN') || input.isDown('S')) speed = -6;
+  if (input.isDown('LEFT') || input.isDown('A')) self.rotateY(-3);
+  if (input.isDown('RIGHT') || input.isDown('D')) self.rotateY(3);
+  self.moveForward(speed);
+  if ((input.justPressed('SPACE') || input.justPressed('UP')) && self.onGround) self.jump(12);
+  if (self.y < -10) game.restart();
+});
+```
+
+3D First-person (FPS) Player:
+```js
+on('create', () => {
+  input.requestPointerLock();
+  game.camera.setMode('first-person');
+  game.camera.follow(self);
+});
+on('update', () => {
+  const lookSpeed = 0.15;
+  self.rotateY((input.mouseDeltaX || 0) * lookSpeed);
+  let forward = 0, strafe = 0;
+  if (input.isDown('W')) forward = 7;
+  if (input.isDown('S')) forward = -7;
+  if (input.isDown('A')) strafe = -7;
+  if (input.isDown('D')) strafe = 7;
+  self.moveForward(forward);
+  self.moveRight(strafe);
+  if (input.justPressed('SPACE') && self.onGround) self.jump(11);
+});
+```
+
+3D Rotating Pickup Coin:
+```js
+on('update', () => { self.rotateY(4); });
+on('overlap', 'Player', () => {
+  game.score += 1;
+  game.setText('hud', 'Score: ' + game.score, 8, 8);
+  game.playSound('coin');
+  self.destroy();
+});
+```
+
 ## Files
 
 `src/graph/` Blueprint core (node catalogue, compiler, Blockly converter; no DOM) - `src/editors/objects/graph-editor.js` visual editor - `mcp/server.js` MCP server - `mcp/cli.js` CLI - `mcp/lib/` Node library (PNG codec, text sprites, validation, ASCII map render, export, graph checks) -
