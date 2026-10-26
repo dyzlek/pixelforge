@@ -7,6 +7,17 @@
 
 ---
 
+## 2026-10-26 (21) — [Phase A] A2 : Documents ouverts en onglets (Multi-document workspace)
+- **Fait** :
+  - Création de `src/ui/documents.js` et `src/ui/documents.css` : gestionnaire d'onglets de documents ouverts (scènes, sprites, scripts, sons, jouer, bibliothèque).
+  - Préservation de l'état de vue (zoom, pan, scroll, sélections) lors du basculement d'onglets grâce à la conservation du DOM avec bascule display.
+  - Pastille `●` en cas de modifications non sauvegardées.
+  - Fermeture d'onglets (bouton `×`, clic molette `auxclick`, raccourci `Ctrl+W`).
+  - Navigation rapide au clavier (`Ctrl+Tab` et `Ctrl+Maj+Tab`).
+  - Mémorisation des onglets ouverts et de l'onglet actif par projet dans `localStorage`.
+- **Vérifié** : `npm run build`, `npm test`, `npm run check:doc`, `validate tetris`, `validate exemple-plateforme-qiqv`, `validate monde-1-1`.
+- **État** : Closes #3.
+
 ## 2026-10-26 (20) — [Phase A] A1 : Coque à panneaux ancrés (Dock layout)
 - **Fait** :
   - Création de `src/ui/dock.js` et `src/ui/dock.css` : gestionnaire de dock inspiré de Godot 4 sans dépendance externe.
