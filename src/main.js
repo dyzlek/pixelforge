@@ -29,7 +29,7 @@ function applyTheme(theme) {
   } catch {}
   const btn = document.getElementById('theme-toggle');
   if (btn) {
-    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    btn.innerHTML = getIconSvg(theme === 'dark' ? 'sun' : 'moon', 13);
     btn.title = theme === 'dark' ? 'Passer au thème clair' : 'Passer au thème sombre';
     btn.setAttribute('aria-label', btn.title);
   }
@@ -45,10 +45,10 @@ const appEl = document.getElementById('app') || document.body;
 // Initialisation du Dock Manager (A1)
 export const dock = new DockManager({
   onPlay: () => {
-    workspace.open({ kind: 'play', title: '▶ Jouer' });
+    workspace.open({ kind: 'play', title: 'Jouer' });
   },
   onPlayCurrent: () => {
-    workspace.open({ kind: 'play', title: '▶ Jouer' });
+    workspace.open({ kind: 'play', title: 'Jouer' });
   },
   onStop: () => {
     dock.setPlayingState(false);
@@ -134,7 +134,7 @@ document.getElementById('pf-quick-tabs')?.addEventListener('click', (e) => {
 const topRightEl = document.getElementById('pf-topright');
 topRightEl.innerHTML = `
   <input id="project-name" class="project-name" spellcheck="false" placeholder="Aucun jeu ouvert" aria-label="Nom du projet" />
-  <button id="theme-toggle" class="theme-btn" title="Changer de thème" aria-label="Changer de thème">☀️</button>
+  <button id="theme-toggle" class="theme-btn" title="Changer de thème" aria-label="Changer de thème">${getIconSvg('sun', 13)}</button>
   <button data-action="export" class="primary" style="padding:3px 8px;font-size:12px;">Exporter HTML</button>
   <span id="save-status" style="color:var(--fg-2);min-width:70px;font-size:12px;"></span>
 `;

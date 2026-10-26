@@ -6,8 +6,8 @@
 [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev)
 [![Phaser 3](https://img.shields.io/badge/Phaser-3.90-orange)](https://phaser.io)
 
-> 🎮 **[Try the live web demo in your browser](https://dyzlek.github.io/pixelforge/)**  
-> 🌐 Version française : **[README.md](README.md)**
+> **[Try the live web demo in your browser](https://dyzlek.github.io/pixelforge/)**  
+> Version française : **[README.md](README.md)**
 
 **PixelForge** is a complete, browser-based 2D retro game engine and editor powered by **Phaser 3**.
 Create pixel art sprites, build tilemap levels, program entity logic using **visual Blueprint node graphs** (inspired by Unreal Engine) or JavaScript, test immediately with zero build steps, and export standalone single-file HTML games.
@@ -16,7 +16,7 @@ One game = **one JSON file** (`games/<id>.pixelforge.json`). The web editor hot-
 
 ---
 
-## ⚡ 5-Minute Quick Start
+## 5-Minute Quick Start
 
 ### 1. Installation & Run
 ```bash
@@ -44,7 +44,7 @@ Open your browser at **[http://localhost:5173](http://localhost:5173)**.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 flowchart TD
@@ -75,7 +75,7 @@ flowchart TD
 
 ---
 
-## ✨ Features
+## Features
 
 - **Pixel Art Studio**: Pencil, eraser, paint bucket, color picker, line, shapes, rectangle selection, undo/redo, 16-color Sweetie 16 palette, frames and animations.
 - **Tilemap Editor**: Multi-layer maps, solid collisions, one-way platforms, parallax scrolling factors, foreground/background layer sorting, multi-map navigation (`game.goToMap`).
@@ -89,7 +89,7 @@ flowchart TD
 
 ---
 
-## 🤖 AI Agents & MCP Support
+## AI Agents & MCP Support
 
 PixelForge is designed from the ground up for agentic AI pairing:
 - Run the native stdio MCP server:
@@ -101,7 +101,7 @@ PixelForge is designed from the ground up for agentic AI pairing:
 
 ---
 
-## 🛠️ Commands & Testing
+## Commands & Testing
 
 ```bash
 npm install               # Install dependencies
@@ -116,6 +116,6 @@ npm run pf -- export <game>    # CLI: build standalone HTML
 
 ---
 
-## 📄 License
+## License
 
 Licensed under the [MIT](LICENSE) License.

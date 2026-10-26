@@ -4,19 +4,20 @@
  */
 
 import './documents.css';
+import { getIconSvg } from './icons.js';
 
-const ICONS = {
-  library: '📚',
-  map: '🗺️',
-  scene: '🗺️',
-  pixel: '🎨',
-  sprite: '🎨',
-  objects: '📜',
-  script: '📜',
-  sound: '🔊',
-  song: '🎵',
-  model3d: '🧊',
-  play: '▶',
+const ICON_NAMES = {
+  library: 'project',
+  map: 'map',
+  scene: 'map',
+  pixel: 'palette',
+  sprite: 'sprite',
+  objects: 'object',
+  script: 'code',
+  sound: 'sound',
+  song: 'music',
+  model3d: 'object',
+  play: 'play',
 };
 
 export class DocumentWorkspace {
@@ -158,7 +159,7 @@ export class DocumentWorkspace {
       return existing;
     }
 
-    const docIcon = icon || ICONS[kind] || '📄';
+    const docIcon = icon || (ICON_NAMES[kind] ? getIconSvg(ICON_NAMES[kind], 13) : getIconSvg('file', 13));
     const docTitle = title || this.resolveTitle(kind, refId) || kind;
 
     const container = document.createElement('div');
@@ -219,7 +220,7 @@ export class DocumentWorkspace {
     const p = this.store.project;
     if (!p) return kind;
     if (kind === 'library') return 'Bibliothèque';
-    if (kind === 'play') return '▶ Jouer';
+    if (kind === 'play') return 'Jouer';
     if (refId) {
       if (kind === 'map' || kind === 'scene') return p.maps?.find((m) => m.id === refId)?.name || 'Carte';
       if (kind === 'pixel' || kind === 'sprite') return p.sprites?.find((s) => s.id === refId)?.name || 'Sprite';

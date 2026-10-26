@@ -62,7 +62,7 @@ export function createSceneTree(container, store) {
       item.className = 'pf-st-item';
       const isVisible = l.visible !== false;
       item.innerHTML = `
-        <span style="font-size:11px;">${l.collides ? '🛡️' : '░'}</span>
+        <span style="display:inline-flex;align-items:center;color:${l.collides ? 'var(--accent)' : 'var(--fg-2)'};">${getIconSvg(l.collides ? 'lock' : 'layers', 12)}</span>
         <span class="pf-st-name">${l.name}</span>
         <div class="pf-st-actions">
           <button class="pf-st-action-btn${isVisible ? '' : ' off'}" data-vis-layer="${l.id}" title="${isVisible ? 'Masquer le calque' : 'Afficher le calque'}" aria-label="Afficher ou masquer le calque">${getIconSvg(isVisible ? 'eye' : 'eyeOff', 12)}</button>
