@@ -1,7 +1,7 @@
 # Catalogue des nœuds Blueprint de PixelForge
 
 > Ce document est généré automatiquement par `node scripts/gen-nodes-doc.mjs`.
-> Total : **182 nœuds** répartis en **18 catégories**.
+> Total : **187 nœuds** répartis en **18 catégories**.
 
 ## Sommaire des catégories
 
@@ -9,12 +9,12 @@
 - [Flux (#flow)](#flow) (9 nœuds)
 - [Fonctions (#func)](#func) (4 nœuds)
 - [Variables (#var)](#var) (3 nœuds)
-- [Mouvement (#move)](#move) (24 nœuds)
-- [Apparence (#look)](#look) (10 nœuds)
+- [Mouvement (#move)](#move) (26 nœuds)
+- [Apparence (#look)](#look) (11 nœuds)
 - [Objet (#self)](#self) (23 nœuds)
 - [Entrée (#input)](#input) (2 nœuds)
 - [Souris (#mouse)](#mouse) (5 nœuds)
-- [Tuiles & rayons (#tile)](#tile) (12 nœuds)
+- [Tuiles & rayons (#tile)](#tile) (14 nœuds)
 - [Son (#sound)](#sound) (6 nœuds)
 - [Messages (#msg)](#msg) (3 nœuds)
 - [Jeu (#game)](#game) (24 nœuds)
@@ -1244,6 +1244,50 @@ on('create', () => {
 });
 ```
 
+### `pf_3d_transform_set` — Transformer 3D
+
+**Type de nœud** : Action  
+**Description** : Modifie la position (X, Y, Z), l'orientation (rotation Y) ou l'échelle de cet objet 3D.  
+**Mots-clés de recherche** : `3d transform position rotation echelle scale translation`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `X` | `number` | `0` | x |
+| `Y` | `number` | `0` | y |
+| `Z` | `number` | `0` | z |
+| `ROTY` | `number` | `0` | rotation Y (°) |
+| `SCALE` | `number` | `1` | échelle |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+### `pf_3d_apply_force` — Appliquer force 3D
+
+**Type de nœud** : Action  
+**Description** : Applique une impulsion ou force physique 3D sur le corps rigide (vecteur X, Y, Z).  
+**Mots-clés de recherche** : `3d physique force impulsion impulse rapier`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `X` | `number` | `0` | force X |
+| `Y` | `number` | `0` | force Y |
+| `Z` | `number` | `0` | force Z |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
 ---
 
 ## <a id="look"></a>Apparence
@@ -1295,6 +1339,25 @@ on('create', () => {
 | Champ | Type de widget | Valeur par défaut | Options / Détails |
 |---|---|---|---|
 | `ANIM` | `anim` | `""` | — |
+
+### `pf_3d_play_anim` — Animer modèle 3D
+
+**Type de nœud** : Action  
+**Description** : Joue une animation du modèle 3D glTF (ex: idle, walk, run, jump).  
+**Mots-clés de recherche** : `3d animation animer gltf clip play walk idle`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `ANIM` | `string` | `"idle"` | animation |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
 
 ### `pf_visible` — Afficher / cacher
 
@@ -2527,6 +2590,76 @@ on('create', () => {
 | Champ | Type de widget | Valeur par défaut | Options / Détails |
 |---|---|---|---|
 | `SIDE` | `dropdown` | `"left"` | `left`, `right`, `up`, `down` |
+
+**Exemple de code JavaScript compilé :**
+
+```javascript
+on('create', () => {
+  game.log('Bonjour');
+});
+```
+
+### `pf_3d_raycast` — Rayon 3D (résultat)
+
+**Type de nœud** : Pur (expression)  
+**Description** : Lance un rayon 3D contre les blocs et objets. Renvoie le résultat à lire avec « Champ du rayon 3D ».  
+**Mots-clés de recherche** : `3d raycast rayon impact collision obstacle`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `X` | `number` | `0` | origine X |
+| `Y` | `number` | `1` | origine Y |
+| `Z` | `number` | `0` | origine Z |
+| `DIR_X` | `number` | `0` | direction X |
+| `DIR_Y` | `number` | `0` | direction Y |
+| `DIR_Z` | `number` | `-1` | direction Z |
+| `DIST` | `number` | `20` | distance max |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `out` | `any` | out |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `MODE` | `dropdown` | `"all"` | `all`, `blocks`, `objects` |
+
+**Exemple de code JavaScript compilé :**
+
+```javascript
+on('create', () => {
+  game.log('Bonjour');
+});
+```
+
+### `pf_3d_ray_get` — Champ du rayon 3D
+
+**Type de nœud** : Pur (expression)  
+**Description** : Lit un champ du résultat d'un rayon 3D.  
+**Mots-clés de recherche** : `3d raycast rayon champ impact`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `RAY` | `any` | — | rayon |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `out` | `any` | out |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `FIELD` | `dropdown` | `"hit"` | `hit`, `distance`, `pointX`, `pointY`, `pointZ`, `normalX`, `normalY`, `normalZ`, `objectName`, `instance` |
 
 **Exemple de code JavaScript compilé :**
 

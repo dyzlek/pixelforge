@@ -38,6 +38,7 @@ jobs:
           npm run pf -- validate monde-1-1
           npm run pf -- validate cube-runner
           npm run pf -- validate donjon-3d
+          npm run pf -- validate adventure-3d
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

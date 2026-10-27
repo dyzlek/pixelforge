@@ -216,6 +216,16 @@ ex('pf_rotate_y_3d', 'Pivoter horizontalement', 'move', 'Ajoute un angle à l\'o
   { inputs: [num('ANGLE', 'angle (°)', 45)], selfOnly: true, dims: ['3d'], keywords: '3d tourner pivoter rotation' });
 pu('pf_distance_3d', 'Distance 3D', 'move', 'number', 'Calcule la distance euclidienne entre deux points dans l\'espace 3D.',
   { inputs: [num('X1', 'x1', 0), num('Y1', 'y1', 0), num('Z1', 'z1', 0), num('X2', 'x2', 0), num('Y2', 'y2', 0), num('Z2', 'z2', 0)], dims: ['3d'], keywords: '3d distance euclidienne hypot' });
+ex('pf_3d_transform_set', 'Transformer 3D', 'move', 'Modifie la position (X, Y, Z), l\'orientation (rotation Y) ou l\'échelle de cet objet 3D.',
+  { inputs: [
+      num('X', 'x', 0, { optional: true }),
+      num('Y', 'y', 0, { optional: true }),
+      num('Z', 'z', 0, { optional: true }),
+      num('ROTY', 'rotation Y (°)', 0, { optional: true }),
+      num('SCALE', 'échelle', 1, { optional: true })
+    ], selfOnly: true, dims: ['3d'], keywords: '3d transform position rotation echelle scale translation' });
+ex('pf_3d_apply_force', 'Appliquer force 3D', 'move', 'Applique une impulsion ou force physique 3D sur le corps rigide (vecteur X, Y, Z).',
+  { inputs: [num('X', 'force X', 0), num('Y', 'force Y', 0), num('Z', 'force Z', 0)], selfOnly: true, dims: ['3d'], keywords: '3d physique force impulsion impulse rapier' });
 
 ex('pf_tween_to', 'Animer vers', 'look', 'Anime l\'objet vers ces valeurs. Les entrées laissées vides ne changent pas. Pour un objet à gravité, coupe d\'abord la gravité.',
   { inputs: [any('X', 'x', undefined, { optional: true }), any('Y', 'y', undefined, { optional: true }),
@@ -224,6 +234,8 @@ ex('pf_tween_to', 'Animer vers', 'look', 'Anime l\'objet vers ces valeurs. Les e
 
 // Apparence ------------------------------------------------------------------
 ex('pf_play', 'Jouer l\'animation', 'look', 'Joue une animation du sprite de l\'objet.', { fields: [fdyn('ANIM', 'animation', 'anim')], selfOnly: true, keywords: 'animation play' });
+ex('pf_3d_play_anim', 'Animer modèle 3D', 'look', 'Joue une animation du modèle 3D glTF (ex: idle, walk, run, jump).',
+  { inputs: [str('ANIM', 'animation', 'idle')], selfOnly: true, dims: ['3d'], keywords: '3d animation animer gltf clip play walk idle' });
 ex('pf_visible', 'Afficher / cacher', 'look', 'Affiche ou cache l\'objet.', { fields: [dd('ON', 'objet', [['afficher', 'true'], ['cacher', 'false']], 'true')], selfOnly: true, keywords: 'visible' });
 ex('pf_alpha', 'Opacité', 'look', 'Opacité de l\'objet (0 à 1).', { inputs: [num('VALUE', 'opacité', 1)], selfOnly: true, keywords: 'alpha' });
 ex('pf_tint_set', 'Teinter', 'look', 'Teinte l\'objet avec une couleur.', { inputs: [col('COLOR', 'couleur', '#ff8040')], selfOnly: true, keywords: 'tint couleur' });
@@ -313,6 +325,34 @@ pu('pf_ray_last', 'Dernier rayon', 'tile', 'any', 'Lit le résultat du dernier r
 pu('pf_ray_get', 'Champ du rayon', 'tile', 'any', 'Lit un champ d\'un résultat de « Rayon (résultat) » mis dans une variable.',
   { inputs: [any('RAY', 'rayon')], fields: [dd('FIELD', 'champ', RAY_FIELDS)], keywords: 'raycast' });
 pu('pf_side', 'Côté', 'tile', 'string', 'Un côté, à comparer avec « côté touché » ou « tuile touchée : côté ».', { fields: [fSide()] });
+
+const RAY_3D_FIELDS = [
+  ['touché (hit)', 'hit'],
+  ['distance', 'distance'],
+  ['point impact X', 'pointX'],
+  ['point impact Y', 'pointY'],
+  ['point impact Z', 'pointZ'],
+  ['normale X', 'normalX'],
+  ['normale Y', 'normalY'],
+  ['normale Z', 'normalZ'],
+  ['nom de l\'objet', 'objectName'],
+  ['instance touchée', 'instance'],
+];
+
+pu('pf_3d_raycast', 'Rayon 3D (résultat)', 'tile', 'any', 'Lance un rayon 3D contre les blocs et objets. Renvoie le résultat à lire avec « Champ du rayon 3D ».',
+  { inputs: [
+      num('X', 'origine X', 0),
+      num('Y', 'origine Y', 1),
+      num('Z', 'origine Z', 0),
+      num('DIR_X', 'direction X', 0),
+      num('DIR_Y', 'direction Y', 0),
+      num('DIR_Z', 'direction Z', -1),
+      num('DIST', 'distance max', 20)
+    ],
+    fields: [dd('MODE', 'cible', [['blocs et objets', 'all'], ['blocs seulement', 'blocks'], ['objets seulement', 'objects']], 'all')],
+    dims: ['3d'], keywords: '3d raycast rayon impact collision obstacle' });
+pu('pf_3d_ray_get', 'Champ du rayon 3D', 'tile', 'any', 'Lit un champ du résultat d\'un rayon 3D.',
+  { inputs: [any('RAY', 'rayon')], fields: [dd('FIELD', 'champ', RAY_3D_FIELDS)], dims: ['3d'], keywords: '3d raycast rayon champ impact' });
 
 // Son ------------------------------------------------------------------------
 ex('pf_play_sound', 'Jouer un son', 'sound', 'Joue un son du projet ou un preset (volume 0-1, pitch 1 = normal).',

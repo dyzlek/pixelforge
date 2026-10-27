@@ -31,6 +31,7 @@ try {
     'pixelforge_guide', 'list_games', 'create_game', 'get_game', 'delete_game', 'duplicate_game', 'set_settings',
     'upsert_sprite', 'get_sprite', 'upsert_model', 'get_model', 'upsert_object', 'set_script', 'get_script', 'list_nodes',
     'upsert_map', 'paint_map', 'set_layer', 'upsert_scene3d', 'paint_gridmap', 'place_entities', 'render_map', 'render_scene3d',
+    'upsert_node3d', 'set_transform', 'import_model', 'set_material', 'add_light',
     'add_sound', 'upsert_song', 'get_song', 'validate_game', 'export_html',
   ]) assert.ok(tools.includes(n), 'missing tool ' + n);
 
@@ -161,6 +162,14 @@ on('update', () => {
   });
   await call('upsert_object', { game: 'test-3d', name: 'PillarObj', model: 'Pillar' });
   await call('paint_gridmap', { game: 'test-3d', scene: 'Main 3D', level: 0, rows: ['22', '22'], x: 0, z: 0 });
+
+  // Test des 5 nouveaux outils 3D (MCP F10)
+  await call('import_model', { game: 'test-3d', name: 'Adventurer', preset: 'cc0_adventurer' });
+  await call('set_material', { game: 'test-3d', name: 'Gold', color: '#ffcd75', roughness: 0.2, metalness: 0.8 });
+  await call('add_light', { game: 'test-3d', scene: 'Main 3D', name: 'Torch', type: 'point', color: '#ffcd75', intensity: 2.0, position: [0, 3, 0] });
+  await call('upsert_node3d', { game: 'test-3d', scene: 'Main 3D', name: 'AdventurerNode', kind: 'mesh', object: 'PillarObj', material: 'Gold', position: [1, 0, 1] });
+  await call('set_transform', { game: 'test-3d', scene: 'Main 3D', node: 'AdventurerNode', position: [2, 0, 2], rotation: [0, 90, 0], scale: [1.5, 1.5, 1.5] });
+
   const rendered3D = await call('render_scene3d', { game: 'test-3d', scene: 'Main 3D' });
   assert.match(rendered3D, /Scene 3D "Main 3D"/);
   const val3D = await call('validate_game', { game: 'test-3d' });

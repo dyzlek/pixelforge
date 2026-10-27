@@ -16,8 +16,13 @@ import {
   paintMap,
   setLayer,
   upsertModel,
+  importModel,
   getModel,
+  setMaterial,
   upsertScene3D,
+  upsertNode3D,
+  setTransform,
+  addLight,
   paintGridMap,
   placeEntities,
   addSound,
@@ -410,6 +415,102 @@ export const AGENT_TOOLS = [
   {
     type: 'function',
     function: {
+      name: 'upsert_node3d',
+      description: 'Cree ou modifie un noeud 3D (mesh, light, camera, group, prefab).',
+      parameters: {
+        type: 'object',
+        properties: {
+          scene: { type: 'string', description: 'Nom de la scene 3D' },
+          name: { type: 'string', description: 'Nom du noeud' },
+          kind: { type: 'string', enum: ['mesh', 'light', 'camera', 'group', 'prefab'] },
+          parent: { type: 'string' },
+          position: { type: 'array', items: { type: 'number' } },
+          rotation: { type: 'array', items: { type: 'number' } },
+          scale: { type: 'array', items: { type: 'number' } },
+          object: { type: 'string' },
+          material: { type: 'string' },
+          prefab: { type: 'string' },
+          props: { type: 'object' },
+        },
+        required: ['name'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'set_transform',
+      description: 'Modifie la position, rotation ou echelle d\'un noeud ou entite 3D.',
+      parameters: {
+        type: 'object',
+        properties: {
+          scene: { type: 'string' },
+          node: { type: 'string', description: 'Nom ou id du noeud' },
+          position: { type: 'array', items: { type: 'number' } },
+          rotation: { type: 'array', items: { type: 'number' } },
+          scale: { type: 'array', items: { type: 'number' } },
+        },
+        required: ['node'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'import_model',
+      description: 'Importe un modele 3D (preset CC0 ou glTF donnees base64 ou voxel).',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Nom du modele' },
+          preset: { type: 'string', description: 'Nom de preset CC0' },
+          gltf: { type: 'string', description: 'Data URL glTF' },
+          slices: { type: 'array' },
+        },
+        required: ['name'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'set_material',
+      description: 'Cree ou modifie un materiau 3D (couleur, rugosite, metallicite, emission).',
+      parameters: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          color: { type: 'string' },
+          roughness: { type: 'number' },
+          metalness: { type: 'number' },
+          emissive: { type: 'string' },
+        },
+        required: ['name'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'add_light',
+      description: 'Ajoute ou modifie une source lumineuse 3D (point ou spot) dans une scene.',
+      parameters: {
+        type: 'object',
+        properties: {
+          scene: { type: 'string' },
+          name: { type: 'string' },
+          type: { type: 'string', enum: ['point', 'spot'] },
+          color: { type: 'string' },
+          intensity: { type: 'number' },
+          position: { type: 'array', items: { type: 'number' } },
+        },
+        required: ['name'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'set_settings',
       description: 'Modifie les parametres generaux du projet (dimensions ecran, gravite, taille de tuile, palette, carte de depart).',
       parameters: {
@@ -676,6 +777,16 @@ export async function executeTool(project, name, rawArgs = {}, options = {}) {
       return upsertScene3D(project, args);
     case 'paint_gridmap':
       return paintGridMap(project, args);
+    case 'upsert_node3d':
+      return upsertNode3D(project, args);
+    case 'set_transform':
+      return setTransform(project, args);
+    case 'import_model':
+      return importModel(project, args);
+    case 'set_material':
+      return setMaterial(project, args);
+    case 'add_light':
+      return addLight(project, args);
     case 'set_settings':
       return setSettings(project, args);
     case 'validate_game': {
@@ -741,6 +852,11 @@ Outils disponibles :
 - upsert_model : creer ou modifier un modele 3D voxel
 - get_model : inspecter un modele 3D voxel
 - upsert_scene3d : creer ou modifier une scene 3D
+- upsert_node3d : creer ou modifier un noeud 3D
+- set_transform : modifier la position, rotation ou echelle d'un noeud ou entite 3D
+- import_model : importer un modele 3D (preset CC0 ou glTF)
+- set_material : configurer un materiau 3D
+- add_light : ajouter ou modifier une lumiere 3D
 - paint_gridmap : peindre des blocs voxels dans une scene 3D
 - set_settings : modifier les reglages generaux du projet
 - validate_game : verifier la validite du jeu

@@ -174,6 +174,67 @@ tool('render_map', 'ASCII view of a 2D map: combined tiles (base-36 index) + ent
 
 tool('render_scene3d', 'ASCII layer-by-layer view of a 3D scene (ruler, X/Z grid per Y level with block colors and capital letters for entities). Use it to inspect 3D levels.', { game: gameArg, scene: z.string().optional() }, ({ game, scene }) => pf.renderScene3D(pf.loadGame(game), scene));
 
+tool('upsert_node3d', 'Create or update a 3D scene node (mesh, light, camera, group, prefab).', {
+  game: gameArg, scene: z.string().optional().describe('3D scene name (default: start scene)'),
+  id: z.string().optional().describe('node id (auto-generated if omitted)'),
+  name: z.string().describe('node name'),
+  kind: z.enum(['mesh', 'light', 'camera', 'group', 'prefab']).optional().describe('node kind (default: mesh)'),
+  parent: z.string().nullable().optional().describe('parent node id'),
+  position: z.array(z.number()).optional().describe('[x, y, z] position'),
+  rotation: z.array(z.number()).optional().describe('[rx, ry, rz] rotation degrees'),
+  scale: z.array(z.number()).optional().describe('[sx, sy, sz] scale'),
+  object: z.string().optional().describe('object template name or id (for kind mesh)'),
+  material: z.string().optional().describe('material name or id'),
+  prefab: z.string().optional().describe('prefab name or id (for kind prefab)'),
+  props: z.record(z.string(), z.any()).optional().describe('specific node properties'),
+  visible: z.boolean().optional(),
+  locked: z.boolean().optional(),
+}, ({ game, ...a }) => write(game, `node "${a.name}"`, (p) => pf.upsertNode3D(p, a)));
+
+tool('set_transform', 'Set or update the 3D transform (position, rotation, scale) of a node or entity in a 3D scene.', {
+  game: gameArg, scene: z.string().optional().describe('3D scene name (default: start scene)'),
+  node: z.string().describe('node name, node id, or entity id'),
+  position: z.array(z.number()).optional().describe('[x, y, z] position coordinates'),
+  rotation: z.array(z.number()).optional().describe('[rx, ry, rz] rotation in degrees'),
+  scale: z.array(z.number()).optional().describe('[sx, sy, sz] scale factors'),
+}, ({ game, ...a }) => write(game, `transform of "${a.node}"`, (p) => pf.setTransform(p, a)));
+
+tool('import_model', 'Import a 3D model: CC0 preset (e.g. cc0_adventurer, cc0_knight, cc0_crate, cc0_barrel), glTF base64 data URL, or voxel slices.', {
+  game: gameArg, name: z.string().describe('model name'),
+  preset: z.string().optional().describe('CC0 preset name/id: cc0_adventurer, cc0_knight, cc0_crate, cc0_barrel'),
+  gltf: z.string().optional().describe('base64 glTF or GLB data URL'),
+  slices: z.array(z.array(z.string())).optional().describe('array of Y slices for voxel model'),
+  legend: z.record(z.string(), z.string()).optional(),
+  voxels: z.record(z.string(), z.any()).optional(),
+  width: z.number().int().optional(), height: z.number().int().optional(), depth: z.number().int().optional(),
+}, ({ game, ...a }) => write(game, `model "${a.name}"`, (p) => pf.importModel(p, a)));
+
+tool('set_material', 'Create or update a 3D material (PBR color, roughness, metalness, emissive, texture).', {
+  game: gameArg, id: z.string().optional().describe('material id (auto-generated if omitted)'),
+  name: z.string().describe('material name'),
+  color: z.string().optional().describe('hex color e.g. #ffffff'),
+  roughness: z.number().min(0).max(1).optional().describe('surface roughness 0.0 to 1.0'),
+  metalness: z.number().min(0).max(1).optional().describe('metalness 0.0 to 1.0'),
+  emissive: z.string().optional().describe('emissive hex color e.g. #000000'),
+  textureSprite: z.string().optional().describe('sprite name or id for texture map'),
+  opacity: z.number().min(0).max(1).optional(),
+  transparent: z.boolean().optional(),
+}, ({ game, ...a }) => write(game, `material "${a.name}"`, (p) => pf.setMaterial(p, a)));
+
+tool('add_light', 'Add or update a light node (point or spot light) in a 3D scene.', {
+  game: gameArg, scene: z.string().optional().describe('3D scene name (default: start scene)'),
+  name: z.string().describe('light name'),
+  type: z.enum(['point', 'spot']).optional().describe('light type: point or spot (default: point)'),
+  color: z.string().optional().describe('light color hex (default #ffcd75)'),
+  intensity: z.number().optional().describe('light intensity (default: 1.5)'),
+  position: z.array(z.number()).optional().describe('[x, y, z] position (default [0, 2, 0])'),
+  distance: z.number().optional().describe('light maximum distance (default 12)'),
+  decay: z.number().optional().describe('light decay rate (default 2)'),
+  angle: z.number().optional().describe('spot light angle in degrees (default 45)'),
+  penumbra: z.number().optional().describe('spot light penumbra (default 0.2)'),
+  castShadow: z.boolean().optional().describe('whether light casts shadows (default false)'),
+}, ({ game, ...a }) => write(game, `light "${a.name}"`, (p) => pf.addLight(p, a)));
+
 tool('add_sound', `Add or update a synthesized sound effect. Presets: ${pf.SOUND_PRESETS.join(', ')}. See SCRIPT_API for how scripts play sounds.`, {
   game: gameArg, name: z.string(), preset: z.enum(pf.SOUND_PRESETS), pitch: z.number().optional(), volume: z.number().optional(),
 }, ({ game, ...a }) => write(game, null, (p) => pf.addSound(p, a)));
