@@ -694,4 +694,67 @@ test.describe('PixelForge Studio E2E Tests', () => {
     const btnStop = page.locator('.pf-music-transport .pf-transport-btn[title*="Arreter"]');
     await btnStop.click();
   });
+
+  test('console de mixage, rack d effets et departs auxiliaires (sends)', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // Ouvrir l'editeur musical via workspace
+    await page.evaluate(async () => {
+      await window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
+    });
+    await expect(page.locator('.pf-music-rack')).toBeVisible({ timeout: 10000 });
+
+    // Basculer sur la vue Mixer
+    const btnMixer = page.locator('.pf-transport-btn', { hasText: 'MIXER' });
+    await expect(btnMixer).toBeVisible();
+    await btnMixer.click();
+
+    // Verifier la presence de la console et des tranches
+    const strips = page.locator('.pf-mixer-strip');
+    await expect(strips.first()).toBeVisible();
+
+    // Selectionner la premiere tranche de canal
+    const firstTrack = strips.nth(1);
+    await firstTrack.click();
+    await expect(firstTrack).toHaveClass(/selected/);
+
+    // Verifier la presence du rack d'effets
+    const fxPanel = page.locator('.pf-mixer-fx-panel');
+    await expect(fxPanel).toBeVisible();
+    await expect(fxPanel).toContainText(/Rack d'Effets/i);
+
+    // Ajouter un effet Reverb
+    const addFxSelect = fxPanel.locator('select.pf-btn-add-channel').first();
+    await expect(addFxSelect).toBeVisible();
+    await addFxSelect.selectOption('reverb');
+
+    // Verifier que l'effet Reverb apparait dans la liste
+    const fxSlots = fxPanel.locator('.pf-fx-slot');
+    await expect(fxSlots.first()).toBeVisible();
+    await expect(fxSlots.first()).toContainText(/Reverberation/i);
+
+    // Verifier que le projet a bien enregistre l'effet sur la piste
+    const hasReverb = await page.evaluate(() => {
+      const s = window.__pfStore.project.songs?.[0];
+      const ch = s?.channels?.[0];
+      return ch?.effects?.some((e) => e.type === 'reverb');
+    });
+    expect(hasReverb).toBe(true);
+
+    // Tester la bascule Bypass
+    const bypassBtn = fxSlots.first().locator('button', { hasText: /Actif|Bypass/i });
+    await bypassBtn.click();
+    await expect(fxSlots.first()).toHaveClass(/bypass/);
+
+    // Ajouter un deuxieme effet (Distorsion)
+    await addFxSelect.selectOption('distortion');
+    await expect(fxSlots).toHaveCount(2);
+
+    // Tester le deplacement d'effet vers le haut
+    const btnUp = fxSlots.nth(1).locator('button', { hasText: '▲' });
+    if (await btnUp.isVisible()) {
+      await btnUp.click();
+    }
+  });
 });

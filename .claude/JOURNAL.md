@@ -1,5 +1,35 @@
 # Journal — PixelForge
 
+## 2026-10-27 (58) — [Phase G] G3 : effets audio par piste et en départ (Issue #83)
+- **Fait** :
+  - `src/audio/chip.js` :
+    - Implementation des 8 effets audio WebAudio natifs (zero import externe, compatibles temps reel et OfflineAudioContext pour export WAV) :
+      - `reverb` : simulation d'espace acoustique par convolution procedurale d'impulsion stereo (`ConvolverNode`), pre-delai et controle de taille / amortissement.
+      - `delay` : echo stereo avec synchronisation rythmique en fractions de temps (`1/4`, `1/8`, `3/16`...), retour feedback et filtrage passe-bas analogique.
+      - `eq3` : egaliseur 3 bandes en cascade (grave lowshelf 100 Hz, medium peaking 1 kHz, aigu highshelf 8 kHz).
+      - `compressor` : controle dynamique de dynamique (`DynamicsCompressorNode`) avec seuil, knee, ratio, attaque, relachement et gain de rattrapage makeup.
+      - `filter` : filtre resonant biquad (passe-bas, passe-haut, passe-bande) avec frequence de coupure et resonance Q reglables.
+      - `distortion` : saturation et overdrive analogique douce par fonction de transfert mathematique tangente hyperbolique (`WaveShaperNode`).
+      - `chorus` : chorus stereo a doubleur harmonique et modulation de delai par LFO.
+      - `bitcrusher` : reducteur de resolution 2 a 16 bits par quantification d'amplitude et filtrage passe-bas d'anti-repliement.
+    - Integration dans `playSong` :
+      - Chaine d'effets serielle par piste (`input -> fx1 -> ... -> fxN -> fader -> panner -> songGain`).
+      - Departs auxiliaires (`sends`) configurables depuis n'importe quelle piste vers un autre bus auxiliaire avec faders de gain independants.
+      - Nettoyage et deconnexion complete de tous les noeuds d'effets et departs a l'arret de la musique.
+    - Export de `VALID_EFFECTS` et methode `createEffectNode`.
+  - `src/core/ops/validate.js` & `docs/PROJECT_SCHEMA.json` :
+    - Enregistrement des schemas `effects` et `sends` pour les pistes et validation dans `validateProject`.
+  - `src/editors/music/` (`mixer.js`, `music.css`) :
+    - Refonte de la console de mixage avec separation tranches / Rack d'effets et departs auxiliaires.
+    - Selection dynamique de la tranche active avec surbrillance bleue.
+    - Rack d'effets complet : reordonnancement des effets par boutons monter/descendre ou glisser-deposer (drag-and-drop), bascule Bypass, reglages de parametres et suppression.
+    - Menu d'ajout des 8 effets audio et gestion des departs vers d'autres pistes de mixage.
+  - Tests :
+    - `src/audio/test/chip.test.mjs` : tests unitaires des 8 effets, du mode bypass, du routage en chaine et des departs auxiliaires.
+    - `e2e/studio.spec.js` : test 13 Playwright validant l'ouverture de la vue Mixer, la selection de tranche, l'ajout d'effets (Reverb, Distorsion), le mode bypass et le reordonnancement.
+- **Verifie** : `npm test` (tous les tests unitaires verts), `npm run check:doc`, `npm run build`, validation `cube-runner` et `exemple-plateforme-qiqv`, et `npm run test:e2e` (13 tests Playwright verts).
+- **Etat** : Branche `feat/audio-effects`, Closes #83.
+
 ## 2026-10-27 (57) — [Phase G] G2 : instruments (synthés, sampler, boîte à rythmes) et préréglages (Issue #82)
 - **Fait** :
   - `src/audio/chip.js` :

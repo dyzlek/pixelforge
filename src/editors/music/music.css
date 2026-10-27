@@ -808,6 +808,12 @@
   flex-shrink: 0;
 }
 
+.pf-mixer-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
 .pf-mixer-strips {
   display: flex;
   flex: 1;
@@ -828,6 +834,108 @@
   padding: 8px;
   gap: 8px;
   align-items: center;
+  cursor: pointer;
+}
+
+.pf-mixer-strip.selected {
+  border-color: #41a6f6;
+  box-shadow: 0 0 8px rgba(65, 166, 246, 0.4);
+}
+
+.pf-strip-fx-badge {
+  font-size: 9px;
+  font-weight: bold;
+  padding: 1px 4px;
+  background: #3b5dc9;
+  color: #fff;
+  border-radius: 3px;
+}
+
+.pf-mixer-fx-panel {
+  width: 340px;
+  background: #111422;
+  border-left: 1px solid var(--border, #262a3f);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 14px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pf-fx-empty {
+  font-size: 12px;
+  color: var(--text-dim, #717791);
+  text-align: center;
+  padding: 24px 12px;
+  line-height: 1.5;
+}
+
+.pf-fx-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #23273c;
+  padding-bottom: 8px;
+  font-size: 12px;
+}
+
+.pf-fx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-fx-empty-slot {
+  font-size: 11px;
+  color: #566c86;
+  font-style: italic;
+  padding: 6px 0;
+}
+
+.pf-fx-slot {
+  background: #181c2e;
+  border: 1px solid #282d46;
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pf-fx-slot.bypass {
+  opacity: 0.6;
+  filter: grayscale(0.5);
+}
+
+.pf-fx-slot-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.pf-fx-slot-title {
+  font-weight: 600;
+  font-size: 11px;
+  color: #f4f4f4;
+}
+
+.pf-fx-slot-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 4px;
+  border-top: 1px solid #21253b;
+}
+
+.pf-fx-param-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #94b0c2;
+  gap: 8px;
 }
 
 .pf-mixer-strip.master {

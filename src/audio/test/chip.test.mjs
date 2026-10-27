@@ -1,6 +1,6 @@
 // Test unitaire du moteur audio chiptune (chip.js).
 import assert from 'node:assert/strict';
-import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, INSTRUMENT_PRESETS, MASTER_GAIN, generateSfxr, mutateSfxr, drumPiece } from '../chip.js';
+import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, INSTRUMENT_PRESETS, VALID_EFFECTS, MASTER_GAIN, generateSfxr, mutateSfxr, drumPiece } from '../chip.js';
 import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../editors/music/pianoroll.js';
 import { encodeWav } from '../wav-encoder.js';
 import { parseMidi, midiToSong } from '../midi-parser.js';
@@ -64,10 +64,41 @@ function createMockAudioContext() {
         type: 'lowpass',
         frequency: createParam(350),
         Q: createParam(1),
-        connect() {}
+        gain: createParam(0),
+        connect() {},
+        disconnect() {}
       };
       nodes.push(f);
       return f;
+    },
+    createDelay(max = 1) {
+      const d = { delayTime: createParam(0), connect() {}, disconnect() {} };
+      nodes.push(d);
+      return d;
+    },
+    createWaveShaper() {
+      const ws = { curve: null, oversample: 'none', connect() {}, disconnect() {} };
+      nodes.push(ws);
+      return ws;
+    },
+    createDynamicsCompressor() {
+      const c = {
+        threshold: createParam(-24),
+        knee: createParam(30),
+        ratio: createParam(12),
+        attack: createParam(0.003),
+        release: createParam(0.25),
+        reduction: 0,
+        connect() {},
+        disconnect() {}
+      };
+      nodes.push(c);
+      return c;
+    },
+    createConvolver() {
+      const cv = { buffer: null, normalize: true, connect() {}, disconnect() {} };
+      nodes.push(cv);
+      return cv;
     },
     createBuffer(channels, length, rate) {
       const data = new Float32Array(length);
@@ -834,6 +865,84 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
   const ctrl = audio.playSong(dawSong, { loop: false, volume: 1 });
   assert.ok(ctrl, 'playSong doit jouer le morceau DAW v2 sans erreur');
   assert.equal(ctrl.tracks.length, 4, 'Doit instancier les 4 pistes');
+  ctrl.stop(0);
+}
+
+// 20. Effets audio par piste et departs auxiliaires (sends) (Issue #83, G3)
+{
+  const { mockCtx, nodes } = createMockAudioContext();
+  const audio = createChipAudio(mockCtx);
+
+  // (a) Verification de la liste des 8 effets valides
+  const expectedEffects = ['reverb', 'delay', 'eq3', 'compressor', 'filter', 'distortion', 'chorus', 'bitcrusher'];
+  assert.equal(VALID_EFFECTS.length, 8, '8 effets doivent etre definis');
+  for (const fxType of expectedEffects) {
+    assert.ok(VALID_EFFECTS.includes(fxType), `VALID_EFFECTS doit contenir ${fxType}`);
+  }
+
+  // (b) Instanciation unitaire de chacun des 8 effets
+  for (const fxType of expectedEffects) {
+    const fxNode = audio.createEffectNode({ type: fxType, mix: 0.5 });
+    assert.ok(fxNode && fxNode.inputNode && fxNode.outputNode, `L'effet ${fxType} doit posseder inputNode et outputNode`);
+    assert.equal(typeof fxNode.disconnect, 'function');
+    fxNode.disconnect();
+  }
+
+  // Mode Bypass
+  const bypassNode = audio.createEffectNode({ type: 'reverb', bypass: true });
+  assert.ok(bypassNode.bypass, 'Le mode bypass doit etre pris en compte');
+  bypassNode.disconnect();
+
+  // (c) Routage dans playSong avec chaine d'effets et departs auxiliaires (sends)
+  const songWithEffectsAndSends = {
+    bpm: 130,
+    tracks: [
+      {
+        id: 't_lead',
+        name: 'Lead Synth',
+        instrument: 'synth_sub',
+        volume: 0.8,
+        effects: [
+          { type: 'distortion', drive: 0.4, mix: 0.3 },
+          { type: 'delay', time: '1/8', feedback: 0.4, mix: 0.35 }
+        ],
+        sends: [
+          { busId: 't_aux_reverb', amount: 0.45 }
+        ]
+      },
+      {
+        id: 't_aux_reverb',
+        name: 'Aux Reverb',
+        instrument: 'pulse50',
+        volume: 0.7,
+        effects: [
+          { type: 'reverb', roomSize: 1.2, damp: 0.8, mix: 1.0 }
+        ]
+      }
+    ],
+    clips: [
+      {
+        trackId: 't_lead',
+        type: 'notes',
+        start: 0,
+        length: 16,
+        notes: [{ step: 0, pitch: 'C4', length: 4 }]
+      }
+    ]
+  };
+
+  const ctrl = audio.playSong(songWithEffectsAndSends, { loop: false, volume: 1 });
+  assert.ok(ctrl, 'playSong doit instancier le morceau avec effets et sends');
+  assert.equal(ctrl.tracks.length, 2, 'Doit instancier 2 bus de pistes');
+
+  const leadBus = ctrl.getTrack('t_lead');
+  assert.ok(leadBus, 'Bus lead accessible');
+  assert.equal(leadBus.fxNodes.length, 2, 'Lead doit posseder 2 noeuds d effets dans sa chaine');
+
+  const auxBus = ctrl.getTrack('t_aux_reverb');
+  assert.ok(auxBus, 'Bus aux reverb accessible');
+  assert.equal(auxBus.fxNodes.length, 1, 'Aux Reverb doit posseder 1 effet dans sa chaine');
+
   ctrl.stop(0);
 }
 
