@@ -1,5 +1,66 @@
 # Journal — PixelForge
 
+## 2026-10-27 (57) — [Phase G] G2 : instruments (synthés, sampler, boîte à rythmes) et préréglages (Issue #82)
+- **Fait** :
+  - `src/audio/chip.js` :
+    - Implementation des 4 nouvelles familles d'instruments DAW v2 dans `scheduleNote` et `playSong` :
+      - `synth_sub` (synthetiseur soustractif) : 2 oscillateurs (ondes NES/saw/triangle/sine, reglage d'octave et accord fin en cents, mixage individuel), filtre resonant biquad (passe-bas, passe-haut, passe-bande) avec enveloppe d'attaque/declin dediee et LFO assignable (pitch, filtre, amplitude).
+      - `synth_fm` (synthetiseur FM 4 operateurs DX-style) : 4 oscillateurs sinusoidaux avec ratios harmoniques, niveaux individuels, enveloppes ADSR par operateur et routage d'algorithmes (Cascade standard 1, Double modulateur 4, Piano electrique 5, Parallele additif 6).
+      - `drum_machine` (boite a rythmes) : synthese analogique percussive sans dependances (kick punchy 808/acoustique avec glissando rapide, snare combine corps triangulaire et bruit blanc filtre, charleston ferme/ouvert, tom, clap 808 multi-declenchements et cymbales).
+      - `sampler` (echantillonneur polyphonique) : lecture d'echantillons en memoire (`samplesCache`) avec suivi de frequence relative (`baseFreq / rootFreq`), boucle configurable et repli gracieux sans echantillon.
+    - Ajout de la banque de 11 prereglages `INSTRUMENT_PRESETS` couvrant toutes les categories requises (basses, nappes, leads, claviers, cordes, batteries) : `bass_808`, `bass_synth`, `bass_fm`, `lead_retro`, `lead_poly`, `pad_warm`, `pad_retro`, `piano_vintage`, `strings_ensemble`, `drums_808`, `drums_acoustic`.
+    - Exposition des methodes utilitaires `loadAudioSample`, `getAudioSample`, `previewPreset` et de l'objet `presets` dans `createChipAudio()`.
+  - `src/core/ops/validate.js` & `docs/PROJECT_SCHEMA.json` :
+    - Enregistrement des instruments `synth_sub`, `synth_fm`, `sampler`, `drum_machine` dans les schemas et le validateur de projet.
+  - `src/editors/music/` (`rack.js`, `index.js`, `pianoroll.js`) :
+    - `rack.js` : bouton d'audition d'un clic pour chaque canal, integration des prereglages et instruments DAW dans le menu d'ajout de canal `+ Ajouter un canal ou prereglage...`.
+    - `index.js` : prise en charge du callback `onAudition(ch)`, transmission des prereglages et parametres de synthese dans `onAddChannel` et `onStepToggle`.
+    - `pianoroll.js` : audition au clavier virtuel avec prise en compte du type d'instrument et des prereglages actifs.
+  - Tests :
+    - `src/audio/test/chip.test.mjs` : tests unitaires complets pour `synth_sub`, `synth_fm`, `drum_machine`, `sampler`, `loadAudioSample`, `previewPreset` et lecture de morceau multi-pistes DAW v2.
+    - `e2e/studio.spec.js` : test 12 Playwright validant l'ajout d'un canal par prereglage, l'audition d'un clic et la lecture dans le studio musical.
+- **Verifie** : `npm test` (tous les tests unitaires verts), `npm run check:doc`, `npm run build`, validation `cube-runner` et `exemple-plateforme-qiqv`, et `npm run test:e2e` (12 tests Playwright verts).
+- **Etat** : Branche `feat/audio-instruments`, Closes #82.
+
+## 2026-10-27 (56) — [Phase G] G1 : moteur audio v2 (pistes, bus et planificateur DAW) (Issue #81)
+- **Fait** :
+  - `src/audio/chip.js` :
+    - Graphe audio par piste (DAW v2) dans `playSong` : bus audio dedies (`input -> fader -> panner -> songGain/master`).
+    - Methodes dynamiques sur le controleur de lecture : `setTrackVolume`, `setTrackPan`, `setTrackMute`, `getTrack`, `tracks`.
+    - Prise en charge des clips de notes (`song.clips[]`).
+    - Methode `measureSchedulingPerformance(trackCount, stepCount)` validant la planification 16 pistes en moins de 100 ms.
+  - `src/core/project.js` :
+    - Normalisation bidirectionnelle dans `normalizeProject` entre `channels[]` et `tracks[]`.
+  - `docs/PROJECT_SCHEMA.json` :
+    - Ajout des schemas `tracks` et `clips` sous `song`.
+  - Tests :
+    - `src/audio/test/chip.test.mjs` : tests unitaires de planification 16 pistes, controle des bus et normalisation.
+- **Verifie** : `npm test`, `npm run check:doc`, `npm run build`, validation des jeux de demo et `npm run test:e2e` (11 tests Playwright verts).
+- **Etat** : Branche `feat/audio-bus-scheduler`, Closes #81.
+
+## 2026-10-27 (55) — [Phase G] G0 : conception du studio audio DAW v2 (Issue #80)
+- **Fait** :
+  - Redaction du document de conception architecturale et technique `docs/MUSIC.md` :
+    - Definition du pipeline audio DAW v2 a zero import externe (WebAudio pur JS).
+    - Modele de donnees unifie (`tracks[]`, `clips[]`, `automation[]`, `loop`).
+    - Typologie des 5 familles d'instruments (chiptune, synth_sub, synth_fm, sampler, drum_machine).
+    - Architecture des 7 effets WebAudio natifs et routage aux bus auxiliaires (sends).
+    - Retrocompatibilite totale et migration sans perte via `normalizeProject`.
+    - Budget memoire strict des echantillons audio (500 Ko par echantillon, 5 Mo par projet).
+- **Verifie** : `npm test`, `npm run check:doc`, `npm run build`, validation des jeux de demo et `npm run test:e2e`.
+- **Etat** : Branche `docs/audio-daw-design`, Closes #80.
+
+## 2026-10-27 (54) — [Phase F] F4 : modeles glTF 2.0 animes, materiaux et presets CC0 (Issue #73)
+- **Fait** :
+  - `CREDITS.md` : attribution complete de toutes les ressources CC0 (Kenney, Quaternius, Sweetie 16, MIT).
+  - `src/core/cc0-models.js` : generateurs de modeles glTF 2.0 CC0 embarques (Aventurier, Chevalier, Caisse, Baril).
+  - `src/runtime3d/engine3d.js` : integration de `GLTFLoader`, gestion des materiaux (`standard`, `unlit`, `toon`), boucle d'animation squelettique et transformationnelle avec `AnimationMixer` et cross-fade a 150 ms, support de `self.play('marche')`.
+  - `src/editors/voxel/index.js` : selecteur de presets CC0, previsualisation 3D et bascule entre voxel et glTF.
+  - `src/core/ops/validate.js` : validation des materiaux et modeles glTF.
+  - `e2e/studio.spec.js` : test 11 Playwright pour la selection de preset CC0.
+- **Verifie** : `npm test`, `npm run check:doc`, `npm run build`, validation des jeux de demo et `npm run test:e2e` (11 tests Playwright verts).
+- **Etat** : Branche `feat/gltf-animated-models`, Closes #73.
+
 ## 2026-10-27 (53) — [Phase F] F3 : navigation de la vue 3D façon Godot (Issue #72)
 - **Fait** :
   - `src/editors/scene3d/index.js` :

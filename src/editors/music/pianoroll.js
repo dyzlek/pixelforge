@@ -196,9 +196,12 @@ export function renderPianoRoll(container, opts) {
 
   function playAudition(midi) {
     if (chip) {
+      const instType = typeof channel?.instrument === 'string' ? channel.instrument : (channel?.instrument?.type || 'pulse50');
       chip.scheduleNote({
         pitch: midiToPitch(midi),
-        instrument: channel?.instrument || 'pulse50',
+        instrument: instType,
+        preset: channel?.preset || channel?.instrument?.preset,
+        params: channel?.params || channel?.instrument?.params,
         duration: 0.18,
         volume: (channel?.volume != null ? channel.volume : 0.8) * 0.7
       });

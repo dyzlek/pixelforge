@@ -1,6 +1,6 @@
 // Test unitaire du moteur audio chiptune (chip.js).
 import assert from 'node:assert/strict';
-import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, MASTER_GAIN, generateSfxr, mutateSfxr, drumPiece } from '../chip.js';
+import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, INSTRUMENT_PRESETS, MASTER_GAIN, generateSfxr, mutateSfxr, drumPiece } from '../chip.js';
 import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../editors/music/pianoroll.js';
 import { encodeWav } from '../wav-encoder.js';
 import { parseMidi, midiToSong } from '../midi-parser.js';
@@ -80,6 +80,11 @@ function createMockAudioContext() {
     },
     createPeriodicWave() {
       return { tag: 'PeriodicWave' };
+    },
+    decodeAudioData(buffer, success) {
+      const b = this.createBuffer(1, 4410, 44100);
+      if (success) success(b);
+      return Promise.resolve(b);
     }
   };
 
@@ -684,6 +689,152 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
   assert.equal(projLegacy.songs[0].tracks.length, 1);
   assert.equal(projLegacy.songs[0].tracks[0].id, 'ch1');
   assert.equal(projLegacy.songs[0].tracks[0].name, 'Lead');
+}
+
+// 19. Instruments DAW v2 et banque de prereglages (Issue #82, G2)
+{
+  const { mockCtx, nodes } = createMockAudioContext();
+  const audio = createChipAudio(mockCtx);
+
+  // (a) Presence des instruments et des prereglages
+  const dawInstruments = ['synth_sub', 'synth_fm', 'drum_machine', 'sampler'];
+  for (const inst of dawInstruments) {
+    assert.ok(INSTRUMENTS.includes(inst), `INSTRUMENTS doit inclure ${inst}`);
+  }
+
+  const expectedCategories = ['bass', 'lead', 'pad', 'keys', 'strings', 'drums'];
+  const presentCategories = new Set(Object.values(INSTRUMENT_PRESETS).map((p) => p.category));
+  for (const cat of expectedCategories) {
+    assert.ok(presentCategories.has(cat), `La banque de prereglages doit contenir la categorie ${cat}`);
+  }
+
+  // (b) Synthe soustractif (synth_sub) avec 2 oscillateurs, filtre resonant et LFO
+  const subHandle = audio.scheduleNote({
+    instrument: 'synth_sub',
+    pitch: 'A2',
+    duration: 0.4,
+    volume: 0.8,
+    preset: 'bass_808'
+  });
+  assert.ok(subHandle && typeof subHandle.stop === 'function', 'synth_sub doit renvoyer un handle avec stop()');
+  subHandle.stop();
+
+  // (c) Synthe FM 4 operateurs (synth_fm) avec algorithmes 1 et 5
+  const fmHandle1 = audio.scheduleNote({
+    instrument: 'synth_fm',
+    pitch: 'C4',
+    duration: 0.5,
+    volume: 0.85,
+    preset: 'bass_fm'
+  });
+  assert.ok(fmHandle1 && typeof fmHandle1.stop === 'function', 'synth_fm algo 1 doit fonctionner');
+  fmHandle1.stop();
+
+  const fmHandle5 = audio.scheduleNote({
+    instrument: 'synth_fm',
+    pitch: 'E4',
+    duration: 0.5,
+    volume: 0.85,
+    preset: 'piano_vintage'
+  });
+  assert.ok(fmHandle5 && typeof fmHandle5.stop === 'function', 'synth_fm algo 5 (piano) doit fonctionner');
+  fmHandle5.stop();
+
+  // (d) Boite a rythmes (drum_machine) pour toutes les pieces
+  const drumPieces = ['kick', 'snare', 'hat_closed', 'hat_open', 'tom', 'clap', 'cymbal'];
+  for (const piece of drumPieces) {
+    const handle = audio.scheduleNote({
+      instrument: 'drum_machine',
+      pitch: piece,
+      duration: 0.2,
+      volume: 0.9,
+      kit: '808'
+    });
+    assert.ok(handle && typeof handle.stop === 'function', `drum_machine doit synthetiser ${piece}`);
+    handle.stop();
+  }
+
+  // (e) Sampler polyphonique avec suivi de hauteur et cache
+  const sampleBuf = mockCtx.createBuffer(1, 4410, 44100);
+  await audio.loadAudioSample('snare_sample', sampleBuf);
+  assert.equal(audio.getAudioSample('snare_sample'), sampleBuf, 'loadAudioSample doit mettre en cache le buffer');
+
+  const samplerHandle = audio.scheduleNote({
+    instrument: 'sampler',
+    sampleId: 'snare_sample',
+    pitch: 'G4',
+    duration: 0.3,
+    rootPitch: 'C4'
+  });
+  assert.ok(samplerHandle && typeof samplerHandle.stop === 'function', 'sampler doit jouer un echantillon');
+  samplerHandle.stop();
+
+  // Repli gracieux pour un echantillon absent
+  const fallbackHandle = audio.scheduleNote({
+    instrument: 'sampler',
+    sampleId: 'missing_sample',
+    pitch: 'A4',
+    duration: 0.2
+  });
+  assert.ok(fallbackHandle && typeof fallbackHandle.stop === 'function', 'sampler repli sine');
+  fallbackHandle.stop();
+
+  // (f) Audition en 1-clic via previewPreset
+  for (const presetKey of Object.keys(INSTRUMENT_PRESETS)) {
+    const handle = audio.previewPreset(presetKey);
+    assert.ok(handle && typeof handle.stop === 'function', `previewPreset(${presetKey}) doit fonctionner`);
+    handle.stop();
+  }
+
+  // (g) Lecture d'un morceau complet integrant les 4 nouveaux instruments DAW v2
+  const dawSong = {
+    bpm: 125,
+    tracks: [
+      { id: 'sub', name: 'Basse Sub', instrument: 'synth_sub', preset: 'bass_synth', volume: 0.8 },
+      { id: 'fm', name: 'Keys FM', instrument: 'synth_fm', preset: 'piano_vintage', volume: 0.75 },
+      { id: 'drums', name: 'Rythmes 808', instrument: 'drum_machine', kit: '808', volume: 0.9 },
+      { id: 'smp', name: 'Sampleur', instrument: 'sampler', sampleId: 'snare_sample', volume: 0.7 }
+    ],
+    clips: [
+      {
+        trackId: 'sub',
+        type: 'notes',
+        start: 0,
+        length: 16,
+        notes: [{ step: 0, pitch: 'A2', length: 4 }, { step: 4, pitch: 'C3', length: 4 }]
+      },
+      {
+        trackId: 'fm',
+        type: 'notes',
+        start: 0,
+        length: 16,
+        notes: [{ step: 0, pitch: 'A4', length: 8 }, { step: 8, pitch: 'E4', length: 8 }]
+      },
+      {
+        trackId: 'drums',
+        type: 'notes',
+        start: 0,
+        length: 16,
+        notes: [
+          { step: 0, pitch: 'kick', length: 1 },
+          { step: 4, pitch: 'snare', length: 1 },
+          { step: 8, pitch: 'clap', length: 1 }
+        ]
+      },
+      {
+        trackId: 'smp',
+        type: 'notes',
+        start: 0,
+        length: 16,
+        notes: [{ step: 2, pitch: 'C4', length: 2 }]
+      }
+    ]
+  };
+
+  const ctrl = audio.playSong(dawSong, { loop: false, volume: 1 });
+  assert.ok(ctrl, 'playSong doit jouer le morceau DAW v2 sans erreur');
+  assert.equal(ctrl.tracks.length, 4, 'Doit instancier les 4 pistes');
+  ctrl.stop(0);
 }
 
 console.log('Tests chip.js reussis avec succes.');

@@ -646,4 +646,52 @@ test.describe('PixelForge Studio E2E Tests', () => {
     });
     expect(modelTypeAfterSwitch).toBe('voxel');
   });
+
+  test('instruments DAW v2 (synth_sub, synth_fm, drum_machine, sampler) et prereglages dans le studio musical', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // Ouvrir l'editeur musical via workspace
+    await page.evaluate(async () => {
+      await window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
+    });
+    const rack = page.locator('.pf-music-rack');
+    await expect(rack).toBeVisible({ timeout: 10000 });
+
+    // Verifier la presence du menu d'ajout de canal
+    const addSelect = page.locator('.pf-btn-add-channel');
+    await expect(addSelect).toBeVisible();
+
+    // Ajouter un canal avec le prereglage Basse 808
+    await addSelect.selectOption('preset:bass_808');
+
+    // Verifier que le canal a ete ajoute dans le projet
+    const channels = await page.evaluate(() => {
+      const s = window.__pfStore.project.songs?.[0];
+      return s?.channels?.map((c) => ({ id: c.id, name: c.name, inst: c.instrument, preset: c.preset }));
+    });
+
+    const added = channels.find((c) => c.preset === 'bass_808');
+    expect(added).toBeDefined();
+    expect(added.inst).toBe('synth_sub');
+
+    // Verifier la presence du bouton d'audition 1-clic
+    const auditionBtns = page.locator('.pf-channel-info .pf-transport-btn[title*="Ecouter"]');
+    await expect(auditionBtns.first()).toBeVisible();
+    await auditionBtns.first().click();
+
+    // Lancer la lecture et verifier que le sequenceur avance
+    const btnPlay = page.locator('.pf-music-transport .pf-transport-btn[title*="Lire"]');
+    await btnPlay.click();
+
+    await page.waitForFunction(() => {
+      return window.__pfMusicEditor && window.__pfMusicEditor.isPlaying();
+    }, { timeout: 3000 });
+
+    const isPlaying = await page.evaluate(() => window.__pfMusicEditor.isPlaying());
+    expect(isPlaying).toBe(true);
+
+    const btnStop = page.locator('.pf-music-transport .pf-transport-btn[title*="Arreter"]');
+    await btnStop.click();
+  });
 });

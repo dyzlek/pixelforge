@@ -238,7 +238,10 @@ export function validateProject(p) {
   }
 
   // ----- chansons -----
-  const VALID_INSTRUMENTS = new Set(['pulse12', 'pulse25', 'pulse50', 'triangle', 'saw', 'noise', 'wave', 'sample']);
+  const VALID_INSTRUMENTS = new Set([
+    'pulse12', 'pulse25', 'pulse50', 'triangle', 'saw', 'noise', 'wave', 'sample',
+    'synth_sub', 'synth_fm', 'sampler', 'drum_machine'
+  ]);
   for (const song of p.songs || []) {
     const sw = `song "${song.name}"`;
     if (!song.channels?.length) add('warning', sw, 'no channels');
