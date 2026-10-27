@@ -6,3 +6,5 @@ export * from './sprites.js';
 export * from './png.js';
 export * from './graph.js';
 export * from './song-text.js';
+export * from './render.js';
+export * from './validate.js';
