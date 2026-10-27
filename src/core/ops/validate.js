@@ -309,6 +309,17 @@ export function validateProject(p) {
         add('error', `${sw} marker "${mk.name || ''}"`, `invalid marker step "${mk.step}"`);
       }
     }
+    for (const auto of song.automation || []) {
+      const validTrack = auto.trackId === 'master' || chIds.has(auto.trackId) || (song.tracks || []).some((t) => t.id === auto.trackId);
+      if (auto.trackId && !validTrack) {
+        add('error', `${sw} automation "${auto.target || ''}"`, `automation references unknown track id "${auto.trackId}"`);
+      }
+      for (const pt of auto.points || []) {
+        if (typeof pt.step !== 'number' || pt.step < 0) {
+          add('error', `${sw} automation point`, `invalid step "${pt.step}"`);
+        }
+      }
+    }
   }
 
   // ----- modeles 3D -----

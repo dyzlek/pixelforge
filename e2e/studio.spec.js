@@ -1277,4 +1277,73 @@ test.describe('PixelForge Studio E2E Tests', () => {
     await page.keyboard.press('Delete');
     await expect(page.locator('.pf-pianoroll-note')).toHaveCount(2);
   });
+
+  test('automation des parametres sur la timeline DAW v2 (G6)', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir l editeur musical via workspace
+    await page.evaluate(async () => {
+      await window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
+    });
+
+    const rack = page.locator('.pf-music-rack');
+    await expect(rack).toBeVisible({ timeout: 10000 });
+
+    // 2. Basculer sur la vue Morceau (Playlist / Timeline)
+    const btnPlaylist = page.locator('.pf-transport-btn', { hasText: 'PLAYLIST' });
+    await expect(btnPlaylist).toBeVisible();
+    await btnPlaylist.click();
+
+    const playlistRoot = page.locator('.pf-playlist-root');
+    await expect(playlistRoot).toBeVisible();
+
+    // 3. Deplier la sous-piste d automation de la premiere piste
+    const btnAuto = page.locator('.pf-track-btn-auto').first();
+    await expect(btnAuto).toBeVisible();
+    await btnAuto.click();
+    await expect(btnAuto).toHaveClass(/active/);
+
+    // 4. Verifier l en-tete d automation et le selecteur de parametre cible
+    const autoHead = page.locator('.pf-playlist-auto-head').first();
+    await expect(autoHead).toBeVisible();
+
+    const targetSelect = autoHead.locator('.pf-auto-target-select');
+    await expect(targetSelect).toBeVisible();
+
+    // 5. Verifier que la sous-piste visuelle d automation et les noeuds sont affiches
+    const autoLane = page.locator('.pf-playlist-auto-lane').first();
+    await expect(autoLane).toBeVisible();
+
+    // 6. Cliquer sur le raccourci d ouverture de filtre sur 8 mesures
+    const btnSweep8 = autoHead.locator('button', { hasText: '8 mes' });
+    await expect(btnSweep8).toBeVisible();
+    await btnSweep8.click();
+
+    // 7. Verifier que les points sont enregistres dans le projet
+    const autoData = await page.evaluate(() => {
+      const s = window.__pfStore.project.songs?.[0];
+      return s?.automation?.[0];
+    });
+
+    expect(autoData).toBeDefined();
+    expect(autoData.target).toBe('filter.cutoff');
+    expect(autoData.points.length).toBe(2);
+    expect(autoData.points[0].step).toBe(0);
+    expect(autoData.points[1].step).toBe(128);
+
+    // 8. Verifier la presence des noeuds interactifs SVG sur la timeline
+    const nodes = autoLane.locator('.pf-auto-node');
+    await expect(nodes).toHaveCount(2);
+
+    // 9. Cliquer sur la sous-piste pour ajouter un point supplementaire
+    await autoLane.click({ position: { x: 200, y: 20 } });
+
+    const updatedPointsCount = await page.evaluate(() => {
+      const s = window.__pfStore.project.songs?.[0];
+      return s?.automation?.[0]?.points?.length;
+    });
+    expect(updatedPointsCount).toBe(3);
+    await expect(autoLane.locator('.pf-auto-node')).toHaveCount(3);
+  });
 });

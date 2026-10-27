@@ -404,6 +404,16 @@ export function normalizeProject(p) {
       step: typeof m.step === 'number' ? Math.max(0, m.step) : 0,
       name: m.name || 'Marqueur'
     }));
+    song.automation = Array.isArray(song.automation) ? song.automation.map((auto) => ({
+      id: auto.id || uid('auto'),
+      trackId: auto.trackId || (song.tracks[0]?.id || song.channels[0]?.id || 'master'),
+      target: auto.target || 'volume',
+      points: Array.isArray(auto.points) ? auto.points.map((pt) => ({
+        step: typeof pt.step === 'number' ? Math.max(0, pt.step) : 0,
+        value: typeof pt.value === 'number' ? pt.value : 0,
+        curve: pt.curve || 'linear'
+      })).sort((a, b) => a.step - b.step) : []
+    })) : [];
     song.timeSignature = Array.isArray(song.timeSignature) && song.timeSignature.length === 2
       ? [Math.max(1, song.timeSignature[0] || 4), Math.max(1, song.timeSignature[1] || 4)]
       : [4, 4];

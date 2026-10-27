@@ -1267,3 +1267,80 @@
   font-family: monospace;
   color: var(--text-dim, #717791);
 }
+
+/* Automation des Parametres DAW v2 (G6) */
+.pf-track-btn-auto {
+  background: #29366f;
+  color: #73eff7;
+  border-color: #41a6f6;
+  font-weight: bold;
+}
+
+.pf-track-btn-auto.active {
+  background: #3b5dc9;
+  color: #ffcd75;
+  border-color: #ffcd75;
+  box-shadow: 0 0 4px rgba(255, 205, 117, 0.4);
+}
+
+.pf-playlist-auto-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  background: #1f2233;
+  border-bottom: 1px solid #333c57;
+  border-right: 1px solid #333c57;
+  box-sizing: border-box;
+}
+
+.pf-auto-target-select {
+  background: #1a1c2c;
+  color: #73eff7;
+  border: 1px solid #333c57;
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 2px 4px;
+  outline: none;
+  cursor: pointer;
+  max-width: 110px;
+}
+
+.pf-auto-readout {
+  font-size: 9px;
+  font-family: monospace;
+  color: #ffcd75;
+  margin-left: 4px;
+  white-space: nowrap;
+}
+
+.pf-playlist-auto-lane {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: rgba(26, 28, 44, 0.85);
+  border-bottom: 1px solid #333c57;
+  box-sizing: border-box;
+  overflow: hidden;
+  cursor: crosshair;
+}
+
+.pf-auto-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.pf-auto-node {
+  cursor: pointer;
+  pointer-events: auto;
+  transition: r 0.1s ease;
+}
+
+.pf-auto-node:hover {
+  r: 7;
+  fill: #73eff7;
+}
