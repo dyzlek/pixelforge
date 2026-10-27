@@ -639,7 +639,10 @@ const same = (a, b) => norm(a) === norm(b);
   const n7 = g3.add('pf_camera_mode_3d', 700, 0, { fields: { MODE: 'third-person' } });
   const n8 = g3.add('pf_camera_follow_3d', 800, 0, { values: { DIST: 8, HEIGHT: 4 } });
   const n9 = g3.add('pf_pointer_lock', 900, 0);
-  g3.exec(e3, n1, n2, n3, n4, n5, n6, n7, n8, n9);
+  const n10 = g3.add('pf_3d_transform_set', 1000, 0, { values: { X: 5, Y: 10, Z: -2, ROTY: 180, SCALE: 2 } });
+  const n11 = g3.add('pf_3d_apply_force', 1100, 0, { values: { X: 0, Y: 15, Z: 5 } });
+  const n12 = g3.add('pf_3d_play_anim', 1200, 0, { values: { ANIM: 'run' } });
+  g3.exec(e3, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10, n11, n12);
 
   const r3 = code(g3);
   ok(r3.errors.length === 0, 'noeuds 3D compilent sans erreur');
@@ -652,6 +655,22 @@ const same = (a, b) => norm(a) === norm(b);
   ok(r3.code.includes("game.camera.setMode('third-person');"), 'camera_mode_3d');
   ok(r3.code.includes('game.camera.follow(self, { distance: 8, height: 4 });'), 'camera_follow_3d');
   ok(r3.code.includes('input.requestPointerLock();'), 'pointer_lock');
+  ok(r3.code.includes('self.setPosition(5, 10, -2);'), '3d_transform_set position');
+  ok(r3.code.includes('self.rotationY = 180;'), '3d_transform_set rotation');
+  ok(r3.code.includes('if (self.setScale) self.setScale(2);'), '3d_transform_set scale');
+  ok(r3.code.includes('self.applyImpulse(0, 15, 5);'), '3d_apply_force');
+  ok(r3.code.includes("self.play('run');"), '3d_play_anim');
+
+  // Test de raycast 3D
+  const gRay = G();
+  const eRay = gRay.add('pf_on_update', 0, 0);
+  const vRay = gRay.add('pf_3d_raycast', 100, 0, { values: { X: 0, Y: 1, Z: 0, DIR_X: 0, DIR_Y: 0, DIR_Z: 1, DIST: 30 }, fields: { MODE: 'all' } });
+  const sRay = gRay.add('var_set', 200, 0, { fields: { NAME: 'hitData' } });
+  gRay.link(vRay, 'out', sRay, 'VALUE');
+  gRay.link(eRay, 'then', sRay, 'exec');
+  const rRay = code(gRay);
+  ok(rRay.errors.length === 0, 'pf_3d_raycast compile sans erreur');
+  ok(rRay.code.includes('game.raycast3D'), 'game.raycast3D call');
 
   try {
     new Function('self', 'game', 'input', 'on', r3.code);

@@ -1,5 +1,39 @@
 # Journal — PixelForge
 
+## 2026-10-27 (65) — [Phase F] F10 : MCP, Blueprints et jeu de démo 3D low-poly (Issue #79)
+- **Fait** :
+  - `src/core/ops/ops.js` & `mcp/server.js` :
+    - Implementation de 5 nouveaux outils MCP purs et sans dependance DOM pour manipuler l'ensemble de l'editeur 3D :
+      - `upsert_node3d` : creation ou mise a jour d'un noeud dans la hierarchie 3D (mesh, light, camera, group, prefab).
+      - `set_transform` : modification de la position, rotation ou echelle d'un noeud ou d'une entite.
+      - `import_model` : importation d'un modele 3D depuis un preset CC0 (`cc0_adventurer`, `cc0_knight`, `cc0_crate`, `cc0_barrel`), glTF base64 ou voxel.
+      - `set_material` : configuration de materiaux PBR (couleur, rugosite, metallicite, emission, texture sprite).
+      - `add_light` : ajout ou mise a jour d'une source de lumiere ponctuelle (`point`) ou focalisee (`spot`).
+    - Preservation des noeuds non-entites (lumieres, cameras, prefabs) lors du remplacement d'entites dans `placeEntities`.
+    - Integration dans `src/ai/agent.js` permettant au Studio AI Copilot d'exploiter les nouveaux outils 3D.
+    - Tests d'integration complets dans `mcp/test/e2e.mjs`.
+  - `src/runtime3d/engine3d.js` :
+    - Zero import externe strictement preserve.
+    - Ajout de la methode `instance.setScale(sx, sy, sz)` avec synchronisation du maillage Three.js.
+    - Extension de `raycast3D(origin, dir, maxDist, opts)` avec prise en charge du raycasting contre les entites 3D vivantes (`opts.mode`, `opts.objects`, `opts.ignore`), resolution des instances touchees et alias `game.raycast`.
+    - Liaison bidirectionnelle des maillages Three.js d'entites et de sous-maillages glTF avec `mesh.userData.instance`.
+  - `src/graph/nodes.js` & `src/graph/compile.js` :
+    - 5 nouveaux noeuds Blueprints dedies au monde 3D :
+      - `pf_3d_transform_set` : transformation 3D (position, rotation Y, echelle).
+      - `pf_3d_apply_force` : impulsion physique Rapier (`self.applyImpulse(x, y, z)`).
+      - `pf_3d_play_anim` : lecture d'animation glTF squelettique avec fondu enchaine (`self.play(anim)`).
+      - `pf_3d_raycast` : raycast 3D contre les blocs et les objets (`game.raycast3D`).
+      - `pf_3d_ray_get` : extraction de metadonnees d'impact 3D (distance, point, normale, objet).
+    - Mise a jour de la documentation via `npm run doc:nodes` et tests unitaires dans `src/graph/test/graph.test.mjs`.
+  - Jeu de demonstration `games/adventure-3d.pixelforge.json` :
+    - Aventure 3D low-poly complete avec modele glTF anime Aventurier (Quaternius CC0), eclairage dynamique avec torches ponctuelles, physique Rapier 3D, musique chiptune tracker sur mesure `AdventureTheme`, cristaux rotatifs a collecter et coffre aux tresors avec victoire finale.
+    - Validation sans erreur ni avertissement par `npm run pf -- validate adventure-3d`.
+    - Ajout de la validation d'`adventure-3d` dans `.github/workflows/ci.yml` et le template de PR.
+  - Tests E2E :
+    - Ajout du test 20 dans `e2e/studio.spec.js` validant le chargement, les modeles glTF, les materiaux, les lumieres, la musique et le deroulement du jeu de demo 3D.
+- **Verifie** : `npm test` (2625 verifications, zero echec), `npm run check:doc`, `npm run build`, validation de tous les jeux de demo et `npm run test:e2e` (20/20 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/mcp-blueprints-demo-3d`, Closes #79.
+
 ## 2026-10-27 (64) — [Phase F] F9 : performances (InstancedMesh, mises à jour incrémentales) (Issue #78)
 - **Fait** :
   - `src/editors/scene3d/instanced-blocks.js` :

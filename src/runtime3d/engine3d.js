@@ -998,23 +998,114 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       } catch (e) { return dflt; }
     },
 
-    raycast3D(origin, dir, maxDist = 20) {
-      const ray = new ThreeLib.Raycaster(
-        new ThreeLib.Vector3(origin.x, origin.y, origin.z),
-        new ThreeLib.Vector3(dir.x, dir.y, dir.z).normalize(),
-        0,
-        maxDist
-      );
-      const hits = ray.intersectObjects(gridGroup.children, true);
-      if (hits.length > 0) {
-        const h = hits[0];
+    raycast3D(origin, dir, maxDist = 20, opts = null) {
+      const origVec = origin ? new ThreeLib.Vector3(origin.x ?? 0, origin.y ?? 0, origin.z ?? 0) : new ThreeLib.Vector3(0, 0, 0);
+      const dirVec = dir ? new ThreeLib.Vector3(dir.x ?? 0, dir.y ?? 0, dir.z ?? -1).normalize() : new ThreeLib.Vector3(0, 0, -1);
+      const limit = Number.isFinite(maxDist) ? maxDist : 20;
+
+      const ray = new ThreeLib.Raycaster(origVec, dirVec, 0, limit);
+
+      const mode = opts?.mode || (opts?.objects ? 'all' : 'blocks');
+      const testBlocks = mode === 'all' || mode === 'blocks';
+      const testObjects = mode === 'all' || mode === 'objects' || !!opts?.objects;
+
+      const ignoreSet = new Set();
+      if (opts?.ignore) {
+        if (Array.isArray(opts.ignore)) opts.ignore.forEach((x) => ignoreSet.add(x?.id || x));
+        else ignoreSet.add(opts.ignore.id || opts.ignore);
+      }
+
+      const allHits = [];
+
+      // 1. Raycast contre les blocs solides du GridMap
+      if (testBlocks && gridGroup.children.length > 0) {
+        const blockHits = ray.intersectObjects(gridGroup.children, true);
+        for (const h of blockHits) {
+          allHits.push({
+            distance: h.distance,
+            point: { x: h.point.x, y: h.point.y, z: h.point.z },
+            normal: h.face ? { x: h.face.normal.x, y: h.face.normal.y, z: h.face.normal.z } : { x: 0, y: 1, z: 0 },
+            instance: null,
+            objectName: null,
+            type: 'block',
+          });
+        }
+      }
+
+      // 2. Raycast contre les objets
+      if (testObjects) {
+        const candidateMeshes = [];
+        const meshToInst = new Map();
+        for (const inst of instances) {
+          if (inst.destroyed || ignoreSet.has(inst.id) || ignoreSet.has(inst)) continue;
+          if (typeof opts?.objects === 'string' && inst.objectName !== opts.objects) continue;
+          if (Array.isArray(opts?.objects) && !opts.objects.includes(inst.objectName)) continue;
+          if (inst.mesh) {
+            candidateMeshes.push(inst.mesh);
+            meshToInst.set(inst.mesh, inst);
+          }
+        }
+        if (candidateMeshes.length > 0) {
+          const objHits = ray.intersectObjects(candidateMeshes, true);
+          for (const h of objHits) {
+            let inst = h.object?.userData?.instance || meshToInst.get(h.object);
+            let cur = h.object;
+            while (!inst && cur && cur.parent) {
+              cur = cur.parent;
+              inst = cur.userData?.instance || meshToInst.get(cur);
+            }
+            if (inst && (ignoreSet.has(inst.id) || ignoreSet.has(inst))) continue;
+            allHits.push({
+              distance: h.distance,
+              point: { x: h.point.x, y: h.point.y, z: h.point.z },
+              normal: h.face ? { x: h.face.normal.x, y: h.face.normal.y, z: h.face.normal.z } : { x: 0, y: 1, z: 0 },
+              instance: inst || null,
+              objectName: inst ? inst.objectName : null,
+              type: 'object',
+            });
+          }
+        }
+      }
+
+      if (allHits.length > 0) {
+        allHits.sort((a, b) => a.distance - b.distance);
+        const best = allHits[0];
         return {
           hit: true,
-          point: { x: h.point.x, y: h.point.y, z: h.point.z },
-          normal: h.face ? { x: h.face.normal.x, y: h.face.normal.y, z: h.face.normal.z } : { x: 0, y: 1, z: 0 },
+          distance: best.distance,
+          point: best.point,
+          pointX: best.point.x,
+          pointY: best.point.y,
+          pointZ: best.point.z,
+          normal: best.normal,
+          normalX: best.normal.x,
+          normalY: best.normal.y,
+          normalZ: best.normal.z,
+          instance: best.instance,
+          objectName: best.objectName,
+          type: best.type,
         };
       }
-      return { hit: false, point: null, normal: null };
+
+      return {
+        hit: false,
+        distance: Infinity,
+        point: null,
+        pointX: 0,
+        pointY: 0,
+        pointZ: 0,
+        normal: null,
+        normalX: 0,
+        normalY: 1,
+        normalZ: 0,
+        instance: null,
+        objectName: null,
+        type: null,
+      };
+    },
+
+    raycast(origin, dir, maxDist = 20, opts = null) {
+      return this.raycast3D(origin, dir, maxDist, opts);
     },
 
     // Le changement de scene est applique en fin d'image (jamais pendant le parcours des instances)
@@ -1198,6 +1289,8 @@ export function createGame3D(project, parent, THREE, opts = {}) {
             child.castShadow = true;
             child.receiveShadow = true;
           }
+          child.userData = child.userData || {};
+          child.userData.instance = instance;
         });
 
         mesh.add(cloned);
@@ -1345,6 +1438,15 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         }
       },
 
+      setScale(sx = 1, sy = sx, sz = sx) {
+        if (Number.isFinite(sx)) this.scaleX = sx;
+        if (Number.isFinite(sy)) this.scaleY = sy;
+        if (Number.isFinite(sz)) this.scaleZ = sz;
+        if (this.mesh?.scale?.set) {
+          this.mesh.scale.set(this.scaleX, this.scaleY, this.scaleZ);
+        }
+      },
+
       setVelocity(nvx, nvy, nvz) {
         if (Number.isFinite(nvx)) this.vx = nvx;
         if (Number.isFinite(nvy)) this.vy = nvy;
@@ -1423,6 +1525,11 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         scene.remove(mesh);
       },
     };
+
+    if (mesh) {
+      mesh.userData = mesh.userData || {};
+      mesh.userData.instance = instance;
+    }
 
     if (rapierWorld && phys.enabled !== false) {
       const bodyType = phys.bodyType || (phys.immovable ? 'static' : 'dynamic');

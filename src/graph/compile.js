@@ -302,6 +302,26 @@ GEN.pf_move_forward_3d = (c) => `self.moveForward(${c.v('SPEED')});\n`;
 GEN.pf_move_right_3d = (c) => `self.moveRight(${c.v('SPEED')});\n`;
 GEN.pf_look_at_3d = (c) => `self.lookAt(${c.v('X')}, ${c.v('Y')}, ${c.v('Z')});\n`;
 GEN.pf_rotate_y_3d = (c) => `self.rotateY(${c.v('ANGLE')});\n`;
+GEN.pf_3d_transform_set = (c) => {
+  let out = '';
+  const x = c.o('X');
+  const y = c.o('Y');
+  const z = c.o('Z');
+  if (x !== null || y !== null || z !== null) {
+    out += `self.setPosition(${x ?? 'self.x'}, ${y ?? 'self.y'}, ${z ?? 'self.z'});\n`;
+  }
+  const roty = c.o('ROTY');
+  if (roty !== null) {
+    out += `self.rotationY = ${roty};\n`;
+  }
+  const scale = c.o('SCALE');
+  if (scale !== null) {
+    out += `if (self.setScale) self.setScale(${scale});\n`;
+  }
+  return out;
+};
+GEN.pf_3d_apply_force = (c) =>
+  `self.applyImpulse(${c.v('X', O.NONE, '0')}, ${c.v('Y', O.NONE, '0')}, ${c.v('Z', O.NONE, '0')});\n`;
 PURE.pf_distance_3d = (c) => [`Math.hypot(${c.v('X1')} - ${c.v('X2')}, ${c.v('Y1')} - ${c.v('Y2')}, ${c.v('Z1')} - ${c.v('Z2')})`, F];
 GEN.pf_tween_to = (c) => {
   const parts = [];
@@ -314,6 +334,7 @@ GEN.pf_tween_to = (c) => {
 
 // -- Apparence
 GEN.pf_play = (c) => `self.play(${q(c.f('ANIM'))});\n`;
+GEN.pf_3d_play_anim = (c) => `self.play(${c.v('ANIM', O.NONE, "'idle'")});\n`;
 GEN.pf_visible = (c) => `self.visible = ${c.on()};\n`;
 GEN.pf_alpha = (c) => `self.alpha = ${c.v('VALUE', O.ASSIGNMENT, '1')};\n`;
 GEN.pf_tint_set = (c) => `self.tint = ${c.v('COLOR', O.ASSIGNMENT, "'#ffffff'")};\n`;
@@ -371,6 +392,14 @@ GEN.pf_ray_cast_mouse = (c) =>
 PURE.pf_ray_last = (c) => [rayField(c.id('FIELD'), c.rayVar()), F];
 PURE.pf_ray_get = (c) => [rayField(c.id('FIELD'), c.v('RAY', O.NONE, 'null')), F];
 PURE.pf_side = (c) => [q(c.f('SIDE')), O.ATOMIC];
+
+const RAY_3D_DEFAULT = { hit: 'false', distance: 'Infinity', pointX: '0', pointY: '0', pointZ: '0', normalX: '0', normalY: '1', normalZ: '0', objectName: 'null', instance: 'null' };
+const ray3dField = (f, src) => `((_r) => (_r ? _r.${f} : ${RAY_3D_DEFAULT[f] ?? 'null'}))(${src})`;
+const ray3dCall = (c) =>
+  `game.raycast3D({ x: ${c.v('X')}, y: ${c.v('Y')}, z: ${c.v('Z')} }, { x: ${c.v('DIR_X')}, y: ${c.v('DIR_Y')}, z: ${c.v('DIR_Z')} }, ${c.v('DIST', O.NONE, '20')}, { mode: ${q(c.f('MODE') || 'all')}, ignore: self })`;
+
+PURE.pf_3d_raycast = (c) => [ray3dCall(c), F];
+PURE.pf_3d_ray_get = (c) => [ray3dField(c.id('FIELD'), c.v('RAY', O.NONE, 'null')), F];
 
 // -- Son
 GEN.pf_play_sound = (c) => `game.playSound(${q(c.f('SOUND'))}, ${c.v('VOL', O.NONE, '1')}, ${c.v('PITCH', O.NONE, '1')});\n`;

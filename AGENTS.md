@@ -201,8 +201,13 @@ To create a 3D game: `create_game { name: 'my-3d-game', dimension: '3d', templat
 
 ### 3D Project Model & Tools
 - `upsert_model { game, name, width, height, depth, slices, legend }`: defines a voxel model by slices along the Y axis. `slices` is an array of Y levels (from Y=0 to Y=height-1), each an array of strings (rows along Z, chars along X). Characters: `.` = empty, `0-9a-f` = sweetie 16 palette color index. Or provide `gltf` base64 data URL.
+- `import_model { game, name, preset, gltf, slices }`: imports a 3D model from a CC0 preset (e.g. `cc0_adventurer`, `cc0_knight`, `cc0_crate`, `cc0_barrel`), glTF base64 data URL, or voxel slices.
 - `get_model { game, name }`: returns the model as ASCII slices.
+- `set_material { game, name, color, roughness, metalness, emissive, textureSprite }`: creates or updates a PBR material.
 - `upsert_scene3d { game, name, environment, start }`: creates or updates a 3D scene (with skyColor, fog, ambient/directional lights).
+- `upsert_node3d { game, scene, name, kind, position, rotation, scale, object, material, prefab, props }`: creates or updates a 3D scene node (mesh, light, camera, group, prefab).
+- `set_transform { game, scene, node, position, rotation, scale }`: sets or updates the 3D transform of a node or entity.
+- `add_light { game, scene, name, type, color, intensity, position, distance, decay }`: adds or updates a point or spot light.
 - `paint_gridmap { game, scene, level, rows, legend, x, z }`: paints solid voxel blocks on Y level `level` of the GridMap. Characters: `.` erases, ` ` leaves unchanged, `0-9a-f` = palette color block.
 - `place_entities { game, scene, entities: [{object, x, y, z}] }`: places 3D entity instances in the 3D scene.
 - `render_scene3d { game, scene }`: ASCII layer-by-layer render of a 3D scene (X/Z grid per Y level with block colors and entity letters).

@@ -330,4 +330,33 @@ Pour garantir une fluidite absolue a 60 images par seconde avec plus de 20 000 b
 - **Suppression incrementale O(1)** : 0,0005 ms par bloc.
 - **Fluidite** : 60 images par seconde constantes.
 
+---
+
+## 11. Outils MCP 3D, Blueprints et Jeu de Demo Adventure 3D (Issue #79)
+
+### 11.1 Nouveaux Outils MCP 3D
+5 outils dedies permettent a l'IA (Claude Code et Copilot Studio) de manipuler l'ensemble des fonctionnalites de l'editeur 3D sans interface graphique :
+- `upsert_node3d` : Cree ou met a jour un noeud dans le graphe de scene 3D (`mesh`, `light`, `camera`, `group`, `prefab`).
+- `set_transform` : Modifie la position `[x, y, z]`, l'orientation `[rx, ry, rz]` ou l'echelle `[sx, sy, sz]` d'un noeud ou d'une entite.
+- `import_model` : Importe un modele 3D depuis un preset CC0 (`cc0_adventurer`, `cc0_knight`, `cc0_crate`, `cc0_barrel`), un fichier glTF base64 ou des tranches voxels.
+- `set_material` : Definit un materiau PBR (couleur, rugosite, metallicite, emission, texture sprite).
+- `add_light` : Instancie une source de lumiere ponctuelle (`point`) ou directionnelle focalisee (`spot`) avec reglage d'intensite, portee et attenuation.
+
+### 11.2 Nœuds Blueprints 3D
+Des noeuds visuels dedies a la dimension 3D sont disponibles dans le catalogue et compiles en JavaScript pur :
+- `pf_3d_transform_set` : Definit position, rotation Y et echelle d'une entite ou d'un noeud 3D.
+- `pf_3d_apply_force` : Applique une impulsion ou force physique 3D sur le corps rigide Rapier (`self.applyImpulse(x, y, z)`).
+- `pf_3d_play_anim` : Declenche la lecture d'une animation glTF squelettique avec fondu enchaine (`self.play(anim)`).
+- `pf_3d_raycast` : Lance un rayon 3D contre les blocs et/ou les objets vivants avec options de filtrage et d'exclusion (`game.raycast3D(origin, dir, maxDist, opts)`).
+- `pf_3d_ray_get` : Extrait un champ d'impact du resultat de raycast 3D (`hit`, `distance`, `pointX`, `pointY`, `pointZ`, `normalX`, `normalY`, `normalZ`, `objectName`, `instance`).
+
+### 11.3 Jeu de Demo Low-Poly : Adventure 3D
+Le jeu de demonstration `games/adventure-3d.pixelforge.json` valide l'integration complete :
+- **Modele glTF anime** : Aventurier CC0 avec animations `idle` et `walk`.
+- **Eclairage dynamique** : Lumieres d'ambiance, lumiere directionnelle solaire et torches ponctuelles.
+- **Physique Rapier 3D** : Gravite, corps rigides et detection d'atterrissage sur blocs solides.
+- **Musique chiptune** : Morceau tracker `AdventureTheme` compose sur mesure.
+- **Gameplay complet** : Collecte de 3 cristaux tournants, interface HUD reactive et ouverture du coffre final pour la victoire.
+
+
 

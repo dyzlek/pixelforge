@@ -18,6 +18,7 @@ Expliquez brièvement les changements introduits par cette pull request, leur mo
   - `npm run pf -- validate tetris`
   - `npm run pf -- validate exemple-plateforme-qiqv`
   - `npm run pf -- validate monde-1-1`
+  - `npm run pf -- validate adventure-3d`
 - [ ] Si la modification est visuelle, j'ai inclus une capture d'écran ou un GIF ci-dessous.
 
 ## Captures d'écran / Démonstration (optionnel)

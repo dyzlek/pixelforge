@@ -959,6 +959,7 @@ export const SELF_BLOCKS = new Set([
   'pf_filter_add', 'pf_filter_clear', 'pf_tint_mode',
   // 3D
   'pf_self_set_3d', 'pf_self_get_3d', 'pf_jump_3d', 'pf_move_forward_3d', 'pf_move_right_3d', 'pf_look_at_3d', 'pf_rotate_y_3d', 'pf_camera_follow_3d',
+  'pf_3d_transform_set', 'pf_3d_apply_force', 'pf_3d_play_anim',
 ]);
 
 /** Désactive (ou réactive) les blocs qui utilisent self selon le type de script. */

@@ -1167,4 +1167,45 @@ test.describe('PixelForge Studio E2E Tests', () => {
     const finalStats = await statsEl.textContent();
     expect(finalStats).toContain('blocs');
   });
+
+  test('jeu de demo 3D low-poly adventure-3d : chargement, physique, lumiere, son et gameplay', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu de demo 3D
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('adventure-3d');
+    });
+
+    const proj = await page.evaluate(() => window.__pfStore.project);
+    expect(proj.name).toBe('Adventure 3D');
+    expect(proj.settings.dimension).toBe('3d');
+    expect(proj.models.some((m) => m.name === 'Adventurer')).toBe(true);
+    expect(proj.materials.some((m) => m.name === 'GoldMat')).toBe(true);
+    expect(proj.scenes3d[0].nodes.some((n) => n.name === 'TorchLight')).toBe(true);
+    expect(proj.songs.some((s) => s.name === 'AdventureTheme')).toBe(true);
+
+    // 2. Lancer la partie avec F5
+    await page.keyboard.press('F5');
+    await expect(page.locator('#tabs')).toContainText(/Jouer/i);
+
+    // 3. Attendre que le canvas de jeu soit visible et le joueur charge
+    const canvas = page.locator('.play-stage canvas, canvas:visible').first();
+    await expect(canvas).toBeVisible({ timeout: 15000 });
+
+    await page.waitForFunction(() => {
+      const snap = window.__pfDebugSnapshot?.();
+      const p = snap?.instances?.find((i) => i.name === 'Player');
+      return p && p.onGround === true;
+    }, { timeout: 15000 });
+
+    const snap = await page.evaluate(() => window.__pfDebugSnapshot());
+    const player = snap.instances.find((i) => i.name === 'Player');
+    expect(player).toBeDefined();
+    expect(player.onGround).toBe(true);
+
+    // 4. Arreter le jeu
+    await page.locator('[data-action="stop"]').click();
+    await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
+  });
 });

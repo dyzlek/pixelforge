@@ -15,7 +15,7 @@ L'objet `self` represente l'entite 3D executee dans la scene courante.
 - `self.rotationX, self.rotationY, self.rotationZ` : Rotation en degres.
 - `self.width, self.height, self.depth` : Boite de collision (AABB), 0,9 par defaut. Le modele voxel est mis a l'echelle pour tenir dans cette boite.
 - `self.visible` : afficher / cacher le modele.
-- `self.setPosition(x, y, z)`, `self.setVelocity(vx, vy, vz)`, `self.distanceTo(autre)` (distance 3D).
+- `self.setPosition(x, y, z)`, `self.setVelocity(vx, vy, vz)`, `self.setScale(sx, sy, sz)`, `self.applyImpulse(ix, iy, iz)`, `self.distanceTo(autre)` (distance 3D).
 
 ### Etat Physique
 - `self.onGround` : Booleen valant `true` si l'entite repose sur une face superieure de bloc.
@@ -79,7 +79,7 @@ En 3D, l'objet `input` s'enrichit de la capture de la souris en vue subjective (
 - `game.find(objectName)` : Renvoie la premiere instance de ce nom trouvee dans la scene.
 - `game.findAll(objectName)` : Renvoie le tableau de toutes les instances du type indique.
 - `game.countOf(objectName)` : nombre d'instances vivantes.
-- `game.raycast3D(origin, direction, maxDistance)` : Lance un rayon contre les blocs et renvoie `{ hit, point: {x,y,z}, normal: {x,y,z} }`.
+- `game.raycast3D(origin, direction, maxDistance, options)` / `game.raycast(...)` : Lance un rayon contre les blocs et les objets (`options: { mode: 'all'|'blocks'|'objects', objects: true|nom, ignore: self }`). Renvoie `{ hit, distance, point: {x,y,z}, pointX, pointY, pointZ, normal: {x,y,z}, normalX, normalY, normalZ, instance, objectName, type }`.
 
 ### Audio et Interface
 - `game.playSound(soundName, volume, pitch)` : Joue un son du projet ou un preset (jump, coin...).

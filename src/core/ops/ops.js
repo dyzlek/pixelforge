@@ -2,10 +2,11 @@
 // levent une Error avec un message explicite).
 // Concu pour fonctionner a l'identique dans le navigateur et sous Node.js (zero dependance DOM).
 
-import { createObject, createMap, createLayer, createModel, createScene3D, uid } from '../project.js';
+import { createObject, createMap, createLayer, createModel, createScene3D, createSceneNode, uid } from '../project.js';
 import { textToFrames, framesToText } from './sprites.js';
 import { buildGraphScript } from './graph.js';
 import { parseSongText, songToText } from './song-text.js';
+import { CC0_PRESETS } from '../cc0-models.js';
 
 export const SOUND_PRESETS = [
   'jump', 'coin', 'hit', 'powerup', 'explosion', 'laser', 'blip', 'portal',
@@ -27,6 +28,8 @@ export const findObject = (p, ref) => find(p.objects || [], ref, 'object');
 export const findMap = (p, ref) => find(p.maps || [], ref, 'map');
 export const findModel = (p, ref) => find(p.models || [], ref, 'model');
 export const findScene3D = (p, ref) => find(p.scenes3d || [], ref, 'scene3d');
+export const findMaterial = (p, ref) => find(p.materials || [], ref, 'material');
+export const findPrefab = (p, ref) => find(p.prefabs3d || [], ref, 'prefab');
 const findLayer = (m, ref) => find(m.layers || [], ref, 'layer');
 
 // ---------- Syntaxe JavaScript de script ----------
@@ -477,7 +480,8 @@ export function placeEntities(p, a) {
     });
     if (mode === 'replace') {
       sc.entities = added;
-      sc.nodes = addedNodes;
+      const nonEntityNodes = (sc.nodes || []).filter((n) => n.kind !== 'mesh' || !n.objectId);
+      sc.nodes = [...nonEntityNodes, ...addedNodes];
     } else {
       sc.entities.push(...added);
       sc.nodes.push(...addedNodes);
@@ -564,4 +568,216 @@ export function getSongText(p, nameOrId) {
   const s = p.songs.find((x) => x.name === nameOrId || x.id === nameOrId);
   if (!s) throw new Error(`song "${nameOrId}" not found`);
   return songToText(s);
+}
+
+// ---------- Noeuds 3D et Transform ----------
+export function upsertNode3D(p, a) {
+  const sc = findScene3D(p, a.scene || p.settings.startScene3DId || p.settings.startMapId || (p.scenes3d?.[0]?.name));
+  sc.nodes ||= [];
+
+  let n = a.id ? sc.nodes.find((x) => x.id === a.id) : null;
+  if (!n && a.name) n = sc.nodes.find((x) => x.name === a.name);
+  const isNew = !n;
+
+  if (!n) {
+    n = createSceneNode(a.name || 'Node3D', a.kind || 'mesh', a.parent || null);
+    if (a.id) n.id = a.id;
+    sc.nodes.push(n);
+  }
+
+  if (a.name) n.name = a.name;
+  if (a.kind) n.kind = a.kind;
+  if (a.parent !== undefined) n.parent = a.parent;
+  if (a.position) n.position = [Number(a.position[0]) || 0, Number(a.position[1]) || 0, Number(a.position[2]) || 0];
+  if (a.rotation) n.rotation = [Number(a.rotation[0]) || 0, Number(a.rotation[1]) || 0, Number(a.rotation[2]) || 0];
+  if (a.scale) n.scale = [Number(a.scale[0]) ?? 1, Number(a.scale[1]) ?? 1, Number(a.scale[2]) ?? 1];
+  if (a.visible !== undefined) n.visible = !!a.visible;
+  if (a.locked !== undefined) n.locked = !!a.locked;
+
+  if (a.object !== undefined || a.objectId !== undefined) {
+    const objRef = a.object ?? a.objectId;
+    if (objRef) {
+      const o = findObject(p, objRef);
+      n.objectId = o.id;
+    } else {
+      n.objectId = null;
+    }
+  }
+
+  if (a.material !== undefined || a.materialId !== undefined) {
+    const matRef = a.material ?? a.materialId;
+    if (matRef) {
+      const m = findMaterial(p, matRef);
+      n.materialId = m.id;
+    } else {
+      n.materialId = null;
+    }
+  }
+
+  if (a.prefab !== undefined || a.prefabId !== undefined) {
+    const pfbRef = a.prefab ?? a.prefabId;
+    if (pfbRef) {
+      const pfb = findPrefab(p, pfbRef);
+      n.prefabId = pfb.id;
+    } else {
+      n.prefabId = null;
+    }
+  }
+
+  if (a.props) {
+    n.props = { ...(n.props || {}), ...a.props };
+  }
+
+  return `${isNew ? 'Created' : 'Updated'} 3D node "${n.name}" (id ${n.id}, kind ${n.kind}) in scene "${sc.name}".`;
+}
+
+export function setTransform(p, a) {
+  const sceneName = a.scene || p.settings.startScene3DId || p.settings.startMapId;
+  const sc = sceneName ? findScene3D(p, sceneName) : (p.scenes3d?.[0] || null);
+  if (!sc) throw new Error('no 3D scene found');
+
+  const ref = a.node || a.id || a.name;
+  if (!ref) throw new Error('node name or id is required');
+
+  sc.nodes ||= [];
+  let n = sc.nodes.find((x) => x.id === ref || x.name === ref);
+  let ent = (sc.entities || []).find((e) => e.id === ref);
+
+  if (!n && !ent) {
+    const obj = (p.objects || []).find((o) => o.name === ref || o.id === ref);
+    if (obj) {
+      ent = (sc.entities || []).find((e) => e.objectId === obj.id);
+      if (ent) n = sc.nodes.find((x) => x.id === ent.id);
+    }
+  }
+
+  if (!n && !ent) throw new Error(`node or entity "${ref}" not found in 3D scene "${sc.name}"`);
+
+  const pos = a.position;
+  const rot = a.rotation;
+  const scl = a.scale;
+
+  if (n) {
+    if (Array.isArray(pos)) n.position = [Number(pos[0]) || 0, Number(pos[1]) || 0, Number(pos[2]) || 0];
+    if (Array.isArray(rot)) n.rotation = [Number(rot[0]) || 0, Number(rot[1]) || 0, Number(rot[2]) || 0];
+    if (Array.isArray(scl)) n.scale = [Number(scl[0]) ?? 1, Number(scl[1]) ?? 1, Number(scl[2]) ?? 1];
+  }
+  if (ent && Array.isArray(pos)) {
+    ent.x = Number(pos[0]) || 0;
+    ent.y = Number(pos[1]) || 0;
+    ent.z = Number(pos[2]) || 0;
+  }
+
+  const pStr = n?.position ? `pos=[${n.position.join(', ')}]` : '';
+  const rStr = n?.rotation ? `rot=[${n.rotation.join(', ')}]` : '';
+  const sStr = n?.scale ? `scale=[${n.scale.join(', ')}]` : '';
+  return `Updated transform of "${n?.name || ent?.id}" in scene "${sc.name}": ${[pStr, rStr, sStr].filter(Boolean).join(' ')}.`;
+}
+
+// ---------- Importation de modele 3D ----------
+export function importModel(p, a) {
+  if (!a.name) throw new Error('model name is required');
+  let gltfData = a.gltf || null;
+
+  if (a.preset) {
+    const presetId = String(a.preset).toLowerCase();
+    const hit = CC0_PRESETS.find((cp) => cp.id.toLowerCase() === presetId ||
+      cp.name.toLowerCase().includes(presetId) ||
+      cp.id.toLowerCase().replace('cc0_', '') === presetId);
+    if (!hit) throw new Error(`preset "${a.preset}" not found (available: ${CC0_PRESETS.map((x) => x.id).join(', ')})`);
+    gltfData = hit.generate();
+  }
+
+  return upsertModel(p, {
+    name: a.name,
+    width: a.width,
+    height: a.height,
+    depth: a.depth,
+    gltf: gltfData,
+    slices: a.slices,
+    legend: a.legend,
+    voxels: a.voxels,
+  });
+}
+
+// ---------- Materiaux 3D ----------
+export function setMaterial(p, a) {
+  if (!a.name && !a.id) throw new Error('material name or id is required');
+  p.materials ||= [];
+  let m = a.id ? p.materials.find((x) => x.id === a.id) : null;
+  if (!m && a.name) m = p.materials.find((x) => x.name === a.name);
+  const isNew = !m;
+
+  if (!m) {
+    m = {
+      id: a.id || uid('mat'),
+      name: a.name || 'Material',
+      color: '#ffffff',
+      roughness: 0.7,
+      metalness: 0.1,
+      emissive: '#000000',
+      textureSpriteId: null,
+      opacity: 1,
+      transparent: false,
+    };
+    p.materials.push(m);
+  }
+
+  if (a.name) m.name = a.name;
+  if (a.color) m.color = a.color;
+  if (a.roughness !== undefined) m.roughness = Number(a.roughness);
+  if (a.metalness !== undefined) m.metalness = Number(a.metalness);
+  if (a.emissive) m.emissive = a.emissive;
+  if (a.opacity !== undefined) m.opacity = Number(a.opacity);
+  if (a.transparent !== undefined) m.transparent = !!a.transparent;
+
+  if (a.textureSprite !== undefined || a.textureSpriteId !== undefined) {
+    const spRef = a.textureSprite ?? a.textureSpriteId;
+    if (spRef) {
+      const sp = findSprite(p, spRef);
+      m.textureSpriteId = sp.id;
+    } else {
+      m.textureSpriteId = null;
+    }
+  }
+
+  return `${isNew ? 'Created' : 'Updated'} material "${m.name}" (id ${m.id}, color ${m.color}, roughness ${m.roughness}, metalness ${m.metalness}).`;
+}
+
+// ---------- Lumieres 3D ----------
+export function addLight(p, a) {
+  const sc = findScene3D(p, a.scene || p.settings.startScene3DId || p.settings.startMapId || (p.scenes3d?.[0]?.name));
+  sc.nodes ||= [];
+
+  const lightName = a.name || `Light_${sc.nodes.filter((n) => n.kind === 'light').length + 1}`;
+  let n = sc.nodes.find((x) => x.name === lightName && x.kind === 'light') || sc.nodes.find((x) => x.id === a.id);
+  const isNew = !n;
+
+  if (!n) {
+    n = createSceneNode(lightName, 'light', a.parent || null);
+    if (a.id) n.id = a.id;
+    sc.nodes.push(n);
+  }
+
+  if (a.name) n.name = a.name;
+  if (a.position) n.position = [Number(a.position[0]) || 0, Number(a.position[1]) || 0, Number(a.position[2]) || 0];
+  if (a.rotation) n.rotation = [Number(a.rotation[0]) || 0, Number(a.rotation[1]) || 0, Number(a.rotation[2]) || 0];
+
+  const type = a.type || a.lightType || n.props?.lightType || 'point';
+  if (type !== 'point' && type !== 'spot') {
+    throw new Error(`unknown light type "${type}" (must be "point" or "spot")`);
+  }
+
+  n.props = {
+    lightType: type,
+    color: a.color || n.props?.color || '#ffcd75',
+    intensity: a.intensity !== undefined ? Number(a.intensity) : (n.props?.intensity ?? 1.5),
+    distance: a.distance !== undefined ? Number(a.distance) : (n.props?.distance ?? 12),
+    decay: a.decay !== undefined ? Number(a.decay) : (n.props?.decay ?? 2),
+    angle: a.angle !== undefined ? Number(a.angle) : (n.props?.angle ?? 45),
+    penumbra: a.penumbra !== undefined ? Number(a.penumbra) : (n.props?.penumbra ?? 0.2),
+    castShadow: a.castShadow !== undefined ? !!a.castShadow : (n.props?.castShadow ?? false),
+  };
+
+  return `${isNew ? 'Added' : 'Updated'} light "${n.name}" (${type}, color ${n.props.color}, intensity ${n.props.intensity}) at [${n.position.join(', ')}] in scene "${sc.name}".`;
 }
