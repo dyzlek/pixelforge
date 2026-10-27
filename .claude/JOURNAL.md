@@ -1,5 +1,25 @@
 # Journal — PixelForge
 
+## 2026-10-27 (48) — [Phase H] H2 : agent IA avec outils dans l'editeur (Issue #90)
+- **Fait** :
+  - Creation de `src/ai/agent.js` :
+    - Definition du catalogue complet d'outils au format OpenAI Function Calling (`AGENT_TOOLS`) : `upsert_sprite`, `get_sprite`, `upsert_object`, `set_script`, `get_script`, `upsert_map`, `paint_map`, `set_layer`, `place_entities`, `add_sound`, `upsert_song`, `get_song`, `upsert_model`, `get_model`, `upsert_scene3d`, `paint_gridmap`, `set_settings`, `validate_game`, `render_map`, `render_scene3d`, `list_nodes`.
+    - `parseJsonPlan(text)` : extraction et normalisation d'un plan d'actions JSON (support des blocs markdown ```json ... ``` et structures JSON directes) pour les petits modeles locaux sans support natif de tool calling.
+    - `executeTool(project, name, args, { confirm })` : execution securisee d'une operation unitaire sur le projet via `src/core/ops`, avec verification et confirmation de l'utilisateur pour les ecrasements ou suppressions destructives (Decision V6).
+    - `executePlan(project, plan, options)` : execution sequentielle d'un plan avec notification par etape.
+    - `buildAgentSystemPrompt(project)` : construction du prompt systeme incluant la synthese textuelle du projet (`summarize`), l'API de script, le schema Blueprint et les regles d'or de Game Feel.
+    - `runAgent({ project, prompt, config, store, onStep, onChunk, signal, confirm })` : boucle d'agent autonome avec outils, effectuant toutes les mutations sur une copie de travail en memoire et appliquant l'ensemble des changements en une seule mise a jour atomique `store.update((p) => Object.assign(p, workingCopy), 'ai-agent')`.
+  - Evolution de `src/ai/client.js` :
+    - `sendAgentChatRequest` : prise en charge complete des tool calls en streaming SSE (accumulation des fragments de `delta.tool_calls`) pour l'API standard OpenAI (LM Studio, Ollama, etc.), et conversion bidirectionnelle pour l'API Claude Messages (Anthropic) avec fusion des blocs `tool_result` consecutifs.
+  - Tests unitaires et d'integration dans `src/ai/test/ai.test.mjs` :
+    - Validation du parseur de plan JSON (wrappers `plan`, tableaux bruts, blocs code).
+    - Validation de `executeTool` (sprites, objets, scripts, cartes, entites).
+    - Validation du hook de confirmation `confirm` en cas de tentative d'ecrasement.
+    - Test du critere d'acceptation : requete complexe d'ajout d'une piece avec script de score (+10) et placement de 5 instances sur la carte, produisant exactement 1 entree dans l'historique d'annulation et annulee integralement en un seul Ctrl+Z (`store.undo()`).
+  - Documentation mise a jour dans `docs/ARCHITECTURE.md`.
+- **Verifie** : `npm test` (2563 verifs + test IA + test MCP e2e), `npm run check:doc`, `npm run build`, validation des jeux `exemple-plateforme-qiqv` et `cube-runner`, et `npm run test:e2e` (6 tests Playwright verts).
+- **Etat** : Branche `feat/in-editor-ai-agent`, Closes #90.
+
 ## 2026-10-27 (47) — [Phase H] H1 : operations partagees entre l'editeur et le MCP (Issue #89)
 - **Fait** :
   - Creation du module `src/core/ops/` (pur JavaScript, zero dependance DOM ni Node) :
