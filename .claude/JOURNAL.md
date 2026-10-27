@@ -1,5 +1,23 @@
 # Journal — PixelForge
 
+## 2026-10-27 (47) — [Phase H] H1 : operations partagees entre l'editeur et le MCP (Issue #89)
+- **Fait** :
+  - Creation du module `src/core/ops/` (pur JavaScript, zero dependance DOM ni Node) :
+    - `src/core/ops/png.js` : encodeur et decodeur PNG minimal RGBA 8 bits pur JS (blocs deflate stockes RFC 1950/1951 avec Adler-32 et CRC-32), compatible navigateur et Node. Support de hook `setInflator` pour acceleration sous Node.js via `node:zlib`.
+    - `src/core/ops/sprites.js` : conversion texte <-> frames PNG (`textToFrames`, `framesToText`, `parseColor`, `toHex`).
+    - `src/core/ops/graph.js` : validation, normalisation, autolayout et compilation de graphes Blueprint (`checkGraph`, `normalizeGraph`, `describeIssue`, `buildGraphScript`, `listNodes`).
+    - `src/core/ops/song-text.js` : parsing et serialisation texte tracker ASCII pour les morceaux chiptune (`parseSongText`, `songToText`).
+    - `src/core/ops/ops.js` : operations de haut niveau sur les projets PixelForge (`setSettings`, `upsertSprite`, `getSprite`, `upsertObject`, `setScript`, `getScript`, `upsertMap`, `paintMap`, `setLayer`, `upsertModel`, `getModel`, `upsertScene3D`, `paintGridMap`, `placeEntities`, `addSound`, `upsertSong`, `getSongText`, `summarize`, etc.).
+    - `src/core/ops/index.js` : point d'entree unifie du module `ops`.
+  - Re-export dans `mcp/lib/` :
+    - `mcp/lib/png.js`, `mcp/lib/sprites.js`, `mcp/lib/graph.js`, `mcp/lib/song-text.js` et `mcp/lib/ops.js` re-exportent desormais depuis `src/core/ops/`.
+  - Integration Studio et E2E :
+    - `src/main.js` : exposition globale de `window.__pfOps` et `window.__pfReady`.
+    - `src/ui/documents.js` : fiabilisation de l'activation des onglets et resolution des courses asynchrones au montage des editeurs.
+    - `e2e/studio.spec.js` : ajout du test 6 executant l'ensemble des operations pures `src/core/ops` directement dans le contexte du navigateur (creation de sprite PNG pur, objet Blueprint compile, carte peinte, entite placee, musique tracker, scene 3D, resume).
+- **Verifie** : `npm run test:e2e` (6 tests Playwright verts en 5.1s), `npm test` (2563 verifs + test e2e mcp complet), `npm run check:doc`, `npm run build`, validation de tous les jeux de demonstration.
+- **Etat** : Branche `feat/shared-ops-core`, Closes #89.
+
 ## 2026-10-26 (46) — [Phase E] E3 : nettoyage apres la migration Phaser 4 (Issue #68)
 - **Fait** :
   - Nettoyage et mise a jour globale de toutes les mentions de version dans la documentation :
