@@ -1,5 +1,40 @@
 # Journal — PixelForge
 
+## 2026-10-27 (72) — [Phase H] H6 : l'IA teste le jeu et corrige seule (Issue #94)
+- **Fait** :
+  - Creation de `src/ai/playtester.js` (module pur, zero dependance DOM ni Node) :
+    - `playtestGame(project, options)` : suite complete de simulation headless sans ecran :
+      - Validation structurelle (liens, references d'objets, sons, musiques, calques, compilation des Blueprints et syntaxe des scripts via `validateProject`, 0 erreur requis).
+      - Controle de securite du point d'apparition du joueur (detection de spawn coince a l'interieur d'un mur solide `player_in_wall`, ou au-dessus du vide sans sol sous les pieds `player_in_pit`).
+      - Recherche de chemin et analyse d'accessibilite physique de la sortie (Platformer Reachability BFS) : prise en compte de la physique reelle (gravite, velocite de saut, portee horizontale et temps en suspension), parcours en largeur sur les cellules standables, detection d'un abime infranchissable ou d'un mur bloquant (`unreachable_exit`).
+      - Bac a sable securise d'execution des scripts : instanciation avec mocks complets (`self`, `game`, `input`, `on`), declenchement des gestionnaires `create` et `update`, interception des exceptions (`script_runtime_error`).
+      - Diagnostic de scenes 3D (presence du joueur dans la scene de depart, sol voxel sous les pieds, cibles).
+    - `autoFixGame(project, issues, options)` : moteur d'autocorrection ciblee :
+      - Placement automatique de plateformes relais solides (2-3 tuiles de large, hauteur interpolee) franchissant les fosses de saut trop larges.
+      - Consolidation du sol sous les sorties flottantes et sous le joueur.
+      - Degagement des cases de spawn en cas d'enfermement dans un mur.
+      - Securisation automatique des scripts en defaut.
+    - `runPlaytestAndFix(project, options)` : boucle autonome de diagnostic et d'autocorrection (jusqu'a 3 tours) delivrant un projet 100% jouable et valide.
+  - Integration dans `src/ai/agent.js` :
+    - Ajout de l'outil `playtest_game` dans `AGENT_TOOLS` avec parametre `autoFix`.
+    - Integration dans `executeTool` avec rapport de diagnostic et liste des reparations appliquees.
+    - Mise a jour du system prompt (`buildAgentSystemPrompt`).
+    - Export de `playtestGame`, `autoFixGame` et `runPlaytestAndFix`.
+  - Integration dans `src/ai/game-generator.js` :
+    - Execution automatique de `runPlaytestAndFix` a la fin de `generateFullGame` pour certifier tout jeu genere.
+  - Integration Studio (`src/ui/panels/ai-assistant.js` & `src/main.js`) :
+    - Prise en charge de `playtest_game` dans `formatStepLabel`.
+    - Exposition sur `window.__pfAi` pour acces programmatique depuis le studio et les tests automatises.
+  - Documentation :
+    - Mise a jour de `docs/AI_GENERATION.md` avec la section 8 dediee au playtest headless et a l'autocorrection.
+    - Mise a jour de `docs/ARCHITECTURE.md`.
+  - Tests :
+    - Section 12 ajoutee dans `src/ai/test/ai.test.mjs` validant le playtest sur jeu valide, la detection de joueur dans un mur, la detection d'un niveau impossible avec fosse de 15 tuiles, l'autocorrection par ajout de plateformes relais, la boucle autonome complete `runPlaytestAndFix` (critere d'acceptation de l'issue #94), l'outil `executeTool('playtest_game')`, et l'absence totale d'emojis dans `playtester.js`.
+    - Test Playwright 27 ajoute dans `e2e/studio.spec.js` testant la detection en direct dans le navigateur d'un niveau rendu impossible et sa reparation automatique avec 0 anomalie residuelle.
+- **Verifie** : `npm test` (14 suites OK, 0 echec), `npm run check:doc`, `npm run build`, validation des 6 jeux de demo (`node mcp/cli.js validate <game>`) et 27/27 tests Playwright e2e verts. Strictement zero emoji.
+- **Etat** : Branche `feat/ai-autonomous-testing`, Closes #94.
+
+
 ## 2026-10-27 (71) — [Phase H] H5 : l'IA genere un jeu complet a partir d'une description (Issue #93)
 - **Fait** :
   - Creation de `src/ai/game-generator.js` (module pur, zero dependance DOM ni Node) :

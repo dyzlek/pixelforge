@@ -21,6 +21,9 @@ import {
   generateSoundData,
   generateFullGame,
   generateGameDesignDocument,
+  playtestGame,
+  autoFixGame,
+  runPlaytestAndFix,
 } from './ai/agent.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
@@ -330,6 +333,9 @@ window.addEventListener('keydown', (e) => {
       generateSoundData,
       generateFullGame,
       generateGameDesignDocument,
+      playtestGame,
+      autoFixGame,
+      runPlaytestAndFix,
     };
     window.__pfCommandPalette = palette;
     window.__pfReady = true;

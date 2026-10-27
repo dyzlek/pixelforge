@@ -20,6 +20,9 @@ import {
   generateSoundData,
   generateFullGame,
   generateGameDesignDocument,
+  playtestGame,
+  autoFixGame,
+  runPlaytestAndFix,
 } from '../agent.js';
 import { parseSongText } from '../../core/ops/song-text.js';
 import { validateProject } from '../../core/ops/validate.js';
@@ -558,5 +561,89 @@ assert.strictEqual(toolProject.maps.length, 3, 'Le projet modifie par executeToo
 // 11.5 Verification de l'absence totale d'emojis dans game-generator.js
 const gameGenSource = readFileSync(new URL('../game-generator.js', import.meta.url), 'utf-8');
 assert.ok(!emojiGenRegex.test(gameGenSource), 'game-generator.js ne doit contenir aucun emoji');
+
+// ==========================================
+// 12. Playtester headless et autocorrection autonome (Phase H - H6 - Issue #94)
+// ==========================================
+
+// 12.1 Playtest d'un jeu complet valide
+const validGame = generateFullGame('jeu de plateforme simple', { name: 'Jeu Valide' });
+const validReport = playtestGame(validGame.project);
+assert.strictEqual(validReport.ok, true, 'Un jeu correctement genere doit passer le playtest avec succes');
+assert.strictEqual(validReport.issues.length, 0, 'Aucune anomalie ne doit etre signalee sur un jeu valide');
+assert.ok(validReport.stats.mapsChecked >= 3, 'Au moins 3 cartes doivent avoir ete controlees');
+
+// 12.2 Detection d'un joueur coince dans un mur
+const stuckProject = JSON.parse(JSON.stringify(validGame.project));
+const map0 = stuckProject.maps[0];
+const layer0 = map0.layers.find((l) => l.collides);
+const playerEnt = map0.entities.find((e) => {
+  const o = stuckProject.objects.find((obj) => obj.id === e.objectId);
+  return o && o.name === 'Player';
+});
+const pCol = Math.floor(playerEnt.x / 16);
+const pRow = Math.floor(playerEnt.y / 16);
+layer0.data[pRow * map0.width + pCol] = 1;
+
+const stuckReport = playtestGame(stuckProject);
+assert.strictEqual(stuckReport.ok, false, 'Le playtest doit echouer si le joueur est dans un mur');
+assert.ok(stuckReport.issues.some((i) => i.type === 'player_in_wall'), 'L anomalie player_in_wall doit etre detectee');
+
+// 12.3 Detection d'un niveau impossible (fosse infranchissable de 15 tuiles sans plateforme)
+const impossibleProject = JSON.parse(JSON.stringify(validGame.project));
+const impMap = impossibleProject.maps[0];
+const impLayer = impMap.layers.find((l) => l.collides);
+// Creuser un abime geant de 15 tuiles de large entre la colonne 4 et 19
+for (let c = 4; c <= 19; c++) {
+  for (let r = 0; r < impMap.height; r++) {
+    impLayer.data[r * impMap.width + c] = -1;
+  }
+}
+// Placer la sortie a la colonne 20
+const portalEnt = impMap.entities.find((e) => {
+  const o = impossibleProject.objects.find((obj) => obj.id === e.objectId);
+  return o && o.name === 'Portal';
+});
+portalEnt.x = 20 * 16;
+portalEnt.y = 7 * 16;
+// Remettre du sol a la colonne 20 pour que la sortie ait du sol
+impLayer.data[8 * impMap.width + 20] = 1;
+
+const impReport = playtestGame(impossibleProject);
+assert.strictEqual(impReport.ok, false, 'Le playtest doit echouer si la sortie est inatteignable');
+const unreachableIssue = impReport.issues.find((i) => i.type === 'unreachable_exit');
+assert.ok(unreachableIssue, 'L anomalie unreachable_exit doit etre detectee');
+assert.ok(unreachableIssue.message.includes('inatteignable'), 'Le message doit expliciter l inaccessibilite');
+
+// 12.4 Autocorrection autonome du niveau impossible
+const fixResult = autoFixGame(impossibleProject, impReport.issues);
+assert.ok(fixResult.repairsApplied.length > 0, 'Des reparations doivent avoir ete appliquees');
+assert.ok(fixResult.repairsApplied.some((r) => r.type === 'added_stepping_platform'), 'Des plateformes relais doivent avoir ete ajoutees');
+
+// Re-playtest apres correction
+const afterFixReport = playtestGame(fixResult.project);
+assert.strictEqual(afterFixReport.ok, true, 'Le niveau prealablement impossible doit etre resolu et terminable');
+
+// 12.5 Boucle complete runPlaytestAndFix (Critere d acceptation Issue #94)
+// On cree un projet avec un niveau impossible ET un script declenchant une exception
+const brokenProject = JSON.parse(JSON.stringify(impossibleProject));
+const brokenObj = brokenProject.objects.find((o) => o.name === 'Player');
+brokenObj.script.code = 'on("create", () => { throw new Error("Crash de script critique"); });';
+
+const loopResult = runPlaytestAndFix(brokenProject);
+assert.strictEqual(loopResult.ok, true, 'runPlaytestAndFix doit reparer et rendre le jeu 100% jouable');
+assert.strictEqual(loopResult.fixed, true, 'Le projet doit etre marque comme repare');
+assert.ok(loopResult.iterations <= 3, 'La correction doit aboutir en 3 tours maximum');
+assert.ok(loopResult.history.length > 0, 'L historique de correction doit etre renseigne');
+
+// 12.6 Execution de l outil playtest_game via executeTool
+const toolPlaytestProject = JSON.parse(JSON.stringify(brokenProject));
+const toolPlaytestMsg = await executeTool(toolPlaytestProject, 'playtest_game', { autoFix: true });
+assert.ok(toolPlaytestMsg.includes('Partie simulee'), 'executeTool doit renvoyer le rapport de simulation');
+assert.ok(toolPlaytestMsg.includes('corrigees'), 'executeTool doit indiquer que les anomalies ont ete corrigees');
+
+// 12.7 Verification de l absence totale d emojis dans playtester.js
+const playtesterSource = readFileSync(new URL('../playtester.js', import.meta.url), 'utf-8');
+assert.ok(!emojiGenRegex.test(playtesterSource), 'playtester.js ne doit contenir aucun emoji');
 
 console.log('Tous les tests Assistant IA & Game Design sont valides !');

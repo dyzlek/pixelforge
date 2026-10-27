@@ -213,6 +213,8 @@ function formatStepLabel(name, args = {}) {
       return `Generation de ${args.type || 'ressource'} "${args.name || ''}" (${args.description || ''})`;
     case 'generate_game':
       return `Generation d un jeu complet 3 niveaux (${args.dimension || '2D'})`;
+    case 'playtest_game':
+      return `Playtest headless et simulation autonome de jouabilite`;
     default:
       return `${name}`;
   }

@@ -27,6 +27,7 @@ import {
   generateModelData,
   generateSoundData,
 } from './generators.js';
+import { runPlaytestAndFix } from './playtester.js';
 
 /**
  * Normalise un texte pour recherche de mots-cles
@@ -1111,7 +1112,7 @@ on('create', () => {
  */
 export function generateFullGame(description = '', options = {}) {
   const gdd = generateGameDesignDocument(description, options);
-  const targetProject = options.baseProject || {
+  let targetProject = options.baseProject || {
     version: 1,
     name: gdd.title,
     settings: {},
@@ -1139,11 +1140,17 @@ export function generateFullGame(description = '', options = {}) {
     buildGame2D(targetProject, gdd);
   }
 
-  // Validation complete
+  // Validation structurelle complete
   const issues = validateProject(targetProject);
   const errors = issues.filter((i) => i.level === 'error');
   if (errors.length > 0) {
     throw new Error('Erreur de validation lors de la generation du jeu : ' + errors.map((e) => e.message).join(' ; '));
+  }
+
+  // Playtest headless et verification d'accessibilite physique autonome
+  const playtestResult = runPlaytestAndFix(targetProject);
+  if (playtestResult.project) {
+    targetProject = playtestResult.project;
   }
 
   const levelCount = gdd.dimension === '3d' ? (targetProject.scenes3d || []).length : (targetProject.maps || []).length;

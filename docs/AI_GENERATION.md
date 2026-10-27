@@ -199,3 +199,38 @@ L'agent dispose de l'outil `generate_game` :
 ```
 L'outil retourne a la fois le Game Design Document au format Markdown et un resume detaille de tous les elements assembles dans le projet.
 
+---
+
+## 8. Playtest Headless et Autocorrection Autonome (Phase H - H6)
+
+### 8.1 Vue d'ensemble
+
+Le module `src/ai/playtester.js` garantit qu'aucun jeu généré n'est livré cassé ou injouable :
+1. **Contrôle d'intégrité structurel** : exécution de `validateProject` (vérification des références d'objets, sons, musiques, calques, compilation des graphes Blueprint et syntaxe des scripts). 0 erreur exigé.
+2. **Simulation headless sans écran (2D et 3D)** :
+   - *Sécurité du point de départ* : vérifie que le joueur n'apparaît ni dans un mur solide (`player_in_wall`), ni au-dessus d'un abîme sans fond sans sol sous ses pieds (`player_in_pit`).
+   - *Accessibilité physique par recherche de chemin BFS (Platformer Reachability)* : calcule les trajectoires de saut (gravité, impulsion, portée horizontale) et vérifie via parcours en largeur (BFS) sur les plateformes si la sortie ou le portail est physiquement atteignable depuis le point de départ (`unreachable_exit`).
+   - *Exécution en bac à sable* : instancie les scripts dans un bac à sable isolé simulant les gestionnaires `create` et `update` pour intercepter les exceptions d'exécution (`script_runtime_error`).
+3. **Autocorrection ciblée (`autoFixGame`)** :
+   - Ajout automatique de plateformes relais solides en cas de fossé trop large ou de dénivelé excessif.
+   - Consolidation du sol sous les sorties ou sous le point de réapparition du joueur.
+   - Dégagement des cases d'apparition en cas d'enfermement dans un mur.
+   - Sécurisation des scripts défaillants.
+4. **Boucle autonome (`runPlaytestAndFix`)** :
+   - Exécute jusqu'à 3 tours de playtest et correction jusqu'à ce que le jeu soit 100% validé et jouable.
+   - Intégrée nativement dans `generateFullGame` et disponible sous l'outil agent `playtest_game`.
+
+### 8.2 Utilisation via l'Agent IA
+
+L'agent dispose de l'outil `playtest_game` :
+```json
+{
+  "tool": "playtest_game",
+  "args": {
+    "autoFix": true
+  }
+}
+```
+L'outil retourne un diagnostic détaillé des contrôles effectués et des réparations appliquées automatiquement.
+
+
