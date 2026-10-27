@@ -30,6 +30,9 @@ L'objet `self` represente l'entite 3D executee dans la scene courante.
 - `self.lookAt(targetX, targetY, targetZ)` : Oriente automatiquement l'entite vers un point de l'espace.
 - `self.rotateY(degrees)` : Ajoute un angle a l'orientation horizontale (positif = vers la droite, vu de dessus ; 0 = regarde vers -Z).
 
+### Animations et Modeles glTF
+- `self.play(animName)` : Declenche une animation du modele glTF avec fondu enchaine (150 ms) via l'AnimationMixer Three.js. Accepte les noms de clips exacts ainsi que les synonymes francais et anglais (`self.play('marche')` ou `self.play('walk')`, `self.play('attente')` ou `self.play('idle')`, `self.play('course')` ou `self.play('run')`).
+
 ### Cycle de Vie et Donnees
 - `self.destroy()` : Supprime definitivement l'entite de la scene 3D.
 - `self.vars` : Dictionnaire d'etat propre a l'instance (ex: `self.vars.hp = 3`).
@@ -106,3 +109,12 @@ Tous les gestionnaires s'enregistrent au premier niveau du script :
 - `on('keydown', 'KEY', () => { ... })` : Pression sur une touche (memes noms que `input` : SPACE, LEFT, UP...).
 - `on('message', 'nom', (donnees) => { ... })` : Message diffuse par `game.broadcast`.
 - `on('beat', (beatNumber) => { ... })` : Temps fort de la musique jouee par `game.playSong`.
+
+---
+
+## 5. Materiaux et Textures Pixel Art
+
+Les materiaux definis dans `project.materials[]` (`standard`, `unlit`, `toon`) peuvent etre appliques aux nœuds de scene ou directement aux objets.
+- `textureSpriteId` : associe un sprite du projet comme texture UV.
+- Les textures sont filtrees avec `THREE.NearestFilter` pour garantir un rendu pixel art net sans flou bilineaire.
+- Prise en charge de la couleur diffuse, de la rugosite, du metallisme, de l'emissif, de la transparence et du rendu double-face.

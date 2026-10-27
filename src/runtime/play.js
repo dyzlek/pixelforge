@@ -77,6 +77,11 @@ export function mount(container, store) {
         addLog('Impossible de charger Three.js : ' + e.message, 'error');
         return;
       }
+      let GLTFLoader = null;
+      try {
+        const gltfMod = await import('three/addons/loaders/GLTFLoader.js');
+        GLTFLoader = gltfMod.GLTFLoader;
+      } catch {}
       if (state.dead || token !== state.token) return;
       try {
         // Scene demandee par l'editeur de scene 3D (« Tester la scene »), une seule fois
@@ -86,6 +91,7 @@ export function mount(container, store) {
           onLog: addLog,
           createChipAudio,
           startScene3DId,
+          GLTFLoader,
         });
       } catch (e) {
         addLog('Impossible de lancer le jeu 3D : ' + e.message, 'error');

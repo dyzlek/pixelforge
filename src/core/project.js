@@ -127,6 +127,22 @@ export function createSceneNode(name = 'Node3D', kind = 'mesh', parent = null) {
   };
 }
 
+export function createMaterial(name = 'Materiau', type = 'standard') {
+  return {
+    id: uid('mat'),
+    name,
+    type,
+    color: '#ffffff',
+    roughness: 0.8,
+    metalness: 0.1,
+    textureSpriteId: null,
+    emissive: '#000000',
+    transparent: false,
+    opacity: 1.0,
+    doubleSided: false,
+  };
+}
+
 export function createScene3D(name = 'Scene 3D') {
   return {
     id: uid('scene3d'),

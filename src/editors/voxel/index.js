@@ -4,6 +4,7 @@
  */
 
 import { greedyMeshVoxels } from './mesher.js';
+import { CC0_PRESETS } from '../../core/cc0-models.js';
 import { getIconSvg } from '../../ui/icons.js';
 import './voxel.css';
 
@@ -56,6 +57,13 @@ export function mount(container, store, { refId } = {}) {
       </div>
 
       <div style="display:flex;align-items:center;gap:6px;">
+        <select id="pf-voxel-cc0-select" class="pf-voxel-tool-btn" style="cursor:pointer;" title="Bibliotheque de modeles CC0 (Kenney, Quaternius)">
+          <option value="">Modeles CC0 (Kenney & Quaternius)...</option>
+          <option value="cc0_adventurer">Aventurier anime (Quaternius - CC0)</option>
+          <option value="cc0_knight">Chevalier anime (Quaternius - CC0)</option>
+          <option value="cc0_crate">Caisse en bois (Kenney - CC0)</option>
+          <option value="cc0_barrel">Baril (Kenney - CC0)</option>
+        </select>
         <label class="pf-voxel-tool-btn" style="cursor:pointer;" title="Importer un fichier glTF ou GLB">
           Importer glTF/GLB
           <input type="file" id="pf-gltf-file-input" accept=".gltf,.glb" style="display:none;" />
@@ -77,7 +85,11 @@ export function mount(container, store, { refId } = {}) {
           <div style="font-weight:600;color:var(--fg-0);">${esc(model.name)}</div>
           <div>Dimensions : ${dimX} × ${dimY} × ${dimZ} voxels</div>
           <div id="pf-voxel-count-label">Voxels : ${Object.keys(voxels).length}</div>
-          <div id="pf-voxel-gltf-info" style="display:${model.type === 'gltf' ? 'block' : 'none'};color:var(--accent);">Modèle glTF embarqué (non affiché en jeu pour l'instant : cube par défaut)</div>
+          <div id="pf-voxel-gltf-info" style="display:${model.type === 'gltf' ? 'block' : 'none'};color:var(--accent);margin-top:6px;font-size:11px;line-height:1.4;">
+            Modele 3D glTF embarque (anime en jeu et export).
+            <div style="color:var(--fg-2);font-size:10px;margin-top:2px;">Licence CC0 1.0 Domaine Public (voir CREDITS.md)</div>
+            <button type="button" id="pf-voxel-switch-mode" class="pf-voxel-tool-btn" style="margin-top:6px;width:100%;font-size:11px;">Basculer en mode Voxel</button>
+          </div>
         </div>
       </div>
     </div>
@@ -163,9 +175,39 @@ export function mount(container, store, { refId } = {}) {
         delete m.dataUrl;
       });
       gltfInfo.style.display = 'block';
+      rebuildMesh();
     };
     reader.readAsDataURL(file);
   };
+
+  const cc0Select = container.querySelector('#pf-voxel-cc0-select');
+  if (cc0Select) {
+    cc0Select.onchange = () => {
+      const presetId = cc0Select.value;
+      cc0Select.value = '';
+      if (!presetId) return;
+      const preset = CC0_PRESETS.find((p) => p.id === presetId);
+      if (!preset) return;
+      commit((m) => {
+        m.type = 'gltf';
+        m.gltfData = preset.generate();
+        delete m.dataUrl;
+      });
+      gltfInfo.style.display = 'block';
+      rebuildMesh();
+    };
+  }
+
+  const switchBtn = container.querySelector('#pf-voxel-switch-mode');
+  if (switchBtn) {
+    switchBtn.onclick = () => {
+      commit((m) => {
+        m.type = 'voxel';
+      });
+      gltfInfo.style.display = 'none';
+      rebuildMesh();
+    };
+  }
 
   // Toute modification passe par store.update (une entree d'annulation prise AVANT le changement)
   function commit(mutate) {
@@ -342,13 +384,57 @@ export function mount(container, store, { refId } = {}) {
     }
   }
 
-  function rebuildMesh() {
+  let gltfLoaderInstance = null;
+  async function rebuildMesh() {
     if (!scene || !ThreeLib) return;
 
     if (currentMesh) {
       scene.remove(currentMesh);
-      currentMesh.geometry?.dispose();
+      currentMesh.geometry?.dispose?.();
       currentMesh = null;
+    }
+
+    if (model.type === 'gltf' && model.gltfData) {
+      container.querySelector('#pf-voxel-poly-stats').textContent = 'Modele glTF 3D';
+      if (!gltfLoaderInstance) {
+        try {
+          const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+          gltfLoaderInstance = new GLTFLoader();
+        } catch {}
+      }
+      if (gltfLoaderInstance) {
+        const comma = model.gltfData.indexOf(',');
+        let ab;
+        if (comma !== -1) {
+          const b64 = model.gltfData.slice(comma + 1);
+          const binary = atob(b64);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          ab = bytes.buffer;
+        }
+        if (ab) {
+          gltfLoaderInstance.parse(ab, '', (gltf) => {
+            if (isDisposed || !scene) return;
+            if (currentMesh) scene.remove(currentMesh);
+            const cloned = gltf.scene;
+            const box = new ThreeLib.Box3().setFromObject(cloned);
+            const size = new ThreeLib.Vector3();
+            box.getSize(size);
+            const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+            const scaleFactor = (dimY * 0.8) / maxDim;
+            cloned.scale.setScalar(scaleFactor);
+            const scaledBox = new ThreeLib.Box3().setFromObject(cloned);
+            const center = new ThreeLib.Vector3();
+            scaledBox.getCenter(center);
+            cloned.position.x = -center.x;
+            cloned.position.z = -center.z;
+            cloned.position.y = -scaledBox.min.y;
+            currentMesh = cloned;
+            scene.add(currentMesh);
+          });
+        }
+      }
+      return;
     }
 
     // Execution de l'algorithme de Greedy Meshing

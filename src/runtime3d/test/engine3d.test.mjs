@@ -150,4 +150,37 @@ assert.ok(!emojiRegex.test(html), 'HTML export must not contain any emoji');
   assert.strictEqual(proj.scenes3d[0].gridmap.blocks['0,0,0'], 4);
 }
 
+// 6. Modeles glTF, materiaux et presets CC0 (Issue #73, F4)
+{
+  // (a) Verification de l'import de GLTFLoader dans l'export autonome HTML 3D
+  assert.ok(html.includes('import { GLTFLoader } from'), 'HTML export must import GLTFLoader');
+  assert.ok(html.includes('GLTFLoader,'), 'HTML export must pass GLTFLoader in opts');
+
+  // (b) Verification des presets CC0
+  const { CC0_PRESETS } = await import('../../core/cc0-models.js');
+  assert.strictEqual(CC0_PRESETS.length, 4, 'Doit contenir 4 presets CC0');
+  const adv = CC0_PRESETS.find((p) => p.id === 'cc0_adventurer');
+  assert.ok(adv, 'Preset aventurier Quaternius present');
+  const advDataUrl = adv.generate();
+  assert.ok(advDataUrl.startsWith('data:model/gltf+json;base64,'), 'Format dataUrl valide');
+
+  // (c) Validation des materiaux dans validateProject
+  const matProj = {
+    settings: { dimension: '3d', startScene3DId: 'sc1' },
+    sprites: [{ id: 'spr1', name: 'Texture', width: 16, height: 16, frames: ['data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='], animations: [] }],
+    materials: [
+      { id: 'mat1', name: 'Bois', type: 'standard', color: '#ff0000', textureSpriteId: 'spr1' },
+      { id: 'mat_orphan', name: 'Pierre', type: 'unlit', textureSpriteId: 'spr_inexistant' }
+    ],
+    objects: [{ id: 'p', name: 'Player', materialId: 'mat1', physics: { enabled: true } }],
+    scenes3d: [{ id: 'sc1', name: 'Main', gridmap: { blocks: { '0,0,0': 1 } }, entities: [{ objectId: 'p', x: 0, y: 1, z: 0 }] }],
+    maps: [], sounds: [], songs: []
+  };
+  const matIssues = validateProject(matProj);
+  assert.ok(
+    matIssues.some((i) => i.level === 'error' && i.message.includes('spr_inexistant')),
+    'textureSpriteId invalide doit declencher une erreur'
+  );
+}
+
 console.log('Tous les tests Runtime 3D Retro sont valides !');

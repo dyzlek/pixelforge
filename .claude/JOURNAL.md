@@ -572,6 +572,53 @@
   - Ajout de l'onglet [MIXER] dans la barre de transport du studio musical.
 - **Verifie** : `npm run build`, `npm test` (tests unitaires de l'encodeur WAV et du parseur MIDI integres), `npm run check:doc`, validation des 3 jeux. Zero emoji.
 
+## 2026-10-27 (50) — [Phase F] F0 : Document de conception de l'editeur 3D Godot-style (Closes #69)
+- **Fait** :
+  - Redaction du document d'architecture et de conception complet `docs/3D-EDITOR.md`.
+  - Specification detaillee de l'arbre de scene hierarchique 3D (`nodes[]`), de la barre d'outils gizmos et d'aimantation.
+  - Definition des modes de navigation du viewport (flycam, orbite, vues orthogonales, focus).
+  - Specification du support des modeles glTF 2.0 animes avec `AnimationMixer` et materiaux PBR retro.
+- **Verifie** : `npm test`, `npm run build`, `npm run check:doc`. Zero emoji.
+
+## 2026-10-27 (51) — [Phase F] F1 : Graphe de scene 3D, arbre hierarchique et inspecteur (Closes #70)
+- **Fait** :
+  - Support de `nodes[]` dans le schema projet `docs/PROJECT_SCHEMA.json` et normalisation bidirectionnelle `entities[]` <-> `nodes[]` dans `src/core/project.js`.
+  - Creation du panneau d'arbre hierarchique 3D `src/ui/panels/scene-tree.js` avec indentation, icones par type, menu d'ajout, duplication, suppression et glisser-deposer pour re-parenter sans cycle.
+  - Integration dans l'inspecteur (`src/ui/inspector-schemas.js`) pour les proprietes de transformation, objet et materiau des nœuds 3D.
+  - Prise en charge dans `src/runtime3d/engine3d.js` de l'instanciation des entites a partir de `scene.nodes`.
+- **Verifie** : `npm test`, `npm run build`, validation des jeux et test Playwright e2e. Zero emoji.
+
+## 2026-10-27 (52) — [Phase F] F2 : Selection, gizmos et aimantation (Closes #71)
+- **Fait** :
+  - Integration de `TransformControls` de Three.js dans `src/editors/scene3d/index.js` avec modes Translation (W), Rotation (E), Echelle (R).
+  - Basculement d'espace de coordonnees Monde / Local (Q).
+  - Grille d'aimantation parametrable (1.0, 0.5, 0.25, desactive) avec suspension temporaire via Ctrl.
+  - Multi-selection par Shift+Clic et rectangle elastique de projection marquee.
+  - Actions de presse-papiers : Copier (Ctrl+C), Coller (Ctrl+V), Dupliquer (Ctrl+D), Supprimer.
+  - Validation atomique des transformations au relachement pour annulation/retablissement propre via Ctrl+Z.
+- **Verifie** : `npm test`, `npm run build`, test e2e Playwright. Zero emoji.
+
+## 2026-10-27 (53) — [Phase F] F3 : Navigation de viewport 3D style Godot (Closes #72)
+- **Fait** :
+  - Mode vol libre (flycam) avec maintien du clic droit et touches ZQSD/WASD, montee/descente avec Espace/E/C et acceleration Maj.
+  - Mode orbite camera au clic molette ou Alt+clic gauche autour de la cible.
+  - Cadrage automatique sur la selection (touche F) centrant la camera sur le barycentre des nœuds selectionnes.
+  - Vues orthogonales alignees predefinies : Face (1 / Numpad 1), Cote (3 / Numpad 3), Dessus (7 / Numpad 7).
+  - Basculement de projection perspective / orthographique (5 / Numpad 5).
+  - Grille etendue 64x64 et repere d'orientation RGB (`AxesHelper`).
+- **Verifie** : `npm test`, `npm run build`, test e2e Playwright. Zero emoji.
+
+## 2026-10-27 (54) — [Phase F] F4 : Modeles glTF animes et materiaux, en jeu et en export (Closes #73)
+- **Fait** :
+  - Creation de `CREDITS.md` repertoriant l'attribution CC0 pour Kenney, Quaternius, Sweetie 16, et les licences open source (Three.js, Phaser, CodeMirror, Vite, PixelForge).
+  - Creation de generateurs de modeles glTF 2.0 embarques CC0 dans `src/core/cc0-models.js` (Aventurier et Chevalier animes Quaternius, Caisse et Baril Kenney).
+  - Integration de `GLTFLoader` dans l'export standalone HTML 3D (`src/runtime3d/export-template-3d.js`) et dans le lanceur de jeu studio (`src/runtime/play.js`).
+  - Moteur de rendu 3D `src/runtime3d/engine3d.js` : chargement et cache des modeles glTF, mise a l'echelle et alignement de la boite englobante, pilotage des animations squelettiques / de transformation par `AnimationMixer` via `self.play('marche')` / `self.play('walk')` avec fondu enchaine de 150 ms.
+  - Gestion des materiaux personnalises `materials[]` (`standard`, `unlit`, `toon`), texture UV extraite des sprites du projet avec filtrage `NearestFilter` pour un rendu retro net, emissif, transparence et double-face.
+  - Selecteur de modeles CC0 et previsualisation 3D dynamique dans l'editeur de modeles (`src/editors/voxel/index.js`).
+  - Validation et documentation de l'API de script 3D (`docs/SCRIPT_API_3D.md`).
+- **Verifie** : `npm test`, `npm run build`, `npm run check:doc`, validation des jeux et 11 tests Playwright e2e 100% verts. Zero emoji.
+
 
 
 
