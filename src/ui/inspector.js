@@ -130,6 +130,7 @@ export function createInspector(container, store) {
     }
 
     for (const g of schema.groups) {
+      if (g.id === 'lightProps' && target.data?.kind !== 'light') continue;
       const groupEl = document.createElement('div');
       const isCollapsed = collapsedGroups.has(g.id);
       groupEl.className = `pf-insp-group${isCollapsed ? ' collapsed' : ''}`;

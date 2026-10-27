@@ -372,6 +372,15 @@ export function validateProject(p) {
       if (n.materialId && !materialById.has(n.materialId)) {
         add('error', nw, `materialId "${n.materialId}" matches no material`);
       }
+      if (n.kind === 'light') {
+        const lp = n.props || {};
+        if (lp.lightType && !['point', 'spot'].includes(lp.lightType)) {
+          add('error', nw, `unknown lightType "${lp.lightType}" (must be "point" or "spot")`);
+        }
+        if (lp.intensity != null && (!Number.isFinite(lp.intensity) || lp.intensity < 0)) {
+          add('error', nw, `invalid light intensity "${lp.intensity}" (must be a positive number)`);
+        }
+      }
     });
 
     for (const n of sc.nodes || []) {

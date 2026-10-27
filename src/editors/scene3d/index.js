@@ -257,6 +257,7 @@ export function mount(container, store, { refId } = {}) {
     if (blockGroup) {
       rebuildBlocks();
       rebuildEntities();
+      rebuildLightsAndEnvironment();
       updateGizmoAttachment();
     }
     updateSelectionUI();
@@ -270,6 +271,7 @@ export function mount(container, store, { refId } = {}) {
     if (blockGroup) {
       rebuildBlocks();
       rebuildEntities();
+      rebuildLightsAndEnvironment();
       updateGizmoAttachment();
     }
     updateSelectionUI();
@@ -363,7 +365,7 @@ export function mount(container, store, { refId } = {}) {
   const marqueeEl = container.querySelector('#pf-s3d-marquee');
   let scene, camera, cameraPersp, cameraOrtho, renderer, ThreeLib;
   let gridHelper, axesHelper;
-  let blockGroup, entityGroup;
+  let blockGroup, entityGroup, lightGroup, ambLight, dirLight;
   let transformControls = null;
   let transformHelper = null;
   let ro = null;
@@ -609,12 +611,15 @@ export function mount(container, store, { refId } = {}) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     viewportContainer.appendChild(renderer.domElement);
 
-    // Lumieres
-    const amb = new ThreeLib.AmbientLight(0xffffff, 0.75);
-    scene.add(amb);
-    const dir = new ThreeLib.DirectionalLight(0xffeedd, 0.95);
-    dir.position.set(15, 25, 20);
-    scene.add(dir);
+    // Lumieres & Ambiance
+    ambLight = new ThreeLib.AmbientLight(0xffffff, 0.75);
+    scene.add(ambLight);
+    dirLight = new ThreeLib.DirectionalLight(0xffeedd, 0.95);
+    dirLight.position.set(15, 25, 20);
+    scene.add(dirLight);
+
+    lightGroup = new ThreeLib.Group();
+    scene.add(lightGroup);
 
     // Grille de travail a l'etage Y actif (etendue 64x64)
     gridHelper = new ThreeLib.GridHelper(64, 64, 0x41a6f6, 0x272c3d);
@@ -693,9 +698,10 @@ export function mount(container, store, { refId } = {}) {
       }
     });
 
-    // Rendu des blocs et des entites
+    // Rendu des blocs, entites, lumieres et ambiance
     rebuildBlocks();
     rebuildEntities();
+    rebuildLightsAndEnvironment();
     updateGizmoAttachment();
     updateOrbitCamera();
 
@@ -987,6 +993,122 @@ export function mount(container, store, { refId } = {}) {
     updateSelectionUI();
   }
 
+  function rebuildLightsAndEnvironment() {
+    if (!scene || !ThreeLib) return;
+    const env = sceneData?.environment || store.project?.environment || {};
+    const bgColor = env.skyColor || '#1a1c2c';
+
+    // Ciel degrade (skyGradient) ou couleur unie
+    if (env.skyGradient?.enabled && typeof document !== 'undefined' && typeof ThreeLib.CanvasTexture === 'function') {
+      try {
+        const skyCanvas = document.createElement('canvas');
+        skyCanvas.width = 2;
+        skyCanvas.height = 256;
+        const ctx2d = skyCanvas.getContext('2d');
+        if (ctx2d) {
+          const grad = ctx2d.createLinearGradient(0, 0, 0, 256);
+          grad.addColorStop(0, env.skyGradient.topColor || '#0d0f18');
+          grad.addColorStop(1, env.skyGradient.bottomColor || env.horizonColor || '#29366f');
+          ctx2d.fillStyle = grad;
+          ctx2d.fillRect(0, 0, 2, 256);
+          const skyTex = new ThreeLib.CanvasTexture(skyCanvas);
+          scene.background = skyTex;
+        } else {
+          scene.background = new ThreeLib.Color(bgColor);
+        }
+      } catch (e) {
+        scene.background = new ThreeLib.Color(bgColor);
+      }
+    } else {
+      scene.background = new ThreeLib.Color(bgColor);
+    }
+
+    // Brouillard (lineaire ou exponentiel)
+    if (env.fog?.enabled) {
+      const fogColor = env.fog.color || bgColor;
+      if (env.fog.type === 'linear' && typeof ThreeLib.Fog === 'function') {
+        scene.fog = new ThreeLib.Fog(fogColor, env.fog.near || 10, env.fog.far || 50);
+      } else if (typeof ThreeLib.FogExp2 === 'function') {
+        scene.fog = new ThreeLib.FogExp2(fogColor, env.fog.density || 0.04);
+      }
+    } else {
+      scene.fog = null;
+    }
+
+    if (ambLight) {
+      ambLight.color.set(env.ambientLight?.color || '#ffffff');
+      ambLight.intensity = typeof env.ambientLight?.intensity === 'number' ? env.ambientLight.intensity : 0.6;
+    }
+    if (dirLight) {
+      dirLight.color.set(env.directionalLight?.color || '#ffeedd');
+      dirLight.intensity = typeof env.directionalLight?.intensity === 'number' ? env.directionalLight.intensity : 1.0;
+      const dp = env.directionalLight?.position || [15, 25, 20];
+      dirLight.position.set(dp[0], dp[1], dp[2]);
+
+      const shadowsEnabled = !!(env.directionalLight?.castShadow || env.shadows?.enabled);
+      if (renderer?.shadowMap) {
+        renderer.shadowMap.enabled = shadowsEnabled;
+        if (shadowsEnabled && ThreeLib.PCFSoftShadowMap) {
+          renderer.shadowMap.type = ThreeLib.PCFSoftShadowMap;
+        }
+      }
+      if (dirLight.shadow) {
+        dirLight.castShadow = shadowsEnabled;
+        if (shadowsEnabled) {
+          dirLight.shadow.mapSize.width = 1024;
+          dirLight.shadow.mapSize.height = 1024;
+          dirLight.shadow.camera.near = 0.5;
+          dirLight.shadow.camera.far = 100;
+          const d = 30;
+          dirLight.shadow.camera.left = -d;
+          dirLight.shadow.camera.right = d;
+          dirLight.shadow.camera.top = d;
+          dirLight.shadow.camera.bottom = -d;
+          dirLight.shadow.bias = -0.0005;
+        }
+      }
+    }
+
+    if (lightGroup) {
+      while (lightGroup.children.length > 0) {
+        lightGroup.remove(lightGroup.children[0]);
+      }
+      const lightNodes = (sceneData?.nodes || []).filter((n) => n.kind === 'light' && n.visible !== false).slice(0, 4);
+      lightNodes.forEach((ln) => {
+        const lp = ln.props || {};
+        const pos = Array.isArray(ln.position) ? ln.position : [0, 2, 0];
+        const lColor = lp.color || '#ffcd75';
+        const lIntensity = typeof lp.intensity === 'number' ? lp.intensity : 1.5;
+        const lDist = typeof lp.distance === 'number' ? lp.distance : 12;
+        const lDecay = typeof lp.decay === 'number' ? lp.decay : 2;
+
+        let lObj = null;
+        if (lp.lightType === 'spot' && typeof ThreeLib.SpotLight === 'function') {
+          const angleRad = ((lp.angle || 45) * Math.PI) / 180;
+          const penumbra = lp.penumbra != null ? lp.penumbra : 0.2;
+          lObj = new ThreeLib.SpotLight(lColor, lIntensity, lDist, angleRad, penumbra, lDecay);
+          lObj.position.set(pos[0], pos[1], pos[2]);
+          if (lp.castShadow && lObj.shadow) {
+            lObj.castShadow = true;
+            lObj.shadow.mapSize.width = 512;
+            lObj.shadow.mapSize.height = 512;
+          }
+          lightGroup.add(lObj);
+          if (lObj.target) lightGroup.add(lObj.target);
+        } else if (typeof ThreeLib.PointLight === 'function') {
+          lObj = new ThreeLib.PointLight(lColor, lIntensity, lDist, lDecay);
+          lObj.position.set(pos[0], pos[1], pos[2]);
+          if (lp.castShadow && lObj.shadow) {
+            lObj.castShadow = true;
+            lObj.shadow.mapSize.width = 512;
+            lObj.shadow.mapSize.height = 512;
+          }
+          lightGroup.add(lObj);
+        }
+      });
+    }
+  }
+
   function rebuildBlocks() {
     while (blockGroup.children.length > 0) {
       blockGroup.remove(blockGroup.children[0]);
@@ -995,6 +1117,8 @@ export function mount(container, store, { refId } = {}) {
     for (const [key, value] of grid.blocks.entries()) {
       const { x, y, z } = GridMap3D.parseKey(key);
       const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(blockColor(value)));
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       mesh.position.set(x, y, z);
       mesh.userData = { blockKey: key, x, y, z };
       blockGroup.add(mesh);
@@ -1033,7 +1157,8 @@ export function mount(container, store, { refId } = {}) {
 
       let mat = getMaterial(color);
       if (node.kind === 'light') {
-        mat = getMaterial('#ffea75');
+        const lp = node.props || {};
+        mat = getMaterial(lp.color || '#ffea75');
       } else if (node.kind === 'camera') {
         mat = getMaterial('#41a6f6');
       } else if (node.kind === 'collision') {
@@ -1041,6 +1166,8 @@ export function mount(container, store, { refId } = {}) {
       }
 
       const mesh = new ThreeLib.Mesh(cubeGeo.geo, mat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       mesh.position.set(pos[0], pos[1], pos[2]);
       mesh.rotation.set(rot[0] * (Math.PI / 180), rot[1] * (Math.PI / 180), rot[2] * (Math.PI / 180));
       mesh.scale.set(scl[0] * 0.9, scl[1] * 0.9, scl[2] * 0.9);

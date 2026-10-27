@@ -111,6 +111,7 @@ export function createModel(name = 'Modele', width = 8, height = 8, depth = 8) {
 }
 
 export function createSceneNode(name = 'Node3D', kind = 'mesh', parent = null) {
+  const isLight = kind === 'light';
   return {
     id: uid('node3d'),
     name,
@@ -123,7 +124,16 @@ export function createSceneNode(name = 'Node3D', kind = 'mesh', parent = null) {
     locked: false,
     objectId: null,
     materialId: null,
-    props: {},
+    props: isLight ? {
+      lightType: 'point',
+      color: '#ffcd75',
+      intensity: 1.5,
+      distance: 12,
+      decay: 2,
+      angle: 45,
+      penumbra: 0.2,
+      castShadow: false
+    } : {},
   };
 }
 
@@ -150,9 +160,11 @@ export function createScene3D(name = 'Scene 3D') {
     environment: {
       skyColor: '#1a1c2c',
       horizonColor: '#29366f',
-      fog: { enabled: false, color: '#1a1c2c', density: 0.04 },
+      skyGradient: { enabled: false, topColor: '#0d0f18', bottomColor: '#29366f' },
+      fog: { enabled: false, type: 'exp2', color: '#1a1c2c', density: 0.04, near: 10, far: 50 },
       ambientLight: { color: '#ffffff', intensity: 0.6 },
-      directionalLight: { color: '#ffeedd', intensity: 1.0, position: [10, 20, 15] },
+      directionalLight: { color: '#ffeedd', intensity: 1.0, position: [10, 20, 15], castShadow: false },
+      shadows: { enabled: false }
     },
     gridmap: {
       blockSize: 1,
@@ -411,6 +423,55 @@ export function normalizeProject(p) {
             props: n.props || {},
           });
         }
+      }
+    }
+
+    // Normalisation de l'environnement de la scene (ciel, brouillard, lumieres, ombres)
+    const env = sc.environment || {};
+    sc.environment = {
+      skyColor: env.skyColor || '#1a1c2c',
+      horizonColor: env.horizonColor || '#29366f',
+      skyGradient: {
+        enabled: !!env.skyGradient?.enabled,
+        topColor: env.skyGradient?.topColor || '#0d0f18',
+        bottomColor: env.skyGradient?.bottomColor || env.horizonColor || '#29366f'
+      },
+      fog: {
+        enabled: !!env.fog?.enabled,
+        type: env.fog?.type || 'exp2',
+        color: env.fog?.color || env.skyColor || '#1a1c2c',
+        density: typeof env.fog?.density === 'number' ? env.fog.density : 0.04,
+        near: typeof env.fog?.near === 'number' ? env.fog.near : 10,
+        far: typeof env.fog?.far === 'number' ? env.fog.far : 50
+      },
+      ambientLight: {
+        color: env.ambientLight?.color || '#ffffff',
+        intensity: typeof env.ambientLight?.intensity === 'number' ? env.ambientLight.intensity : 0.6
+      },
+      directionalLight: {
+        color: env.directionalLight?.color || '#ffeedd',
+        intensity: typeof env.directionalLight?.intensity === 'number' ? env.directionalLight.intensity : 1.0,
+        position: Array.isArray(env.directionalLight?.position) ? env.directionalLight.position : [10, 20, 15],
+        castShadow: !!env.directionalLight?.castShadow
+      },
+      shadows: {
+        enabled: !!(env.shadows?.enabled || env.directionalLight?.castShadow)
+      }
+    };
+
+    for (const n of sc.nodes) {
+      if (n.kind === 'light') {
+        n.props = {
+          lightType: 'point',
+          color: '#ffcd75',
+          intensity: 1.5,
+          distance: 12,
+          decay: 2,
+          angle: 45,
+          penumbra: 0.2,
+          castShadow: false,
+          ...(n.props || {})
+        };
       }
     }
   }

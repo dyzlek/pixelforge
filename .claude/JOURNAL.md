@@ -1,5 +1,31 @@
 # Journal — PixelForge
 
+## 2026-10-27 (60) — [Phase F] F5 : lumières, ciel et ambiance éditables (Issue #74)
+- **Fait** :
+  - `src/core/project.js` & `docs/PROJECT_SCHEMA.json` :
+    - Schema de l'environnement de scene 3D enrichi : `skyGradient` (degrade zenith/horizon), `fog` (lineaire ou exponentiel avec densite et distances near/far), `ambientLight` (couleur et intensite), `directionalLight` (couleur, intensite, position, ombres portees) et `shadows` (activation globale).
+    - Support des noeuds 3D de type `light` (`kind: 'light'`) avec proprietes completes : `lightType` ('point' | 'spot'), `color`, `intensity`, `distance`, `decay`, `angle`, `penumbra`, `castShadow`.
+    - Normalisation sans perte dans `normalizeProject` pour garantir la retrocompatibilite de toutes les scenes existantes.
+  - `src/core/ops/validate.js` :
+    - Validation du type de lumiere (`point` ou `spot`), de l'intensite positive et de la structure de l'environnement.
+  - `src/ui/inspector-schemas.js` & `src/ui/inspector.js` & `src/ui/panels/scene-tree.js` :
+    - Onglet inspecteur dedie aux parametres de lumiere visible uniquement lors de la selection d'un noeud `light`.
+    - Extension des champs d'environnement de la scene 3D (ciel degrade, brouillard lineaire/exp2, eclairage, ombres).
+    - Creation directe de noeuds `Lumiere` depuis le bouton d'ajout de l'arbre de scene avec position initiale sure au-dessus du sol.
+  - `src/editors/scene3d/index.js` & `src/runtime3d/engine3d.js` :
+    - Rendu partagé et rigoureusement identique entre l'editeur et le runtime de jeu :
+      - Ciel degrade via texture Canvas 2D en degrade lineaire vertical ou couleur unie.
+      - Brouillard volumetrique lineaire (`Fog`) ou exponentiel (`FogExp2`).
+      - Eclairage directionnel avec calcul d'ombres portees (`PCFSoftShadowMap`, carte d'ombre 1024x1024).
+      - Prise en charge des lumieres dynamiques ponctuelles et projecteurs (limite a 4 lumieres actives en mode retro pour preserver un affichage fluide a 60 FPS).
+      - Activation automatique des ombres portees (`castShadow` et `receiveShadow`) sur les blocs de la GridMap, les modeles voxel et les entites glTF.
+      - Reactivite immediate : les modifications d'ambiance et de lumiere dans l'inspecteur sont repercutees instantanement dans la vue 3D sans rechargement.
+  - Tests :
+    - `src/runtime3d/test/engine3d.test.mjs` & `src/runtime3d/test/sim3d.test.mjs` : tests unitaires d'environnement, de lumieres dynamiques et de validation.
+    - `e2e/studio.spec.js` : test 15 Playwright validant l'ajout de noeud Lumiere, la configuration du ciel degrade, du brouillard et des ombres dans le jeu 3D Cube Runner.
+- **Verifie** : `npm test`, `npm run check:doc`, `npm run build`, validation des jeux et `npm run test:e2e` (15 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/lights-sky-ambiance`, Closes #74.
+
 ## 2026-10-27 (59) — [Phase G] G4 : arrangement multipiste (timeline) (Issue #84)
 - **Fait** :
   - `src/audio/presets/epic-2min.js` & `src/audio/presets/index.js` :

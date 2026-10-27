@@ -500,13 +500,14 @@ test.describe('PixelForge Studio E2E Tests', () => {
       await window.__pfStore.openGame('cube-runner');
     });
 
-    // 2. Ouvrir la scene 3D
+    // 2. Ouvrir la scene 3D et activer le panneau arbre de scene
     await page.evaluate(() => {
       const p = window.__pfStore.project;
       const sc = p.scenes3d?.[0];
       if (sc) {
         window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
       }
+      window.__pfDock.activatePanel('scene-tree');
     });
 
     // 3. Verifier la barre d'outils gizmos
@@ -560,13 +561,14 @@ test.describe('PixelForge Studio E2E Tests', () => {
       await window.__pfStore.openGame('cube-runner');
     });
 
-    // 2. Ouvrir la scene 3D
+    // 2. Ouvrir la scene 3D et activer le panneau arbre de scene
     await page.evaluate(() => {
       const p = window.__pfStore.project;
       const sc = p.scenes3d?.[0];
       if (sc) {
         window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
       }
+      window.__pfDock.activatePanel('scene-tree');
     });
 
     await page.waitForSelector('.pf-scene3d-viewport canvas');
@@ -827,5 +829,73 @@ test.describe('PixelForge Studio E2E Tests', () => {
     expect(projectSong.bpm).toBe(120);
     expect(projectSong.markers.length).toBe(5);
     expect(projectSong.clips.length).toBe(5);
+  });
+
+  test('lumieres, ciel et ambiance editables dans la vue 3D', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Ouvrir la scene 3D et activer le panneau arbre de scene
+    await page.evaluate(() => {
+      const p = window.__pfStore.project;
+      const sc = p.scenes3d?.[0];
+      if (sc) {
+        window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
+      }
+      window.__pfDock.activatePanel('scene-tree');
+    });
+
+    await page.waitForSelector('.pf-scene3d-viewport canvas');
+
+    // 3. Ajouter un noeud de Lumiere dans l'arbre de scene
+    const addBtn = page.locator('#pf-st-add-btn');
+    await expect(addBtn).toBeVisible();
+    await addBtn.click();
+
+    const addLightItem = page.locator('.pf-st-menu-item[data-add-kind="light"]');
+    await expect(addLightItem).toBeVisible();
+    await addLightItem.click();
+
+    // 4. Verifier que le noeud Lumiere a ete cree
+    const lightNode = await page.evaluate(() => {
+      const sc = window.__pfStore.project.scenes3d?.[0];
+      return sc?.nodes?.find((n) => n.kind === 'light');
+    });
+    expect(lightNode).toBeTruthy();
+    expect(lightNode.props.lightType).toBe('point');
+    expect(lightNode.position[1]).toBe(3);
+
+    // 5. Verifier l'affichage du panneau d'inspection pour la lumiere
+    const inspGroup = page.locator('.pf-insp-group', { hasText: 'Parametres de Lumiere' });
+    await expect(inspGroup).toBeVisible();
+
+    // 6. Configurer l'environnement (ciel degrade, brouillard, ombres)
+    await page.evaluate(() => {
+      const store = window.__pfStore;
+      store.update((p) => {
+        const sc = p.scenes3d?.[0];
+        if (sc) {
+          sc.environment = {
+            ...sc.environment,
+            skyGradient: { enabled: true, topColor: '#05060a', bottomColor: '#1a1c2c' },
+            fog: { enabled: true, type: 'linear', color: '#090a10', near: 15, far: 60 },
+            directionalLight: { ...sc.environment?.directionalLight, castShadow: true },
+            shadows: { enabled: true }
+          };
+        }
+      }, 'inspector');
+    });
+
+    const envData = await page.evaluate(() => {
+      return window.__pfStore.project.scenes3d?.[0]?.environment;
+    });
+    expect(envData.skyGradient.enabled).toBe(true);
+    expect(envData.fog.type).toBe('linear');
+    expect(envData.directionalLight.castShadow).toBe(true);
   });
 });

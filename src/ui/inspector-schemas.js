@@ -232,6 +232,29 @@ export const SCHEMAS = {
         ],
       },
       {
+        id: 'lightProps',
+        label: 'Parametres de Lumiere',
+        fields: [
+          {
+            key: 'props.lightType',
+            label: 'Type de lumiere',
+            type: 'enum',
+            options: [
+              { label: 'Ponctuelle (PointLight)', value: 'point' },
+              { label: 'Projecteur (SpotLight)', value: 'spot' }
+            ],
+            default: 'point'
+          },
+          { key: 'props.color', label: 'Couleur', type: 'color', default: '#ffcd75' },
+          { key: 'props.intensity', label: 'Intensite', type: 'number', min: 0, max: 10, step: 0.1, default: 1.5 },
+          { key: 'props.distance', label: 'Portee (distance)', type: 'number', min: 0, max: 100, step: 1, default: 12 },
+          { key: 'props.decay', label: 'Attenuation (decay)', type: 'number', min: 0, max: 4, step: 0.5, default: 2 },
+          { key: 'props.angle', label: 'Angle spot (degres)', type: 'number', min: 5, max: 90, step: 5, default: 45 },
+          { key: 'props.penumbra', label: 'Penombre (0-1)', type: 'number', min: 0, max: 1, step: 0.05, default: 0.2 },
+          { key: 'props.castShadow', label: 'Ombres portees', type: 'boolean', default: false }
+        ]
+      },
+      {
         id: 'instanceProps',
         label: 'Variables d’instance (Props)',
         type: 'instance-props',
@@ -251,14 +274,46 @@ export const SCHEMAS = {
       },
       {
         id: 'environment',
-        label: 'Environnement & Ambiance',
+        label: 'Environnement & Ciel',
         fields: [
-          { key: 'environment.skyColor', label: 'Couleur du ciel', type: 'color', default: '#1a1c2c' },
-          { key: 'environment.horizonColor', label: 'Degrade horizon', type: 'color', default: '#29366f' },
-          { key: 'environment.ambientLight.intensity', label: 'Lumiere ambiante', type: 'number', min: 0, max: 2, step: 0.1, default: 0.6 },
-          { key: 'environment.directionalLight.intensity', label: 'Lumiere directionnelle', type: 'number', min: 0, max: 3, step: 0.1, default: 1.0 },
-          { key: 'environment.fog.enabled', label: 'Brouillard active', type: 'boolean', default: true },
+          { key: 'environment.skyColor', label: 'Couleur ciel unie', type: 'color', default: '#1a1c2c' },
+          { key: 'environment.skyGradient.enabled', label: 'Degrade de ciel', type: 'boolean', default: false },
+          { key: 'environment.skyGradient.topColor', label: 'Ciel haut (zenith)', type: 'color', default: '#0d0f18' },
+          { key: 'environment.skyGradient.bottomColor', label: 'Ciel bas (horizon)', type: 'color', default: '#29366f' },
+          { key: 'environment.horizonColor', label: 'Couleur horizon classique', type: 'color', default: '#29366f' }
+        ],
+      },
+      {
+        id: 'lighting',
+        label: 'Eclairage & Ombres',
+        fields: [
+          { key: 'environment.ambientLight.color', label: 'Ambiante couleur', type: 'color', default: '#ffffff' },
+          { key: 'environment.ambientLight.intensity', label: 'Ambiante intensite', type: 'number', min: 0, max: 2, step: 0.05, default: 0.6 },
+          { key: 'environment.directionalLight.color', label: 'Soleil couleur', type: 'color', default: '#ffeedd' },
+          { key: 'environment.directionalLight.intensity', label: 'Soleil intensite', type: 'number', min: 0, max: 3, step: 0.1, default: 1.0 },
+          { key: 'environment.directionalLight.castShadow', label: 'Ombres solaires', type: 'boolean', default: false },
+          { key: 'environment.shadows.enabled', label: 'Activer ombres globales', type: 'boolean', default: false }
+        ],
+      },
+      {
+        id: 'fog',
+        label: 'Brouillard',
+        fields: [
+          { key: 'environment.fog.enabled', label: 'Brouillard active', type: 'boolean', default: false },
+          {
+            key: 'environment.fog.type',
+            label: 'Type de brouillard',
+            type: 'enum',
+            options: [
+              { label: 'Exponentiel (Exp2)', value: 'exp2' },
+              { label: 'Lineaire', value: 'linear' }
+            ],
+            default: 'exp2'
+          },
           { key: 'environment.fog.color', label: 'Couleur brouillard', type: 'color', default: '#1a1c2c' },
+          { key: 'environment.fog.density', label: 'Densite (Exp2)', type: 'number', min: 0.001, max: 0.2, step: 0.005, default: 0.04 },
+          { key: 'environment.fog.near', label: 'Debut (Lineaire)', type: 'number', min: 0, max: 100, step: 2, default: 10 },
+          { key: 'environment.fog.far', label: 'Fin (Lineaire)', type: 'number', min: 5, max: 200, step: 5, default: 50 }
         ],
       },
     ],

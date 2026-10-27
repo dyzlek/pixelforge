@@ -472,23 +472,56 @@
               "props": { "type": "object" }
             }
           }
-        }
+        },
+        "environment": { "$ref": "#/$defs/environment" }
       }
     },
     "environment": {
       "type": "object",
       "properties": {
         "skyColor": { "$ref": "#/$defs/color" },
+        "horizonColor": { "$ref": "#/$defs/color" },
+        "skyGradient": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" },
+            "topColor": { "$ref": "#/$defs/color" },
+            "bottomColor": { "$ref": "#/$defs/color" }
+          }
+        },
         "fog": {
           "type": "object",
           "properties": {
             "enabled": { "type": "boolean" },
+            "type": { "type": "string", "enum": ["exp2", "linear"] },
             "color": { "$ref": "#/$defs/color" },
-            "density": { "type": "number" }
+            "density": { "type": "number" },
+            "near": { "type": "number" },
+            "far": { "type": "number" }
           }
         },
-        "ambientLight": { "type": "object" },
-        "directionalLight": { "type": "object" }
+        "ambientLight": {
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/color" },
+            "intensity": { "type": "number" }
+          }
+        },
+        "directionalLight": {
+          "type": "object",
+          "properties": {
+            "color": { "$ref": "#/$defs/color" },
+            "intensity": { "type": "number" },
+            "position": { "type": "array", "items": { "type": "number" } },
+            "castShadow": { "type": "boolean" }
+          }
+        },
+        "shadows": {
+          "type": "object",
+          "properties": {
+            "enabled": { "type": "boolean" }
+          }
+        }
       }
     }
   }
