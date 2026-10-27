@@ -1,5 +1,28 @@
 # Journal — PixelForge
 
+## 2026-10-27 (66) — [Phase G] G5 : piano roll avancé, clavier MIDI et enregistrement en direct (Issue #85)
+- **Fait** :
+  - `src/editors/music/pianoroll.js` :
+    - Gestion de la velocite par note (valeur de 0.05 a 1.0, defaut a 0.8), rendu dynamique de l'opacite des notes et audition ponderee en volume.
+    - Piste inferieure de velocite retractable (`.pf-pianoroll-velocity-lane`) avec jauges verticales interactives (`.pf-velocity-stem`, `.pf-velocity-handle`) permettant l'ajustement fin de la dynamique note a note.
+    - Outil de quantification rythmique (1/16, 1/8, 1/4) avec bouton dans la barre d'outils et raccourci clavier `Q` recalant les notes selectionnees sur la grille la plus proche.
+    - Selection multiple de notes (Shift/Ctrl + clic ou lasso de selection rectangulaire `.pf-pianoroll-marquee`), deplacement et transposition groupique preservant les ecarts musicaux relatifs.
+    - Operations de presse-papiers completes : Copier (`Ctrl+C`), Couper (`Ctrl+X`), Coller (`Ctrl+V`), Dupliquer (`Ctrl+D`), et Supprimer (`Delete` / `Backspace`).
+    - Integration de l'API Web MIDI (`navigator.requestMIDIAccess`) avec detection des peripheriques connectes, reconnexion dynamique, voyant lumineux d'activite et hooks d'audition / simulation (`window.__pfSimulateMidiNoteOn`, `window.__pfSimulateMidiNoteOff`).
+    - Clavier piano virtuel pilote par les touches du clavier d'ordinateur (2 octaves) avec boutons `-` / `+` et raccourcis `[` et `]` pour le decalage d'octave.
+    - Enregistrement en direct (`.pf-btn-rec`) dans le clip actif durant la lecture avec option de quantification a l'enregistrement.
+  - `src/editors/music/music.css` :
+    - Styles d'interface pour les notes selectionnees, le rectangle lasso, la piste de velocite, les tiges et poignees de reglage, le bouton REC actif et l'indicateur de statut MIDI.
+  - `src/editors/music/index.js` :
+    - Transmission des fonctions de transport (`getCurrentStep`, `getIsPlaying`, `startPlayback`, `stopPlayback`) au composant `renderPianoRoll`.
+  - `docs/MUSIC.md` :
+    - Ajout de la section 8 documentant le Piano Roll avance, la piste de velocite, les claviers d'entree et le flux d'enregistrement live.
+  - Tests :
+    - Suite de tests unitaires `src/editors/music/test/pianoroll.test.mjs` validant les conversions MIDI/Pitch, les modes musicaux, la quantification, les operations de duplication et le bornage de la velocite (integree a `npm test`).
+    - Test Playwright 21 dans `e2e/studio.spec.js` verifiant la capture d'evenements MIDI simules en enregistrement temps reel, l'edition de velocite et la quantification.
+- **Verifie** : `npm test` (2628 verifications + 5 suites secondaires, 0 echec), `npm run check:doc`, `npm run build`, validation de tous les jeux de demo et `npm run test:e2e` (21/21 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/piano-roll-midi-record`, Closes #85.
+
 ## 2026-10-27 (65) — [Phase F] F10 : MCP, Blueprints et jeu de démo 3D low-poly (Issue #79)
 - **Fait** :
   - `src/core/ops/ops.js` & `mcp/server.js` :

@@ -494,6 +494,10 @@ export function mount(container, store, { refId = null } = {}) {
         selectedChannelId,
         chip: getSharedChip(),
         currentStep,
+        getCurrentStep: () => currentStep,
+        getIsPlaying: () => isPlaying,
+        startPlayback,
+        stopPlayback,
         onNotesChange() {
           store.update((p) => {
             const cur = (p.songs || []).find((s) => s.id === song.id);

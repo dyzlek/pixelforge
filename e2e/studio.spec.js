@@ -1208,4 +1208,73 @@ test.describe('PixelForge Studio E2E Tests', () => {
     await page.locator('[data-action="stop"]').click();
     await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
   });
+
+  test('piano roll avance : enregistrement en direct MIDI, quantification et edition', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir l editeur musical
+    await page.evaluate(async () => {
+      await window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
+    });
+
+    const rack = page.locator('.pf-music-rack');
+    await expect(rack).toBeVisible({ timeout: 10000 });
+
+    // 2. Basculer sur la vue Piano Roll
+    const btnRoll = page.locator('.pf-transport-btn', { hasText: 'ROLL' });
+    await expect(btnRoll).toBeVisible();
+    await btnRoll.click();
+
+    const pianoRollRoot = page.locator('.pf-pianoroll-root');
+    await expect(pianoRollRoot).toBeVisible();
+
+    // 3. Verifier la presence des commandes avancees (REC, quantification, velocite, MIDI)
+    const btnRec = page.locator('.pf-btn-rec');
+    await expect(btnRec).toBeVisible();
+
+    const btnQuantize = page.locator('.pf-pianoroll-toolbar button', { hasText: /Quantifier/i });
+    await expect(btnQuantize).toBeVisible();
+
+    const midiBadge = page.locator('.pf-midi-indicator');
+    await expect(midiBadge).toBeVisible();
+
+    const velLane = page.locator('.pf-pianoroll-velocity-lane');
+    await expect(velLane).toBeVisible();
+
+    // 4. Activer l enregistrement en direct
+    await btnRec.click();
+    await expect(btnRec).toHaveClass(/active/);
+
+    // 5. Simuler l arrivee d une melodie via clavier MIDI
+    await page.evaluate(() => {
+      window.__pfSimulateMidiNoteOn(60, 0.9); // C4
+      window.__pfSimulateMidiNoteOff(60);
+      window.__pfSimulateMidiNoteOn(64, 0.85); // E4
+      window.__pfSimulateMidiNoteOff(64);
+      window.__pfSimulateMidiNoteOn(67, 0.75); // G4
+      window.__pfSimulateMidiNoteOff(67);
+    });
+
+    // Desactiver l enregistrement
+    await btnRec.click();
+    await expect(btnRec).not.toHaveClass(/active/);
+
+    // 6. Verifier que les 3 notes ont bien ete enregistrees dans la grille
+    const noteEls = page.locator('.pf-pianoroll-note');
+    await expect(noteEls).toHaveCount(3);
+
+    // 7. Verifier les batons de velocite
+    const stemEls = page.locator('.pf-velocity-stem');
+    await expect(stemEls).toHaveCount(3);
+
+    // 8. Selectionner et quantifier les notes
+    await btnQuantize.click();
+
+    // 9. Editer une note : selection et suppression d une note
+    await noteEls.first().click();
+    await expect(noteEls.first()).toHaveClass(/selected/);
+    await page.keyboard.press('Delete');
+    await expect(page.locator('.pf-pianoroll-note')).toHaveCount(2);
+  });
 });
