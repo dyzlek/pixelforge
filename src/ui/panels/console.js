@@ -121,15 +121,19 @@ export function createConsolePanel(container, store, workspace) {
       return;
     }
 
+    const is3D = snap.instances.some((i) => i.z !== undefined) || snap.blocks !== undefined;
+
     let rowsHtml = '';
     for (const inst of snap.instances) {
       const varsJson = JSON.stringify(inst.vars || {});
+      const posText = is3D ? `${inst.x}, ${inst.y}, ${inst.z ?? 0}` : `${inst.x}, ${inst.y}`;
+      const velText = is3D ? `${inst.vx}, ${inst.vy}, ${inst.vz ?? 0}` : `${inst.vx}, ${inst.vy}`;
       rowsHtml += `
         <tr>
           <td>#${inst.id}</td>
           <td style="font-weight:600;color:var(--accent)">${escapeHtml(inst.name)}</td>
-          <td>${inst.x}, ${inst.y}</td>
-          <td>${inst.vx}, ${inst.vy}</td>
+          <td>${posText}</td>
+          <td>${velText}</td>
           <td>${inst.onGround ? 'Oui' : 'Non'}</td>
           <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--fg-1);" title="${escapeHtml(varsJson)}">
             ${escapeHtml(varsJson)}
@@ -140,16 +144,21 @@ export function createConsolePanel(container, store, workspace) {
 
     remoteEl.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px;margin-bottom:4px;border-bottom:1px solid var(--border);color:var(--fg-1)">
-        <span>Carte active : <strong>${escapeHtml(snap.mapName || 'Principale')}</strong> (${snap.instances.length} instance(s))</span>
-        <span style="color:var(--success)">${snap.fps} FPS</span>
+        <span>${is3D ? 'Scène active' : 'Carte active'} : <strong>${escapeHtml(snap.mapName || snap.scene || 'Principale')}</strong> (${snap.instances.length} instance(s)${snap.blocks !== undefined ? `, ${snap.blocks} blocs` : ''})</span>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <button class="pf-dock-btn" data-remote-act="pause" title="Pause / Reprendre">${snap.isPaused ? 'Reprendre' : 'Pause'}</button>
+          <button class="pf-dock-btn" data-remote-act="step" title="Avancer d'une image">Image</button>
+          <button class="pf-dock-btn ${snap.debugColliders ? 'active' : ''}" data-remote-act="colliders" title="Afficher/masquer colliders">Colliders</button>
+          <span style="color:var(--success)">${snap.fps} FPS</span>
+        </div>
       </div>
       <table class="pf-remote-table">
         <thead>
           <tr>
             <th>ID</th>
             <th>Nom</th>
-            <th>Position (X, Y)</th>
-            <th>Vitesse (Vx, Vy)</th>
+            <th>Position (${is3D ? 'X, Y, Z' : 'X, Y'})</th>
+            <th>Vitesse (${is3D ? 'Vx, Vy, Vz' : 'Vx, Vy'})</th>
             <th>Au sol</th>
             <th>Variables (vars)</th>
           </tr>
@@ -160,6 +169,25 @@ export function createConsolePanel(container, store, workspace) {
       </table>
     `;
   }
+
+  remoteEl.onclick = (e) => {
+    const btn = e.target.closest('[data-remote-act]');
+    if (!btn) return;
+    const act = btn.dataset.remoteAct;
+    if (act === 'pause') {
+      const snap = getDebugSnapshot();
+      if (snap?.isPaused) {
+        globalThis.__pfPlayResume?.();
+      } else {
+        globalThis.__pfPlayPause?.();
+      }
+    } else if (act === 'step') {
+      globalThis.__pfPlayStep?.();
+    } else if (act === 'colliders') {
+      globalThis.__pfPlayToggleColliders?.();
+    }
+    renderRemote();
+  };
 
   function escapeHtml(s) {
     return String(s).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));

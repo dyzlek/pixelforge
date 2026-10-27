@@ -1033,4 +1033,88 @@ test.describe('PixelForge Studio E2E Tests', () => {
     await page.keyboard.press('F8');
     await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
   });
+
+  test('jouer depuis la camera de l editeur et debogage 3D : placement, pause, pas a pas et colliders', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Ouvrir l editeur de scene 3D
+    await page.evaluate(() => {
+      const sc = window.__pfStore.project.scenes3d?.[0];
+      if (sc) {
+        window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
+      }
+    });
+
+    await expect(page.locator('.pf-scene3d-toolbar')).toBeVisible();
+
+    // 3. Verifier la presence des boutons de placement direct et de vue camera
+    const spawnPlayTool = page.locator('.pf-scene3d-btn[data-tool="spawn-play"]');
+    await expect(spawnPlayTool).toBeVisible();
+    const playCamBtn = page.locator('#pf-s3d-play-cam-btn');
+    await expect(playCamBtn).toBeVisible();
+
+    // 4. Lancer le jeu depuis un point d apparition specifique (placer & jouer)
+    await page.evaluate(() => {
+      const sc = window.__pfStore.project.scenes3d?.[0];
+      window.__pfStore.ui.playScene3DId = sc.id;
+      window.dispatchEvent(new CustomEvent('pixelforge:play-from-camera', {
+        detail: { spawnPlayerPosition: [5, 4, 5] },
+      }));
+    });
+
+    await expect(page.locator('#tabs')).toContainText(/Jouer/i);
+    const canvas = page.locator('.play-stage canvas, canvas:visible').first();
+    await expect(canvas).toBeVisible({ timeout: 15000 });
+
+    // 5. Verifier que le joueur a ete place aux coordonnees demandees
+    await page.waitForFunction(() => {
+      const snap = window.__pfDebugSnapshot?.();
+      const p = snap?.instances?.find((i) => i.name === 'Player');
+      return p && Math.abs(p.x - 5) < 0.5 && Math.abs(p.z - 5) < 0.5;
+    }, { timeout: 15000 });
+
+    const snapSpawn = await page.evaluate(() => window.__pfDebugSnapshot());
+    const spawnedPlayer = snapSpawn.instances.find((i) => i.name === 'Player');
+    expect(spawnedPlayer).toBeDefined();
+    expect(Math.abs(spawnedPlayer.x - 5)).toBeLessThan(0.5);
+
+    // 6. Verifier la barre de debogage (Pause, Image, Colliders)
+    const pauseBtn = page.locator('[data-act="toggle-pause"]');
+    const stepBtn = page.locator('[data-act="step-frame"]');
+    const collidersBtn = page.locator('[data-act="toggle-colliders"]');
+    await expect(pauseBtn).toBeVisible();
+    await expect(stepBtn).toBeVisible();
+    await expect(collidersBtn).toBeVisible();
+
+    // 7. Activer les colliders (F9 ou clic)
+    await collidersBtn.click();
+    await page.waitForFunction(() => window.__pfDebugSnapshot?.()?.debugColliders === true);
+    const snapColl = await page.evaluate(() => window.__pfDebugSnapshot());
+    expect(snapColl.debugColliders).toBe(true);
+
+    // 8. Mettre en pause (P ou clic)
+    await pauseBtn.click();
+    await page.waitForFunction(() => window.__pfDebugSnapshot?.()?.isPaused === true);
+    expect(pauseBtn).toHaveText(/Reprendre/i);
+
+    // 9. Avancer d une image (O ou clic)
+    await stepBtn.click();
+    const snapPaused = await page.evaluate(() => window.__pfDebugSnapshot());
+    expect(snapPaused.isPaused).toBe(true);
+
+    // 10. Reprendre l execution
+    await pauseBtn.click();
+    await page.waitForFunction(() => window.__pfDebugSnapshot?.()?.isPaused === false);
+    expect(pauseBtn).toHaveText(/Pause/i);
+
+    // 11. Arreter le jeu
+    await page.locator('[data-action="stop"]').click();
+    await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
+  });
 });

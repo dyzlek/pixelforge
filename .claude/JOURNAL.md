@@ -1,5 +1,33 @@
 # Journal — PixelForge
 
+## 2026-10-27 (63) — [Phase F] F8 : jouer depuis la caméra de l éditeur et débogage 3D (Issue #77)
+- **Fait** :
+  - `src/runtime3d/engine3d.js` :
+    - Zero import externe strictement preserve.
+    - Ajout des wireframes de debogage des collisionneurs (`setDebugColliders(enabled)`, `hasDebugColliders()`) affichant en temps reel les boites englobantes des blocs solides (vert) et des entites vivantes (or).
+    - Ajout du controle pas-a-pas et de l'etat de pause (`pause()`, `resume()`, `isPaused()`, `stepFrame(dt)`).
+    - Prise en charge des options d'apparition `playFromCamera` (cible et position de camera) et `spawnPlayerPosition` (teleportation directe du joueur aux coordonnees exactes demandees).
+    - Enrichissement de `debugSnapshot()` avec les etats `isPaused` et `debugColliders`.
+  - `src/editors/scene3d/index.js` :
+    - Synchronisation dynamique dans la boucle de rendu de `store.ui.editorCamera3D` avec la position, cible et identifiant de scene de la camera de l'editeur 3D.
+    - Ajout de l'outil de placement direct « Placer & Jouer » (`activeTool === 'spawn-play'`) permettant de cliquer n'importe ou sur la grille, un bloc ou une entite pour lancer immediatement le jeu avec le joueur pose a cet endroit exact.
+    - Ajout du bouton « Vue (F6) » dans la barre d'outils de scene 3D pour tester directement depuis la perspective de travail de l'editeur.
+  - `src/main.js` :
+    - Gestion dans `onPlayCurrent` de `store.ui.editorCamera3D` pour transmettre `playFromCamera` et `playScene3DId` au runtime.
+    - Ajout de l'ecouteur d'evenement `pixelforge:play-from-camera` pour recevoir `spawnPlayerPosition` et declencher la session de jeu ciblee.
+  - `src/runtime/play.js` :
+    - Ajout des boutons de controle de debogage dans la barre de jeu : Pause / Reprendre (raccourci `P`), Image par image (`O`), et Collisionneurs (`F9`).
+    - Transmission de `playFromCamera` et `spawnPlayerPosition` a `createGame3D`.
+    - Exposition globale des helpers de debogage distant `__pfPlayPause`, `__pfPlayResume`, `__pfPlayStep`, `__pfPlayToggleColliders`.
+  - `src/ui/panels/console.js` :
+    - Extension du panneau « Scene en jeu (Distant) » pour afficher les coordonnees 3D completes `(X, Y, Z)` et vitesses `(Vx, Vy, Vz)`.
+    - Integration des boutons de controle direct Pause, Image et Colliders dans l'en-tete de la vue distante avec rafraichissement reactif.
+  - Tests :
+    - `src/runtime3d/test/sim3d.test.mjs` : section 8 validant le positionnement du joueur via `playFromCamera` et `spawnPlayerPosition`, le gel de la simulation en pause, l'avance manuelle d'une image avec `stepFrame`, et l'activation des colliders de debogage.
+    - `e2e/studio.spec.js` : test 18 Playwright testant l'apparition immediate du joueur a l'emplacement clique, l'activation des wireframes colliders, la mise en pause, l'avance image par image et la reprise du jeu.
+- **Verifie** : `npm test` (2566 verifications, zero echec), `npm run check:doc`, `npm run build`, validation de tous les jeux de demo et `npm run test:e2e` (18/18 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/play-from-camera-debug-3d`, Closes #77.
+
 ## 2026-10-27 (62) — [Phase F] F7 : préfabriqués et terrain sculptable (Issue #76)
 - **Fait** :
   - `docs/PROJECT_SCHEMA.json` & `src/core/project.js` :

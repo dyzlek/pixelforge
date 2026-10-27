@@ -122,6 +122,42 @@ export function createGame3D(project, parent, THREE, opts = {}) {
   const dynamicLightGroup = new ThreeLib.Group();
   scene.add(dynamicLightGroup);
 
+  const debugColliderGroup = new ThreeLib.Group();
+  debugColliderGroup.visible = false;
+  scene.add(debugColliderGroup);
+
+  let showDebugColliders = false;
+  const wireframeCubeGeo = typeof ThreeLib.BoxGeometry === 'function' ? new ThreeLib.BoxGeometry(1, 1, 1) : null;
+  const blockWireMat = typeof ThreeLib.MeshBasicMaterial === 'function' ? new ThreeLib.MeshBasicMaterial({ color: 0x38b764, wireframe: true }) : null;
+  const entityWireMat = typeof ThreeLib.MeshBasicMaterial === 'function' ? new ThreeLib.MeshBasicMaterial({ color: 0xffcd75, wireframe: true }) : null;
+
+  function updateDebugColliders() {
+    if (!showDebugColliders || !wireframeCubeGeo) {
+      debugColliderGroup.visible = false;
+      return;
+    }
+    debugColliderGroup.visible = true;
+    while (debugColliderGroup.children.length > 0) {
+      debugColliderGroup.remove(debugColliderGroup.children[0]);
+    }
+
+    for (const { x, y, z } of solidBlocks.values()) {
+      const m = new ThreeLib.Mesh(wireframeCubeGeo, blockWireMat);
+      m.position.set(x, y, z);
+      debugColliderGroup.add(m);
+    }
+
+    for (const inst of instances) {
+      if (inst.destroyed) continue;
+      const m = new ThreeLib.Mesh(wireframeCubeGeo, entityWireMat);
+      m.position.set(inst.x, inst.y, inst.z);
+      if (m.scale?.set) {
+        m.scale.set(inst.width || 1, inst.height || 1, inst.depth || 1);
+      }
+      debugColliderGroup.add(m);
+    }
+  }
+
   // Ambiance : celle de la scene 3D, sinon celle du projet (anciens fichiers)
   // Developpement des prefabs (kind === 'prefab') sans import externe
   function expandPrefabNodes(nodes, prefabs3d) {
@@ -721,6 +757,32 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     }
   }
 
+  function applyPlayFromCamera() {
+    let targetPos = null;
+    if (Array.isArray(opts.spawnPlayerPosition) && opts.spawnPlayerPosition.length === 3) {
+      targetPos = opts.spawnPlayerPosition;
+    } else if (opts.playFromCamera) {
+      if (Array.isArray(opts.playFromCamera.target)) {
+        targetPos = [opts.playFromCamera.target[0], opts.playFromCamera.target[1] + 1, opts.playFromCamera.target[2]];
+      } else if (Array.isArray(opts.playFromCamera.position)) {
+        targetPos = [opts.playFromCamera.position[0], opts.playFromCamera.position[1], opts.playFromCamera.position[2]];
+      }
+    }
+
+    if (targetPos) {
+      const playerInst = instances.find((i) => /^player\b/i.test(i.objectName) || /player/i.test(i.objectName)) || instances[0];
+      if (playerInst) {
+        playerInst.setPosition(targetPos[0], targetPos[1], targetPos[2]);
+        playerInst.vx = 0;
+        playerInst.vy = 0;
+        playerInst.vz = 0;
+      }
+      if (opts.playFromCamera && Array.isArray(opts.playFromCamera.position)) {
+        camera.position.set(opts.playFromCamera.position[0], opts.playFromCamera.position[1], opts.playFromCamera.position[2]);
+      }
+    }
+  }
+
   function loadScene(sc) {
     currentScene3D = sc;
     waits.length = 0;
@@ -728,6 +790,8 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     applyEnvironment(currentScene3D);
     buildGridMap(currentScene3D.gridmap);
     spawnSceneEntities();
+    applyPlayFromCamera();
+    if (showDebugColliders) updateDebugColliders();
   }
 
   // Gestion de Camera
@@ -1478,6 +1542,8 @@ export function createGame3D(project, parent, THREE, opts = {}) {
   }
 
   spawnSceneEntities();
+  applyPlayFromCamera();
+  if (showDebugColliders) updateDebugColliders();
 
   // Boucle Principale et Moteur Physique 3D
   let lastTime = performance.now();
@@ -1860,6 +1926,7 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     lastTime = now;
 
     updatePhysics(dt);
+    if (showDebugColliders) updateDebugColliders();
     if (activeMixers.size > 0) {
       const dtSec = dt / 1000;
       for (const m of activeMixers) {
@@ -1922,6 +1989,21 @@ export function createGame3D(project, parent, THREE, opts = {}) {
 
     pause() { isPaused = true; },
     resume() { isPaused = false; lastTime = performance.now(); },
+    isPaused() { return isPaused; },
+    stepFrame(dt = 16.6) {
+      const wasPaused = isPaused;
+      isPaused = false;
+      updatePhysics(dt);
+      if (showDebugColliders) updateDebugColliders();
+      renderer.render(scene, camera);
+      isPaused = wasPaused;
+    },
+    setDebugColliders(enabled) {
+      showDebugColliders = enabled !== undefined ? !!enabled : !showDebugColliders;
+      updateDebugColliders();
+      return showDebugColliders;
+    },
+    hasDebugColliders() { return showDebugColliders; },
     restart() { loadScene(currentScene3D); },
     // Etat lisible (tests ; panneau Console de l'editeur via __debugSnapshot, meme forme qu'en 2D)
     debugSnapshot,
@@ -1935,6 +2017,8 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       mapName: currentScene3D.name,
       scene: currentScene3D.name,
       blocks: solidBlocks.size,
+      isPaused,
+      debugColliders: showDebugColliders,
       instances: instances.filter((i) => !i.destroyed).map((i) => ({
         id: i.id, name: i.objectName, x: i.x, y: i.y, z: i.z, vx: i.vx, vy: i.vy, vz: i.vz, onGround: i.onGround, vars: { ...i.vars },
       })),
