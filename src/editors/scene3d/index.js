@@ -8,6 +8,7 @@
  */
 
 import { GridMap3D } from './gridmap.js';
+import { Terrain3D } from './terrain.js';
 import { getIconSvg } from '../../ui/icons.js';
 import { uid } from '../../core/project.js';
 import './scene3d.css';
@@ -66,6 +67,11 @@ export function mount(container, store, { refId } = {}) {
         <button class="pf-scene3d-btn" data-tool="erase" title="Gomme (Supprimer le bloc clique)">Gomme bloc</button>
         <button class="pf-scene3d-btn" data-tool="entity" title="Poser une instance d'objet 3D">Poser entite</button>
         <button class="pf-scene3d-btn" data-tool="select" title="Selectionner / manipuler les objets (W/E/R)">Selectionner</button>
+        <span style="width:1px;height:18px;background:var(--border);margin:0 4px;"></span>
+        <button class="pf-scene3d-btn" data-tool="terrain-raise" title="Monter le terrain (sculpture)">Monter terrain</button>
+        <button class="pf-scene3d-btn" data-tool="terrain-lower" title="Creuser le terrain (sculpture)">Creuser terrain</button>
+        <button class="pf-scene3d-btn" data-tool="terrain-smooth" title="Lisser le terrain">Lisser terrain</button>
+        <button class="pf-scene3d-btn" data-tool="terrain-paint" title="Peindre le terrain">Peindre terrain</button>
         <span style="width:1px;height:18px;background:var(--border);margin:0 4px;"></span>
         <div class="pf-s3d-gizmo-tools" id="pf-s3d-gizmo-bar">
           <button class="pf-s3d-gizmo-btn active" data-gizmo="translate" title="Deplacer (W)">W</button>
@@ -1124,6 +1130,23 @@ export function mount(container, store, { refId } = {}) {
       blockGroup.add(mesh);
     }
 
+    if (sceneData.terrain && sceneData.terrain.enabled !== false) {
+      const ter = new Terrain3D(sceneData.terrain);
+      const tBlocks = ter.toSolidBlocks(-1);
+      for (const [key, value] of Object.entries(tBlocks)) {
+        if (grid.blocks.has(key)) continue;
+        const { x, y, z } = GridMap3D.parseKey(key);
+        if (y === Math.round(ter.getHeight(x, z))) {
+          const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(blockColor(value)));
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.position.set(x, y, z);
+          mesh.userData = { isTerrain: true, x, y, z, blockKey: key };
+          blockGroup.add(mesh);
+        }
+      }
+    }
+
     container.querySelector('#pf-s3d-stats').textContent = `${grid.blocks.size} blocs`;
   }
 
@@ -1148,12 +1171,56 @@ export function mount(container, store, { refId } = {}) {
 
     nodes.forEach((node) => {
       if (node.visible === false) return;
-      const objDef = (store.project?.objects || []).find((o) => o.id === node.objectId);
-      const matDef = (store.project?.materials || []).find((m) => m.id === (node.materialId || objDef?.materialId));
-      const color = matDef?.color || objDef?.color || '#ffcd75';
       const pos = Array.isArray(node.position) ? node.position : [0, 0, 0];
       const scl = Array.isArray(node.scale) ? node.scale : [1, 1, 1];
       const rot = Array.isArray(node.rotation) ? node.rotation : [0, 0, 0];
+
+      if (node.kind === 'prefab') {
+        const pfb = (store.project?.prefabs3d || []).find((p) => p.id === node.prefabId || p.name === node.prefabId);
+        const group = new ThreeLib.Group();
+        group.position.set(pos[0], pos[1], pos[2]);
+        group.rotation.set(rot[0] * (Math.PI / 180), rot[1] * (Math.PI / 180), rot[2] * (Math.PI / 180));
+        group.scale.set(scl[0], scl[1], scl[2]);
+        group.userData = { entityId: node.id, node, isPrefab: true };
+
+        if (pfb && Array.isArray(pfb.nodes) && pfb.nodes.length > 0) {
+          for (const c of pfb.nodes) {
+            if (c.visible === false) continue;
+            const cObj = (store.project?.objects || []).find((o) => o.id === c.objectId);
+            const cMatDef = (store.project?.materials || []).find((m) => m.id === (c.materialId || cObj?.materialId));
+            const cCol = cMatDef?.color || cObj?.color || '#a7f070';
+            const cPos = Array.isArray(c.position) ? c.position : [0, 0, 0];
+            const cRot = Array.isArray(c.rotation) ? c.rotation : [0, 0, 0];
+            const cScl = Array.isArray(c.scale) ? c.scale : [1, 1, 1];
+
+            const cMesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(cCol));
+            cMesh.castShadow = true;
+            cMesh.receiveShadow = true;
+            cMesh.position.set(cPos[0], cPos[1], cPos[2]);
+            cMesh.rotation.set(cRot[0] * (Math.PI / 180), cRot[1] * (Math.PI / 180), cRot[2] * (Math.PI / 180));
+            cMesh.scale.set(cScl[0] * 0.9, cScl[1] * 0.9, cScl[2] * 0.9);
+            group.add(cMesh);
+          }
+        } else {
+          const dummy = new ThreeLib.Mesh(cubeGeo.geo, getMaterial('#a7f070'));
+          dummy.scale.set(0.9, 0.9, 0.9);
+          group.add(dummy);
+        }
+
+        const isSelected = selectedNodeIds.has(node.id) || node.id === selectedEntityId;
+        if (isSelected) {
+          const selWire = new ThreeLib.Mesh(cubeGeo.geo, selWireMat);
+          selWire.scale.set(1.05, 1.05, 1.05);
+          group.add(selWire);
+        }
+
+        entityGroup.add(group);
+        return;
+      }
+
+      const objDef = (store.project?.objects || []).find((o) => o.id === node.objectId);
+      const matDef = (store.project?.materials || []).find((m) => m.id === (node.materialId || objDef?.materialId));
+      const color = matDef?.color || objDef?.color || '#ffcd75';
 
       let mat = getMaterial(color);
       if (node.kind === 'light') {
@@ -1294,6 +1361,28 @@ export function mount(container, store, { refId } = {}) {
       grid.setBlock(bx, by, bz, activeColor);
       rebuildBlocks();
       commit();
+    } else if (activeTool.startsWith('terrain-')) {
+      let tx = 0, tz = 0;
+      if (hitBlock) {
+        tx = hitBlock.object.position.x;
+        tz = hitBlock.object.position.z;
+      } else if (hitGrid) {
+        tx = Math.round(hitGrid.x);
+        tz = Math.round(hitGrid.z);
+      }
+      store.update((proj) => {
+        const sc = (proj.scenes3d || []).find((s) => s.id === sceneData.id);
+        if (!sc) return;
+        sc.terrain = sc.terrain || { enabled: true, width: 32, depth: 32, heights: {}, colors: {} };
+        const t = new Terrain3D(sc.terrain);
+        if (activeTool === 'terrain-raise') t.raise(tx, tz, 2, 1);
+        else if (activeTool === 'terrain-lower') t.lower(tx, tz, 2, 1);
+        else if (activeTool === 'terrain-smooth') t.smooth(tx, tz, 2, 0.5);
+        else if (activeTool === 'terrain-paint') t.paint(tx, tz, 2, activeColor);
+        sc.terrain = t.toProjectJSON(sc.terrain);
+      }, 'scene3d');
+      sceneData = findScene();
+      rebuildBlocks();
     } else if (activeTool === 'erase') {
       if (hitBlock) {
         const key = hitBlock.object.userData?.blockKey;

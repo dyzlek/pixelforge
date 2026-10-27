@@ -274,3 +274,33 @@ L'editeur 3D (`src/editors/scene3d/index.js`) propose les memes controles que le
 4. **F3 (Issue #72)** : Navigation de la vue 3D facon Godot (orbite, vol libre ZQSD, raccourcis pave numerique, focus F).
 5. **F4 (Issue #73)** : Modeles glTF animes (`AnimationMixer`), collection `materials[]` et modeles CC0 integres.
 6. **F5-F10 (Issues #74-#79)** : Lumieres et ambiance editables, Rapier 3D, prefabs imbriques, terrain sculptable.
+
+---
+
+## 9. Prefabriques (Prefabs) et Terrain Sculptable (Issue #76)
+
+### 9.1 Prefabriques 3D (`prefabs3d[]`)
+Un prefabrique est une ressource reusable composee d'une arborescence de noeuds (`nodes[]`) :
+```json
+{
+  "id": "pfb_pine",
+  "name": "PineTree",
+  "folder": "",
+  "nodes": [
+    { "id": "n_trunk", "name": "Tronc", "kind": "mesh", "objectId": "obj_trunk", "position": [0, 0, 0] },
+    { "id": "n_top", "name": "Feuillage", "kind": "mesh", "objectId": "obj_foliage", "position": [0, 2, 0] }
+  ]
+}
+```
+- **Instanciation** : Un noeud de scene de type `kind: 'prefab'` pointe sur `prefabId`. Il definit sa position, rotation et echelle dans le monde.
+- **Propagation immediate** : Toute modification du prefabrique dans `prefabs3d[]` met instantanement a jour l'ensemble de ses instances a travers toutes les scenes du jeu.
+- **Runtime** : La fonction pure `expandSceneNodes` developpe les sous-noeuds en tenant compte des transformations relatives, permettant l'instanciation des entites et des lumieres associees.
+
+### 9.2 Terrain sculptable par Heightmap (`scene3d.terrain`)
+Un terrain par heightmap permet de modeler des paysages en 3D avec 4 outils :
+- **Monter (`raise`)** : Eleve le relief localement selon un profil cosinusoidal doux.
+- **Creuser (`lower`)** : Creuse des depressions ou des tranchees.
+- **Lisser (`smooth`)** : Attenue les variations brusques de hauteur en convergeant vers la moyenne locale.
+- **Peindre (`paint`)** : Applique une couleur de palette sur la surface du terrain.
+- **Solidite physique** : La methode `toSolidBlocks()` convertit les colonnes sculptees en blocs solides etanches, garantissant que le terrain est 100% solide en jeu aussi bien en mode simple AABB qu'avec Rapier 3D.
+

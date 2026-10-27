@@ -950,4 +950,87 @@ test.describe('PixelForge Studio E2E Tests', () => {
     const backToSimple = await page.evaluate(() => window.__pfStore.project.settings.physics3d);
     expect(backToSimple).toBe('simple');
   });
+
+  test('prefabriques et terrain sculptable : creation d un prefabrique, sculpture du terrain et solidite en jeu', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Definir un prefabrique et un terrain sculpte dans la scene
+    await page.evaluate(() => {
+      window.__pfStore.update((p) => {
+        p.prefabs3d = p.prefabs3d || [];
+        p.prefabs3d.push({
+          id: 'pfb_totem',
+          name: 'Totem',
+          nodes: [
+            { id: 'node_totem_base', name: 'BaseTotem', kind: 'mesh', objectId: p.objects[0]?.id, position: [0, 0, 0] },
+          ],
+        });
+
+        const sc = p.scenes3d[0];
+        sc.nodes = sc.nodes || [];
+        sc.nodes.push({
+          id: 'inst_totem',
+          name: 'MonTotem',
+          kind: 'prefab',
+          prefabId: 'pfb_totem',
+          position: [4, 0, 4],
+          rotation: [0, 0, 0],
+          scale: [1, 1, 1],
+          visible: true,
+        });
+
+        sc.terrain = {
+          enabled: true,
+          width: 12,
+          depth: 12,
+          originX: -6,
+          originZ: -6,
+          defaultHeight: 0,
+          defaultColor: 6,
+          heights: {
+            '0,0': 1,
+          },
+        };
+      }, 'scene3d');
+    });
+
+    // 3. Verifier que le prefabrique et le terrain sont bien enregistres dans le store
+    const prefabCount = await page.evaluate(() => window.__pfStore.project.prefabs3d?.length || 0);
+    const terrainEnabled = await page.evaluate(() => window.__pfStore.project.scenes3d?.[0]?.terrain?.enabled);
+    expect(prefabCount).toBeGreaterThanOrEqual(1);
+    expect(terrainEnabled).toBe(true);
+
+    // 4. Lancer le jeu avec F5 et verifier que le terrain sculpte et les prefabs sont instancies
+    await page.keyboard.press('F5');
+    await expect(page.locator('#tabs')).toContainText(/Jouer/i);
+
+    const canvas = page.locator('.play-stage canvas, canvas:visible').first();
+    await expect(canvas).toBeVisible({ timeout: 15000 });
+
+    // 5. Attendre que le joueur repose sur le sol
+    await page.waitForFunction(() => {
+      const snap = window.__pfDebugSnapshot?.();
+      const p = snap?.instances?.find((i) => i.name === 'Player');
+      return p && p.onGround === true;
+    }, { timeout: 15000 });
+
+    const snap = await page.evaluate(() => window.__pfDebugSnapshot());
+    const player = snap.instances.find((i) => i.name === 'Player');
+    expect(player).toBeDefined();
+    expect(player.onGround).toBe(true);
+
+    // 6. Verifier la presence de l'entite issue du prefabrique
+    const totemInst = snap.instances.find((i) => i.x === 4 && i.z === 4);
+    expect(totemInst).toBeDefined();
+
+    // 7. Arreter le jeu avec F8
+    await page.keyboard.press('F8');
+    await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
+  });
 });

@@ -4,7 +4,7 @@
  */
 
 import './resources.css';
-import { createMap, createSprite, createObject, createSong, uid } from '../../core/project.js';
+import { createMap, createSprite, createObject, createSong, createPrefab3D, uid } from '../../core/project.js';
 import { getIconSvg } from '../icons.js';
 import { showNewSongDialog } from '../dialogs/new-song.js';
 
@@ -73,6 +73,13 @@ export function createResourcesPanel(container, store, workspace) {
         iconName: 'cube',
         kind: 'model3d',
         items: p.models || [],
+      }] : []),
+      ...(is3D || p.prefabs3d?.length ? [{
+        id: 'prefabs3d',
+        label: 'Préfabriqués 3D',
+        iconName: 'cube',
+        kind: 'prefab3d',
+        items: p.prefabs3d || [],
       }] : []),
       {
         id: 'sprites',
@@ -193,7 +200,7 @@ export function createResourcesPanel(container, store, workspace) {
     if (!act) return;
 
     if (act === 'add') {
-      const type = prompt('Type de ressource à créer :\n1 = Scène / Carte\n2 = Sprite\n3 = Objet\n4 = Son\n5 = Musique', '1');
+      const type = prompt('Type de ressource à créer :\n1 = Scène / Carte\n2 = Sprite\n3 = Objet\n4 = Son\n5 = Musique\n6 = Préfabriqué 3D', '1');
       if (type === '1') {
         const name = prompt('Nom de la carte :', 'Nouvelle carte');
         if (name) {
@@ -232,6 +239,14 @@ export function createResourcesPanel(container, store, workspace) {
         }
       } else if (type === '5') {
         showNewSongDialog(store, workspace);
+      } else if (type === '6') {
+        const name = prompt('Nom du préfabriqué :', 'NouveauPrefab');
+        if (name) {
+          store.update((p) => {
+            p.prefabs3d = p.prefabs3d || [];
+            p.prefabs3d.push(createPrefab3D(name));
+          }, 'prefab');
+        }
       }
     } else if (act === 'dup' && selectedItem) {
       store.update((p) => {
@@ -292,6 +307,15 @@ export function createResourcesPanel(container, store, workspace) {
             p.models.push(copy);
             workspace.open({ kind: 'model3d', refId: copy.id, title: copy.name });
           }
+        } else if (selectedItem.kind === 'prefab3d') {
+          const src = (p.prefabs3d || []).find((pf) => pf.id === selectedItem.id);
+          if (src) {
+            const copy = structuredClone(src);
+            copy.id = uid('pfb');
+            copy.name = src.name + ' (copie)';
+            p.prefabs3d = p.prefabs3d || [];
+            p.prefabs3d.push(copy);
+          }
         }
       });
     } else if (act === 'del' && selectedItem) {
@@ -316,6 +340,7 @@ export function createResourcesPanel(container, store, workspace) {
       store.update((proj) => {
         if (selectedItem.kind === 'map') proj.maps = proj.maps.filter((m) => m.id !== selectedItem.id);
         else if (selectedItem.kind === 'scene3d') proj.scenes3d = (proj.scenes3d || []).filter((s) => s.id !== selectedItem.id);
+        else if (selectedItem.kind === 'prefab3d') proj.prefabs3d = (proj.prefabs3d || []).filter((s) => s.id !== selectedItem.id);
         else if (selectedItem.kind === 'model3d') proj.models = (proj.models || []).filter((m) => m.id !== selectedItem.id);
         else if (selectedItem.kind === 'pixel') proj.sprites = proj.sprites.filter((s) => s.id !== selectedItem.id);
         else if (selectedItem.kind === 'objects') proj.objects = proj.objects.filter((o) => o.id !== selectedItem.id);

@@ -124,6 +124,7 @@ export function createModel(name = 'Modele', width = 8, height = 8, depth = 8) {
 
 export function createSceneNode(name = 'Node3D', kind = 'mesh', parent = null) {
   const isLight = kind === 'light';
+  const isPrefab = kind === 'prefab';
   return {
     id: uid('node3d'),
     name,
@@ -136,6 +137,7 @@ export function createSceneNode(name = 'Node3D', kind = 'mesh', parent = null) {
     locked: false,
     objectId: null,
     materialId: null,
+    prefabId: isPrefab ? null : undefined,
     props: isLight ? {
       lightType: 'point',
       color: '#ffcd75',
@@ -147,6 +149,66 @@ export function createSceneNode(name = 'Node3D', kind = 'mesh', parent = null) {
       castShadow: false
     } : {},
   };
+}
+
+export function createPrefab3D(name = 'Prefab', nodes = []) {
+  return {
+    id: uid('pfb'),
+    name,
+    folder: '',
+    nodes: Array.isArray(nodes) ? nodes : [],
+  };
+}
+
+/**
+ * Developpe les instances de prefab (kind === 'prefab') presentes dans une liste de noeuds de scene.
+ * Renvoie un tableau avec les noeuds natifs et les copies instanciees des sous-noeuds de prefab,
+ * avec calcul des positions/rotations relatives.
+ */
+export function expandSceneNodes(nodes = [], prefabs3d = []) {
+  const result = [];
+  const pfbMap = new Map();
+  for (const pfb of prefabs3d || []) {
+    if (pfb && pfb.id) pfbMap.set(pfb.id, pfb);
+    if (pfb && pfb.name) pfbMap.set(pfb.name, pfb);
+  }
+
+  for (const node of nodes || []) {
+    if (node.kind === 'prefab') {
+      const pfb = pfbMap.get(node.prefabId);
+      if (pfb && Array.isArray(pfb.nodes)) {
+        const rootPos = Array.isArray(node.position) ? node.position : [0, 0, 0];
+        const rootRot = Array.isArray(node.rotation) ? node.rotation : [0, 0, 0];
+        const rootScl = Array.isArray(node.scale) ? node.scale : [1, 1, 1];
+        for (const child of pfb.nodes) {
+          const cPos = Array.isArray(child.position) ? child.position : [0, 0, 0];
+          const cRot = Array.isArray(child.rotation) ? child.rotation : [0, 0, 0];
+          const cScl = Array.isArray(child.scale) ? child.scale : [1, 1, 1];
+          const instChild = {
+            ...child,
+            id: `${node.id}_${child.id}`,
+            name: `${node.name}/${child.name}`,
+            parent: child.parent ? `${node.id}_${child.parent}` : node.parent,
+            position: [
+              rootPos[0] + cPos[0] * rootScl[0],
+              rootPos[1] + cPos[1] * rootScl[1],
+              rootPos[2] + cPos[2] * rootScl[2],
+            ],
+            rotation: [rootRot[0] + cRot[0], rootRot[1] + cRot[1], rootRot[2] + cRot[2]],
+            scale: [rootScl[0] * cScl[0], rootScl[1] * cScl[1], rootScl[2] * cScl[2]],
+            visible: node.visible !== false && child.visible !== false,
+            locked: !!node.locked || !!child.locked,
+            _fromPrefabId: pfb.id,
+            _prefabInstanceId: node.id,
+          };
+          result.push(instChild);
+        }
+        continue;
+      }
+    }
+    result.push(node);
+  }
+  return result;
 }
 
 export function createMaterial(name = 'Materiau', type = 'standard') {
@@ -260,6 +322,7 @@ export function createEmptyProject(name = 'Mon jeu') {
     songs: [],
     models: [],
     materials: [],
+    prefabs3d: [],
     scenes3d: [],
     environment: {
       skyColor: '#1a1c2c',
@@ -390,6 +453,25 @@ export function normalizeProject(p) {
   });
   p.models = Array.isArray(p.models) ? p.models.map((m) => ({ folder: '', ...m })) : [];
   p.materials = Array.isArray(p.materials) ? p.materials : [];
+  p.prefabs3d = (p.prefabs3d || []).map((pfb) => ({
+    id: pfb.id || uid('pfb'),
+    name: pfb.name || 'Prefab',
+    folder: pfb.folder || '',
+    nodes: (pfb.nodes || []).map((n) => ({
+      id: n.id || uid('node3d'),
+      name: n.name || 'Node',
+      kind: n.kind || 'mesh',
+      parent: n.parent || null,
+      position: Array.isArray(n.position) && n.position.length === 3 ? n.position : [0, 0, 0],
+      rotation: Array.isArray(n.rotation) && n.rotation.length === 3 ? n.rotation : [0, 0, 0],
+      scale: Array.isArray(n.scale) && n.scale.length === 3 ? n.scale : [1, 1, 1],
+      visible: n.visible !== false,
+      locked: !!n.locked,
+      objectId: n.objectId || null,
+      materialId: n.materialId || null,
+      props: typeof n.props === 'object' && n.props ? { ...n.props } : {},
+    })),
+  }));
   p.scenes3d = Array.isArray(p.scenes3d) ? p.scenes3d.map((s) => ({ folder: '', gridmap: {}, entities: [], nodes: [], ...s })) : [];
   // Gridmap au format unique { blockSize, blocks } et migration hierarchique entities[] -> nodes[]
   for (const sc of p.scenes3d || []) {
@@ -472,7 +554,25 @@ export function normalizeProject(p) {
       }
     };
 
+    if (sc.terrain && typeof sc.terrain === 'object') {
+      sc.terrain = {
+        enabled: sc.terrain.enabled !== false,
+        width: typeof sc.terrain.width === 'number' && sc.terrain.width > 0 ? sc.terrain.width : 32,
+        depth: typeof sc.terrain.depth === 'number' && sc.terrain.depth > 0 ? sc.terrain.depth : 32,
+        cellSize: typeof sc.terrain.cellSize === 'number' && sc.terrain.cellSize > 0 ? sc.terrain.cellSize : 1,
+        originX: typeof sc.terrain.originX === 'number' ? sc.terrain.originX : -16,
+        originZ: typeof sc.terrain.originZ === 'number' ? sc.terrain.originZ : -16,
+        defaultHeight: typeof sc.terrain.defaultHeight === 'number' ? sc.terrain.defaultHeight : 0,
+        defaultColor: sc.terrain.defaultColor != null ? sc.terrain.defaultColor : 6,
+        heights: typeof sc.terrain.heights === 'object' && sc.terrain.heights ? { ...sc.terrain.heights } : {},
+        colors: typeof sc.terrain.colors === 'object' && sc.terrain.colors ? { ...sc.terrain.colors } : {},
+      };
+    }
+
     for (const n of sc.nodes) {
+      if (n.kind === 'prefab') {
+        n.prefabId = n.prefabId || null;
+      }
       if (n.kind === 'light') {
         n.props = {
           lightType: 'point',

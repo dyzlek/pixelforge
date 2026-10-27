@@ -64,6 +64,7 @@ export function validateProject(p) {
   dup(p.sprites || [], 'sprite'); dup(p.objects || [], 'object'); dup(p.maps || [], 'map');
   dup(p.sounds || [], 'sound'); dup(p.songs || [], 'song');
   dup(p.models || [], 'model'); dup(p.materials || [], 'material'); dup(p.scenes3d || [], 'scene3d');
+  dup(p.prefabs3d || [], 'prefab');
 
   if (p.settings?.physics3d && !['simple', 'rapier'].includes(p.settings.physics3d)) {
     add('error', 'settings', `physics3d must be "simple" or "rapier" (got "${p.settings.physics3d}")`);
@@ -329,6 +330,41 @@ export function validateProject(p) {
     }
   }
 
+  // ----- prefabs 3D -----
+  const prefabById = new Map((p.prefabs3d || []).map((pfb) => [pfb.id, pfb]));
+  for (const pfb of p.prefabs3d || []) {
+    const pw = `prefab "${pfb.name || pfb.id}"`;
+    if (!pfb.id) add('error', pw, 'prefab must have a valid id');
+    const pfbNodeIds = new Set((pfb.nodes || []).map((n) => n.id));
+    (pfb.nodes || []).forEach((n, i) => {
+      const nw = `${pw} node #${i} "${n.name || n.id}"`;
+      if (!n.id) add('error', nw, 'node must have a valid id');
+      if (n.parent && !pfbNodeIds.has(n.parent)) {
+        add('error', nw, `parent node id "${n.parent}" does not exist in prefab`);
+      }
+      if (n.kind === 'mesh' && n.objectId) {
+        const obj = (p.objects || []).find((o) => o.id === n.objectId);
+        if (!obj) add('error', nw, `objectId "${n.objectId}" matches no object`);
+      }
+      if (n.materialId && !materialById.has(n.materialId)) {
+        add('error', nw, `materialId "${n.materialId}" matches no material`);
+      }
+    });
+    for (const n of pfb.nodes || []) {
+      const visited = new Set([n.id]);
+      let cur = n.parent;
+      while (cur) {
+        if (visited.has(cur)) {
+          add('error', `${pw} node "${n.name}"`, 'circular parent-child hierarchy detected in prefab');
+          break;
+        }
+        visited.add(cur);
+        const pNode = (pfb.nodes || []).find((x) => x.id === cur);
+        cur = pNode ? pNode.parent : null;
+      }
+    }
+  }
+
   // ----- scenes 3D -----
   for (const sc of p.scenes3d || []) {
     const w = `scene3d "${sc.name}"`;
@@ -402,7 +438,34 @@ export function validateProject(p) {
           add('error', nw, `invalid light intensity "${lp.intensity}" (must be a positive number)`);
         }
       }
+      if (n.kind === 'prefab') {
+        if (!n.prefabId) {
+          add('warning', nw, 'prefab node has no prefabId specified');
+        } else if (!prefabById.has(n.prefabId) && !(p.prefabs3d || []).some((x) => x.name === n.prefabId)) {
+          add('error', nw, `prefabId "${n.prefabId}" matches no prefab in prefabs3d`);
+        }
+      }
     });
+
+    const ter = sc.terrain;
+    if (ter && typeof ter === 'object') {
+      if (ter.width != null && (ter.width <= 0 || !Number.isInteger(ter.width))) {
+        add('error', `${w} terrain`, `width must be a positive integer (got ${ter.width})`);
+      }
+      if (ter.depth != null && (ter.depth <= 0 || !Number.isInteger(ter.depth))) {
+        add('error', `${w} terrain`, `depth must be a positive integer (got ${ter.depth})`);
+      }
+      if (ter.heights && typeof ter.heights === 'object') {
+        for (const [posKey, val] of Object.entries(ter.heights)) {
+          if (!/^-?\d+,-?\d+$/.test(posKey)) {
+            add('error', `${w} terrain`, `invalid height position key "${posKey}" (must be "x,z" integers)`);
+          }
+          if (!Number.isFinite(val)) {
+            add('error', `${w} terrain`, `height at "${posKey}" must be a finite number`);
+          }
+        }
+      }
+    }
 
     for (const n of sc.nodes || []) {
       const visited = new Set([n.id]);
