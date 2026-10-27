@@ -190,7 +190,10 @@ export function parseSongText(text, defaultName = 'Song') {
         const inst = instMatch ? instMatch[1].toLowerCase() : 'pulse50';
         const opts = instMatch ? instMatch[2] : '';
 
-        const validInst = ['pulse12', 'pulse25', 'pulse50', 'triangle', 'saw', 'noise', 'wave', 'sample'].includes(inst) ? inst : 'pulse50';
+        const validInst = [
+          'pulse12', 'pulse25', 'pulse50', 'triangle', 'saw', 'noise', 'wave', 'sample',
+          'synth_sub', 'synth_fm', 'sampler', 'drum_machine'
+        ].includes(inst) ? inst : 'pulse50';
         const ch = {
           id: uid('ch'),
           name: chName,

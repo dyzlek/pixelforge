@@ -301,7 +301,24 @@ export function normalizeProject(p) {
       delete song.loopStart;
     }
     song.tracks = Array.isArray(song.tracks) ? song.tracks : [];
-    song.clips = Array.isArray(song.clips) ? song.clips : [];
+    song.clips = (song.clips || []).map((c) => ({
+      id: c.id || uid('clp'),
+      name: c.name || 'Clip',
+      trackId: c.trackId || (song.tracks[0]?.id || song.channels[0]?.id || 'ch0'),
+      type: c.type || 'notes',
+      start: typeof c.start === 'number' ? c.start : 0,
+      length: typeof c.length === 'number' ? c.length : 16,
+      offset: typeof c.offset === 'number' ? c.offset : 0,
+      loop: !!c.loop,
+      notes: Array.isArray(c.notes) ? c.notes : []
+    }));
+    song.markers = (song.markers || []).map((m) => ({
+      step: typeof m.step === 'number' ? Math.max(0, m.step) : 0,
+      name: m.name || 'Marqueur'
+    }));
+    song.timeSignature = Array.isArray(song.timeSignature) && song.timeSignature.length === 2
+      ? [Math.max(1, song.timeSignature[0] || 4), Math.max(1, song.timeSignature[1] || 4)]
+      : [4, 4];
     if (song.channels.length > 0 && song.tracks.length === 0) {
       song.tracks = song.channels.map((ch) => ({
         id: ch.id,
@@ -312,18 +329,24 @@ export function normalizeProject(p) {
         mute: ch.mute,
         solo: ch.solo,
         instrument: ch.instrument,
+        preset: ch.preset,
+        params: ch.params,
         drumKit: ch.drumKit,
         env: ch.env,
         vibrato: ch.vibrato,
         arp: ch.arp,
         waveTable: ch.waveTable,
         sampleSoundId: ch.sampleSoundId,
+        effects: Array.isArray(ch.effects) ? ch.effects : [],
+        sends: Array.isArray(ch.sends) ? ch.sends : []
       }));
     } else if (song.tracks.length > 0 && song.channels.length === 0) {
       song.channels = song.tracks.map((tr) => ({
         id: tr.id,
         name: tr.name,
         instrument: typeof tr.instrument === 'string' ? tr.instrument : (tr.instrument?.type || 'pulse50'),
+        preset: tr.preset || tr.instrument?.preset,
+        params: tr.params || tr.instrument?.params,
         volume: tr.volume,
         pan: tr.pan,
         mute: tr.mute,
@@ -334,6 +357,8 @@ export function normalizeProject(p) {
         arp: tr.arp,
         waveTable: tr.waveTable,
         sampleSoundId: tr.sampleSoundId,
+        effects: Array.isArray(tr.effects) ? tr.effects : [],
+        sends: Array.isArray(tr.sends) ? tr.sends : []
       }));
     }
     return song;

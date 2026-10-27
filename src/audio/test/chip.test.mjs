@@ -442,8 +442,8 @@ assert.ok(songCtrl.isPlaying());
 songCtrl.setVolume(0.5);
 songCtrl.stop({ fadeOut: 0.1 });
 
-// 16. Test des 6 morceaux de demonstration et 4 modeles de batterie
-assert.equal(SONG_PRESETS.length, 6);
+// 16. Test des 7 morceaux de demonstration et 4 modeles de batterie
+assert.equal(SONG_PRESETS.length, 7);
 for (const p of SONG_PRESETS) {
   const song = p.create();
   assert.ok(song.id);
@@ -558,8 +558,8 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
     };
   }
 
-  // (a) Test sur les 6 morceaux de demonstration
-  for (const preset of SONG_PRESETS) {
+  // (a) Test sur les 6 morceaux de demonstration chiptune tracker
+  for (const preset of SONG_PRESETS.filter((p) => p.id !== 'epic_2min')) {
     const original = preset.create();
     const text = songToText(original);
     const parsed = parseSongText(text, original.name);
@@ -943,6 +943,37 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
   assert.ok(auxBus, 'Bus aux reverb accessible');
   assert.equal(auxBus.fxNodes.length, 1, 'Aux Reverb doit posseder 1 effet dans sa chaine');
 
+  ctrl.stop(0);
+}
+
+// ----------------------------------------------------
+// Tests DAW v2 Timeline & Morceau Odyssee 2 min (G4)
+// ----------------------------------------------------
+{
+  const epicPreset = getSongPreset('epic_2min');
+  assert.ok(epicPreset, 'Preset epic_2min doit etre accessible');
+  assert.equal(epicPreset.bpm, 120, 'BPM doit etre a 120');
+  assert.deepEqual(epicPreset.timeSignature, [4, 4], 'Signature doit etre [4, 4]');
+  assert.equal(epicPreset.tracks.length, 5, 'Doit comporter 5 pistes');
+  assert.equal(epicPreset.clips.length, 5, 'Doit comporter 5 clips DAW v2');
+  assert.equal(epicPreset.markers.length, 5, 'Doit comporter 5 marqueurs temporels');
+
+  const markerNames = epicPreset.markers.map((m) => m.name);
+  assert.ok(markerNames.includes('Intro'), 'Doit inclure Intro');
+  assert.ok(markerNames.includes('Couplet 1'), 'Doit inclure Couplet 1');
+  assert.ok(markerNames.includes('Refrain'), 'Doit inclure Refrain');
+  assert.ok(markerNames.includes('Pont'), 'Doit inclure Pont');
+  assert.ok(markerNames.includes('Fin'), 'Doit inclure Fin');
+
+  // Duree totale 960 pas = 60 mesures = 120 secondes a 120 BPM
+  const maxClipStep = Math.max(...epicPreset.clips.map((c) => c.start + c.length));
+  assert.equal(maxClipStep, 960, 'Arrangement doit durer exactement 960 pas (120 secondes)');
+
+  const { mockCtx: epicCtx } = createMockAudioContext();
+  const audio = createChipAudio(epicCtx);
+  const ctrl = audio.playSong(epicPreset, { loop: false, volume: 1 });
+  assert.ok(ctrl, 'playSong doit instancier le morceau de 2 minutes');
+  assert.equal(ctrl.tracks.length, 5, 'Doit instancier 5 bus de piste');
   ctrl.stop(0);
 }
 

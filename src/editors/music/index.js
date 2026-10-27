@@ -459,6 +459,12 @@ export function mount(container, store, { refId = null } = {}) {
             const cur = (p.songs || []).find((s) => s.id === song.id);
             if (cur) {
               cur.playlist = structuredClone(viewSong.playlist || []);
+              cur.clips = structuredClone(viewSong.clips || []);
+              cur.tracks = structuredClone(viewSong.tracks || []);
+              cur.channels = structuredClone(viewSong.channels || []);
+              cur.markers = structuredClone(viewSong.markers || []);
+              cur.timeSignature = structuredClone(viewSong.timeSignature || [4, 4]);
+              cur.bpm = viewSong.bpm;
               cur.loop = { ...(cur.loop || {}), ...(viewSong.loop || {}) };
             }
           }, 'song:playlist');
