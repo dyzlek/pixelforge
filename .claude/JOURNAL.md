@@ -619,6 +619,16 @@
   - Validation et documentation de l'API de script 3D (`docs/SCRIPT_API_3D.md`).
 - **Verifie** : `npm test`, `npm run build`, `npm run check:doc`, validation des jeux et 11 tests Playwright e2e 100% verts. Zero emoji.
 
+## 2026-10-27 (55) — [Phase G] G0 : Conception du studio audio DAW v2 (Closes #80)
+- **Fait** :
+  - Redaction du document d'architecture et de conception complet `docs/MUSIC.md`.
+  - Definition du modele de donnees DAW v2 : pistes (`tracks[]`), clips audio et notes (`clips[]`), chaines d'effets ordonnables (`effects[]`) et automation temporelle (`automation[]`).
+  - Specification des 5 familles d'instruments : chiptune retro, synthetiseur soustractif double oscillateur, synthetiseur FM 4 operateurs, echantillonneur polyphonique et boite a rythmes a pads.
+  - Definition des 7 effets audio natifs WebAudio : reverb, delay, eq3, compressor, distortion, bitcrusher et chorus.
+  - Strategie de retrocompatibilite transparente sans perte via `normalizeProject` pour preserver les morceaux historiques (`channels[]`, `patterns[]`, `playlist[]`).
+  - Budget memoire des echantillons (500 Ko par echantillon, 5 Mo max par projet) et architecture WebAudio autonome sans import dans `src/audio/chip.js`.
+- **Verifie** : `npm test`, `npm run build`, `npm run check:doc`. Zero emoji.
+
 
 
 
