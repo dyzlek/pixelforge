@@ -379,6 +379,27 @@
             "blocks": { "type": "object", "additionalProperties": { "type": ["integer", "string"] } }
           }
         },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "kind"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "kind": { "type": "string", "enum": ["mesh", "light", "camera", "collision", "audio", "prefab", "empty"] },
+              "parent": { "type": ["string", "null"] },
+              "position": { "type": "array", "items": { "type": "number" } },
+              "rotation": { "type": "array", "items": { "type": "number" } },
+              "scale": { "type": "array", "items": { "type": "number" } },
+              "visible": { "type": "boolean", "default": true },
+              "locked": { "type": "boolean", "default": false },
+              "objectId": { "type": ["string", "null"] },
+              "materialId": { "type": ["string", "null"] },
+              "props": { "type": "object" }
+            }
+          }
+        },
         "entities": {
           "type": "array",
           "items": {

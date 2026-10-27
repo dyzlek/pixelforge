@@ -318,16 +318,49 @@ export function validateProject(p) {
         }
       }
     });
+
+    // Validation des noeuds 3D (nodes[])
+    const nodeIds = new Set((sc.nodes || []).map((n) => n.id));
+    (sc.nodes || []).forEach((n, i) => {
+      const nw = `${w} node #${i} "${n.name || n.id}"`;
+      if (!n.id) add('error', nw, 'node must have a valid id');
+      if (n.parent && !nodeIds.has(n.parent)) {
+        add('error', nw, `parent node id "${n.parent}" does not exist in scene`);
+      }
+      if (n.kind === 'mesh' && n.objectId) {
+        const obj = (p.objects || []).find((o) => o.id === n.objectId);
+        if (!obj) add('error', nw, `objectId "${n.objectId}" matches no object`);
+      }
+    });
+
+    for (const n of sc.nodes || []) {
+      const visited = new Set([n.id]);
+      let cur = n.parent;
+      while (cur) {
+        if (visited.has(cur)) {
+          add('error', `${w} node "${n.name}"`, 'circular parent-child hierarchy detected');
+          break;
+        }
+        visited.add(cur);
+        const pNode = (sc.nodes || []).find((x) => x.id === cur);
+        cur = pNode ? pNode.parent : null;
+      }
+    }
   }
 
   if (p.settings?.dimension === '3d') {
     const startSc = (p.scenes3d || []).find((s) => s.id === (p.settings.startScene3DId || p.settings.startMapId));
     if (startSc) {
-      const hasPlayer = (startSc.entities || []).some((e) => {
+      const hasPlayerEnt = (startSc.entities || []).some((e) => {
         const obj = (p.objects || []).find((o) => o.id === e.objectId);
         return obj && (/^player\b/i.test(obj.name) || /player/i.test(obj.name));
       });
-      if (!hasPlayer) {
+      const hasPlayerNode = (startSc.nodes || []).some((n) => {
+        if (n.kind !== 'mesh' || !n.objectId) return false;
+        const obj = (p.objects || []).find((o) => o.id === n.objectId);
+        return obj && (/^player\b/i.test(obj.name) || /player/i.test(obj.name));
+      });
+      if (!hasPlayerEnt && !hasPlayerNode) {
         add('error', `scene3d "${startSc.name}"`, 'the start 3D scene must contain a player entity (an instance of an object named "Player")');
       }
     }

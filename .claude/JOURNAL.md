@@ -1,5 +1,37 @@
 # Journal — PixelForge
 
+## 2026-10-27 (51) — [Phase F] F1 : graphe de scene 3D, arbre et inspecteur (Issue #70)
+- **Fait** :
+  - `src/core/project.js` & `docs/PROJECT_SCHEMA.json` :
+    - `createSceneNode(name, kind, parent)` : structure complete de noeud 3D avec id, name, kind (mesh, light, camera, collision, audio, empty), parent, position [x,y,z], rotation [x,y,z], scale [x,y,z], visible, locked, objectId, materialId, props.
+    - `createScene3D` : ajout du tableau `nodes: []`.
+    - `normalizeProject` : migration automatique et idempotente des anciennes `entities[]` vers `nodes[]`, tout en maintenant la synchronisation bi-directionnelle pour les noeuds de type mesh.
+  - `src/runtime3d/engine3d.js` :
+    - Prise en charge native de `scene.nodes` dans l'instanciation runtime (avec fallback sur `scene.entities`).
+  - `src/core/ops/ops.js` & `src/core/ops/validate.js` :
+    - `placeEntities` pour les scenes 3D peuple a la fois `sc.entities` et `sc.nodes`.
+    - Validation approfondie de `sc.nodes` : verification des identifiants, des types, de l'existence de l'objet associe, de l'existence du parent dans la scene, detection des cycles de parente et detection du joueur dans `nodes`.
+  - `src/ui/inspector-schemas.js` & `src/ui/inspector.js` :
+    - Schemas de configuration et inspecteur interactif pour `node3d` et `scene3d`.
+    - Controles de type `object-ref` et `material-ref`.
+    - Synchronisation automatique avec `sc.entities` lors des modifications de position, rotation, visibilite et verrouillage via `store.update`.
+  - `src/ui/panels/scene-tree.js` & `scene-tree.css` :
+    - Vue arborescente hierarchique 3D avec indentation par niveau de profondeur.
+    - Icones selon le type (mesh/cube, lumiere/sun, camera, collision/shield, audio/sound, dossier/empty).
+    - Bouton [+] avec menu d'ajout de noeud (Mesh, Lumiere, Camera, Collision, Audio, Empty).
+    - Duplication (Ctrl+D) et suppression (Trash) avec reparentage automatique des orphelins.
+    - Renommage en ligne sur double-clic avec commit sur Entree / blur et annulation sur Echap.
+    - Glisser-deposer pour parenter des noeuds entre eux ou les replacer a la racine, avec prevention active des cycles de parente.
+    - Synchronisation temps reel de la selection entre l'arbre, le viewport 3D et l'inspecteur.
+  - `src/editors/scene3d/index.js` & `src/ui/panels/resources.js` :
+    - Mise a jour de l'editeur 3D pour manipuler `nodes` et `entities`.
+    - Prise en charge des scenes 3D et modeles 3D dans le panneau des ressources (affichage, duplication, suppression).
+  - Tests unitaires et E2E :
+    - `src/core/test/scenegraph3d.test.mjs` : creation de noeud, migration `normalizeProject`, detection de cycles de parente, synchronisation `placeEntities`.
+    - `e2e/studio.spec.js` : test E2E de l'arbre de scene 3D, ajout d'un noeud, inspection et cycle complet d'annulation `store.undo()`.
+- **Verifie** : `npm test` (tous les tests unitaires et scenegraph3d verts), `npm run check:doc`, `npm run build`, validation `cube-runner` et `exemple-plateforme-qiqv`, et `npm run test:e2e` (8 tests Playwright verts).
+- **Etat** : Branche `feat/scene-graph-3d`, Closes #70.
+
 ## 2026-10-27 (50) — [Phase F] F0 : conception du nouvel editeur 3D (Issue #69)
 - **Fait** :
   - Redaction du document de conception architecturale et technique `docs/3D-EDITOR.md` :

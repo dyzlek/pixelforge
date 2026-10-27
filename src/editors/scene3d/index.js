@@ -19,6 +19,8 @@ export function mount(container, store, { refId } = {}) {
     return { dispose() {}, onShow() {}, onHide() {} };
   }
 
+  if (store.ui) store.ui.selectedScene3DId = refId;
+
   let grid = new GridMap3D(sceneData.gridmap);
 
   let activeTool = 'block'; // 'block' | 'erase' | 'entity' | 'select'
@@ -154,12 +156,44 @@ export function mount(container, store, { refId } = {}) {
     if (!sc) return;
     sceneData = sc;
     grid = new GridMap3D(sc.gridmap);
-    if (selectedEntityId && !(sc.entities || []).some((e) => e.id === selectedEntityId)) selectedEntityId = null;
+    if (selectedEntityId && !(sc.entities || []).some((e) => e.id === selectedEntityId) && !(sc.nodes || []).some((n) => n.id === selectedEntityId)) selectedEntityId = null;
     if (blockGroup) {
       rebuildBlocks();
       rebuildEntities();
     }
     updateSelectionUI();
+  });
+
+  const offChange = store.on('change', () => {
+    const sc = findScene();
+    if (!sc) return;
+    sceneData = sc;
+    grid = new GridMap3D(sc.gridmap);
+    if (blockGroup) {
+      rebuildBlocks();
+      rebuildEntities();
+    }
+    updateSelectionUI();
+  });
+
+  const offSel = store.on('selection', (sel) => {
+    if (sel?.type === 'node3d' && (sel.sceneId === refId || !sel.sceneId)) {
+      if (selectedEntityId !== sel.id) {
+        selectedEntityId = sel.id;
+        updateSelectionUI();
+        rebuildEntities();
+      }
+    } else if (sel?.type === 'entity') {
+      if (selectedEntityId !== sel.id) {
+        selectedEntityId = sel.id;
+        updateSelectionUI();
+        rebuildEntities();
+      }
+    } else if (selectedEntityId && (!sel || (sel.type !== 'node3d' && sel.type !== 'entity'))) {
+      selectedEntityId = null;
+      updateSelectionUI();
+      rebuildEntities();
+    }
   });
 
   // --- Initialisation Three.js Viewport ---
@@ -361,16 +395,45 @@ export function mount(container, store, { refId } = {}) {
       entityGroup.remove(entityGroup.children[0]);
     }
 
-    (sceneData.entities || []).forEach((ent) => {
-      const objDef = (store.project?.objects || []).find((o) => o.id === ent.objectId);
+    const nodes = (sceneData.nodes && sceneData.nodes.length > 0) ? sceneData.nodes : (sceneData.entities || []).map((ent) => ({
+      id: ent.id,
+      name: 'Entity',
+      kind: 'mesh',
+      parent: null,
+      position: [ent.x, ent.y, ent.z],
+      rotation: [0, ent.rotationY || 0, 0],
+      scale: [1, 1, 1],
+      visible: ent.visible !== false,
+      locked: !!ent.locked,
+      objectId: ent.objectId,
+      props: ent.props,
+    }));
+
+    nodes.forEach((node) => {
+      if (node.visible === false) return;
+      const objDef = (store.project?.objects || []).find((o) => o.id === node.objectId);
       const color = objDef?.color || '#ffcd75';
-      const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(color));
-      mesh.position.set(ent.x, ent.y, ent.z);
-      mesh.scale.set(0.9, 0.9, 0.9);
-      mesh.userData = { entityId: ent.id, ent };
+      const pos = Array.isArray(node.position) ? node.position : [0, 0, 0];
+      const scl = Array.isArray(node.scale) ? node.scale : [1, 1, 1];
+      const rot = Array.isArray(node.rotation) ? node.rotation : [0, 0, 0];
+
+      let mat = getMaterial(color);
+      if (node.kind === 'light') {
+        mat = getMaterial('#ffea75');
+      } else if (node.kind === 'camera') {
+        mat = getMaterial('#41a6f6');
+      } else if (node.kind === 'collision') {
+        mat = getMaterial('#ef7d57');
+      }
+
+      const mesh = new ThreeLib.Mesh(cubeGeo.geo, mat);
+      mesh.position.set(pos[0], pos[1], pos[2]);
+      mesh.rotation.set(rot[0] * (Math.PI / 180), rot[1] * (Math.PI / 180), rot[2] * (Math.PI / 180));
+      mesh.scale.set(scl[0] * 0.9, scl[1] * 0.9, scl[2] * 0.9);
+      mesh.userData = { entityId: node.id, node };
 
       // Marqueur de sélection
-      if (ent.id === selectedEntityId) {
+      if (node.id === selectedEntityId) {
         const selWire = new ThreeLib.Mesh(cubeGeo.geo, selWireMat);
         selWire.scale.set(1.05, 1.05, 1.05);
         mesh.add(selWire);
@@ -436,6 +499,7 @@ export function mount(container, store, { refId } = {}) {
 
     if (activeTool === 'select' && hitEntity) {
       selectedEntityId = hitEntity.id;
+      store.setSelection({ type: 'node3d', sceneId: sceneData.id, id: hitEntity.id });
       updateSelectionUI();
       rebuildEntities();
       return;
@@ -480,8 +544,24 @@ export function mount(container, store, { refId } = {}) {
         ez = Math.round(hitGrid.z);
       }
 
+      const id = `node3d_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+      const objName = (store.project?.objects || []).find((o) => o.id === selectedObjectId)?.name || 'Mesh';
+      const newNode = {
+        id,
+        name: objName,
+        kind: 'mesh',
+        parent: null,
+        position: [ex, ey, ez],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        visible: true,
+        locked: false,
+        objectId: selectedObjectId,
+        materialId: null,
+        props: {},
+      };
       const newEnt = {
-        id: `ent3d_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        id,
         objectId: selectedObjectId,
         x: ex,
         y: ey,
@@ -490,32 +570,36 @@ export function mount(container, store, { refId } = {}) {
         props: {},
       };
       commit((sc) => {
+        if (!Array.isArray(sc.nodes)) sc.nodes = [];
+        sc.nodes.push(newNode);
         if (!Array.isArray(sc.entities)) sc.entities = [];
         sc.entities.push(newEnt);
       });
-      selectedEntityId = newEnt.id;
+      selectedEntityId = id;
+      store.setSelection({ type: 'node3d', sceneId: sceneData.id, id });
       updateSelectionUI();
       rebuildEntities();
     }
   }
 
   function updateSelectionUI() {
-    const card = container.querySelector('#pf-s3d-selected-card');
     const details = container.querySelector('#pf-s3d-sel-details');
     const delBtn = container.querySelector('#pf-s3d-delete-ent');
 
-    const ent = (sceneData.entities || []).find((i) => i.id === selectedEntityId);
-    if (!ent) {
+    const node = (sceneData.nodes || []).find((i) => i.id === selectedEntityId) ||
+                 (sceneData.entities || []).find((i) => i.id === selectedEntityId);
+    if (!node) {
       details.textContent = 'Aucune entité sélectionnée';
       delBtn.style.display = 'none';
       return;
     }
 
-    const obj = (store.project?.objects || []).find((o) => o.id === ent.objectId);
+    const obj = (store.project?.objects || []).find((o) => o.id === node.objectId);
     const num = (v) => (Number.isFinite(v) ? v.toFixed(1) : '?');
+    const pos = Array.isArray(node.position) ? node.position : [node.x ?? 0, node.y ?? 0, node.z ?? 0];
     details.innerHTML = `
-      <div><strong>${esc(obj?.name || 'Entité')}</strong></div>
-      <div>Position : (${num(ent.x)}, ${num(ent.y)}, ${num(ent.z)})</div>
+      <div><strong>${esc(node.name || obj?.name || 'Entité')}</strong> <small style="color:var(--fg-2);">(${esc(node.kind || 'mesh')})</small></div>
+      <div>Position : (${num(pos[0])}, ${num(pos[1])}, ${num(pos[2])})</div>
     `;
     delBtn.style.display = 'block';
   }
@@ -524,11 +608,12 @@ export function mount(container, store, { refId } = {}) {
   function deleteSelectedEntity() {
     if (!selectedEntityId) return;
     const id = selectedEntityId;
-    if (!(sceneData.entities || []).some((i) => i.id === id)) return;
     commit((sc) => {
+      sc.nodes = (sc.nodes || []).filter((i) => i.id !== id);
       sc.entities = (sc.entities || []).filter((i) => i.id !== id);
     });
     selectedEntityId = null;
+    store.setSelection(null);
     updateSelectionUI();
     rebuildEntities();
   }
@@ -543,6 +628,8 @@ export function mount(container, store, { refId } = {}) {
       animId = null;
       window.removeEventListener('keydown', onKeyDown);
       offLoad();
+      offChange();
+      offSel();
       ro?.disconnect();
       materialCache.forEach((m) => m.dispose());
       materialCache.clear();
@@ -555,6 +642,7 @@ export function mount(container, store, { refId } = {}) {
     },
     onShow() {
       isActive = true;
+      if (store.ui) store.ui.selectedScene3DId = refId;
       if (renderLoop && !animId) renderLoop();
     },
     onHide() {

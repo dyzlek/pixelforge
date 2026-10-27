@@ -116,3 +116,64 @@
   font-style: italic;
   font-size: 11px;
 }
+
+.pf-st-item.pf-st-drag-over {
+  border-color: var(--accent);
+  background: var(--bg-3);
+}
+
+.pf-st-rename-input {
+  background: var(--bg-0);
+  color: var(--fg-0);
+  border: 1px solid var(--accent);
+  border-radius: 2px;
+  font-size: 11px;
+  padding: 1px 4px;
+  width: 100%;
+  outline: none;
+}
+
+.pf-st-badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  background: var(--bg-3);
+  color: var(--fg-2);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pf-st-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 100;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  padding: 4px 0;
+  min-width: 140px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pf-st-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: transparent;
+  border: none;
+  color: var(--fg-0);
+  font-size: 11px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.pf-st-menu-item:hover {
+  background: var(--bg-3);
+  color: var(--accent);
+}
+

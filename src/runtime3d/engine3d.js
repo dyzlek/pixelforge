@@ -839,13 +839,34 @@ export function createGame3D(project, parent, THREE, opts = {}) {
   }
 
   function spawnSceneEntities() {
-    (currentScene3D.entities || []).forEach((ent) => {
-      const objDef = objectsById[ent.objectId] || objectsByName[ent.objectId];
-      if (objDef) {
-        const inst = createInstance(objDef, ent.x || 0, ent.y || 0, ent.z || 0, ent.props || {});
-        if (typeof ent.rotationY === 'number') inst.rotationY = ent.rotationY;
-      }
-    });
+    const nodes = Array.isArray(currentScene3D.nodes) && currentScene3D.nodes.length > 0
+      ? currentScene3D.nodes
+      : null;
+
+    if (nodes) {
+      nodes.forEach((node) => {
+        if (node.visible === false) return;
+        if (node.kind === 'mesh' && node.objectId) {
+          const objDef = objectsById[node.objectId] || objectsByName[node.objectId];
+          if (objDef) {
+            const px = Array.isArray(node.position) ? node.position[0] : (node.position?.x || 0);
+            const py = Array.isArray(node.position) ? node.position[1] : (node.position?.y || 0);
+            const pz = Array.isArray(node.position) ? node.position[2] : (node.position?.z || 0);
+            const inst = createInstance(objDef, px, py, pz, node.props || {});
+            const ry = Array.isArray(node.rotation) ? node.rotation[1] : (node.rotation?.y || 0);
+            if (typeof ry === 'number') inst.rotationY = ry;
+          }
+        }
+      });
+    } else {
+      (currentScene3D.entities || []).forEach((ent) => {
+        const objDef = objectsById[ent.objectId] || objectsByName[ent.objectId];
+        if (objDef) {
+          const inst = createInstance(objDef, ent.x || 0, ent.y || 0, ent.z || 0, ent.props || {});
+          if (typeof ent.rotationY === 'number') inst.rotationY = ent.rotationY;
+        }
+      });
+    }
 
     // Si aucune entite n'est presente, instancier le premier objet ou un cube joueur
     if (instances.length === 0 && project.objects?.[0]) {

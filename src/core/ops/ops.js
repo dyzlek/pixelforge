@@ -457,7 +457,31 @@ export function placeEntities(p, a) {
         }
       });
     }
-    if (mode === 'replace') sc.entities = added; else sc.entities.push(...added);
+    sc.nodes ||= [];
+    const addedNodes = added.map((e) => {
+      const o = p.objects.find((obj) => obj.id === e.objectId);
+      return {
+        id: e.id,
+        name: o?.name || `Entity_${e.id.slice(-4)}`,
+        kind: 'mesh',
+        parent: null,
+        position: [e.x, e.y, e.z],
+        rotation: [0, 0, 0],
+        scale: [1, 1, 1],
+        visible: true,
+        locked: false,
+        objectId: e.objectId,
+        materialId: null,
+        props: e.props || {},
+      };
+    });
+    if (mode === 'replace') {
+      sc.entities = added;
+      sc.nodes = addedNodes;
+    } else {
+      sc.entities.push(...added);
+      sc.nodes.push(...addedNodes);
+    }
     const counts = {};
     for (const e of added) { const n = p.objects.find((o) => o.id === e.objectId).name; counts[n] = (counts[n] || 0) + 1; }
     return `${mode === 'replace' ? 'Replaced entities of' : 'Added to'} 3D scene "${sc.name}": ${Object.entries(counts).map(([n, c]) => `${c}x${n}`).join(', ') || 'nothing'}; scene now has ${sc.entities.length} entities.`;
