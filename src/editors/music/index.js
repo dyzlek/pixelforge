@@ -463,6 +463,7 @@ export function mount(container, store, { refId = null } = {}) {
               cur.tracks = structuredClone(viewSong.tracks || []);
               cur.channels = structuredClone(viewSong.channels || []);
               cur.markers = structuredClone(viewSong.markers || []);
+              cur.automation = structuredClone(viewSong.automation || []);
               cur.timeSignature = structuredClone(viewSong.timeSignature || [4, 4]);
               cur.bpm = viewSong.bpm;
               cur.loop = { ...(cur.loop || {}), ...(viewSong.loop || {}) };

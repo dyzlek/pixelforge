@@ -17,18 +17,101 @@ export function renderPlaylist(container, opts) {
 
   let stepWidth = 12; // 12px par pas par defaut
   const TRACK_HEIGHT = 44;
+  const AUTO_LANE_HEIGHT = 44;
   let snapSteps = 16; // aimantation par defaut a 1 mesure (16 pas)
   let activeTool = 'pointer'; // 'pointer' ou 'split'
   let selectedPatternId = activePatternId || song.patterns?.[0]?.id || null;
+  const expandedAutoTracks = new Set();
 
   // Initialisation des collections DAW v2
   song.tracks = Array.isArray(song.tracks) ? song.tracks : [];
   song.clips = Array.isArray(song.clips) ? song.clips : [];
   song.markers = Array.isArray(song.markers) ? song.markers : [];
+  song.automation = Array.isArray(song.automation) ? song.automation : [];
   song.playlist = Array.isArray(song.playlist) ? song.playlist : [];
   song.loop = song.loop && typeof song.loop === 'object' ? song.loop : { enabled: true, start: 0, end: 64 };
   song.timeSignature = Array.isArray(song.timeSignature) && song.timeSignature.length === 2 ? song.timeSignature : [4, 4];
   song.bpm = Number(song.bpm) || 120;
+
+  const AUTOMATION_TARGETS = {
+    'filter.cutoff': {
+      name: 'Filtre : Coupure',
+      min: 40,
+      max: 16000,
+      def: 2000,
+      unit: 'Hz',
+      log: true,
+      format: (v) => Math.round(v) + ' Hz'
+    },
+    'filter.resonance': {
+      name: 'Filtre : Resonance',
+      min: 0.1,
+      max: 20,
+      def: 1.0,
+      unit: '',
+      log: false,
+      format: (v) => v.toFixed(1)
+    },
+    'volume': {
+      name: 'Volume',
+      min: 0,
+      max: 1,
+      def: 0.8,
+      unit: '%',
+      log: false,
+      format: (v) => Math.round(v * 100) + '%'
+    },
+    'pan': {
+      name: 'Panoramique',
+      min: -1,
+      max: 1,
+      def: 0,
+      unit: '',
+      log: false,
+      format: (v) => v < -0.05 ? `${Math.round(-v * 100)}% G` : (v > 0.05 ? `${Math.round(v * 100)}% D` : 'Centre')
+    },
+    'delay.mix': {
+      name: 'Delai : Mix',
+      min: 0,
+      max: 1,
+      def: 0.3,
+      unit: '%',
+      log: false,
+      format: (v) => Math.round(v * 100) + '%'
+    },
+    'reverb.mix': {
+      name: 'Reverb : Mix',
+      min: 0,
+      max: 1,
+      def: 0.35,
+      unit: '%',
+      log: false,
+      format: (v) => Math.round(v * 100) + '%'
+    }
+  };
+
+  function normToVal(norm, targetKey) {
+    const meta = AUTOMATION_TARGETS[targetKey] || AUTOMATION_TARGETS['volume'];
+    const clampedNorm = Math.max(0, Math.min(1, norm));
+    if (meta.log) {
+      const minLog = Math.log(meta.min);
+      const maxLog = Math.log(meta.max);
+      return Math.exp(minLog + clampedNorm * (maxLog - minLog));
+    }
+    return meta.min + clampedNorm * (meta.max - meta.min);
+  }
+
+  function valToNorm(val, targetKey) {
+    const meta = AUTOMATION_TARGETS[targetKey] || AUTOMATION_TARGETS['volume'];
+    if (meta.log) {
+      const minLog = Math.log(meta.min);
+      const maxLog = Math.log(meta.max);
+      const clampedVal = Math.max(meta.min, Math.min(meta.max, typeof val === 'number' ? val : meta.def));
+      return (Math.log(clampedVal) - minLog) / (maxLog - minLog);
+    }
+    const clampedVal = Math.max(meta.min, Math.min(meta.max, typeof val === 'number' ? val : meta.def));
+    return (clampedVal - meta.min) / (meta.max - meta.min);
+  }
 
   function getTracksList() {
     return (song.tracks && song.tracks.length > 0) ? song.tracks : (song.channels || []);
@@ -36,6 +119,48 @@ export function renderPlaylist(container, opts) {
 
   function getNumTracks() {
     return Math.max(8, getTracksList().length);
+  }
+
+  function getTrackY(tIdx) {
+    let y = 0;
+    const tracksList = getTracksList();
+    for (let i = 0; i < tIdx; i++) {
+      const trk = tracksList[i];
+      const isExpanded = trk && expandedAutoTracks.has(trk.id);
+      y += TRACK_HEIGHT + (isExpanded ? AUTO_LANE_HEIGHT : 0);
+    }
+    return y;
+  }
+
+  function getTotalTracksHeight() {
+    let h = 0;
+    const tracksList = getTracksList();
+    const numT = getNumTracks();
+    for (let i = 0; i < numT; i++) {
+      const trk = tracksList[i];
+      const isExpanded = trk && expandedAutoTracks.has(trk.id);
+      h += TRACK_HEIGHT + (isExpanded ? AUTO_LANE_HEIGHT : 0);
+    }
+    return h;
+  }
+
+  function getTrackIndexAtY(y) {
+    let currentY = 0;
+    const tracksList = getTracksList();
+    const numT = getNumTracks();
+    for (let i = 0; i < numT; i++) {
+      const trk = tracksList[i];
+      const isExpanded = trk && expandedAutoTracks.has(trk.id);
+      const trackH = TRACK_HEIGHT + (isExpanded ? AUTO_LANE_HEIGHT : 0);
+      if (y >= currentY && y < currentY + trackH) {
+        if (isExpanded && y >= currentY + TRACK_HEIGHT) {
+          return -1; // Clic a l'interieur de la sous-piste d'automation
+        }
+        return i;
+      }
+      currentY += trackH;
+    }
+    return Math.min(numT - 1, Math.floor(y / TRACK_HEIGHT));
   }
 
   function computeTotalSteps() {
@@ -46,7 +171,8 @@ export function renderPlaylist(container, opts) {
     const clipsMax = (song.clips || []).map((c) => (c.start || 0) + (c.length || 16));
     const markersMax = (song.markers || []).map((m) => m.step || 0);
     const loopMax = [song.loop?.end || 0];
-    const maxVal = Math.max(128, ...playlistMax, ...clipsMax, ...markersMax, ...loopMax);
+    const autoMax = (song.automation || []).flatMap((a) => (a.points || []).map((p) => p.step || 0));
+    const maxVal = Math.max(128, ...playlistMax, ...clipsMax, ...markersMax, ...loopMax, ...autoMax);
     return maxVal + 64;
   }
 
@@ -333,6 +459,7 @@ export function renderPlaylist(container, opts) {
 
     for (let t = 0; t < numT; t++) {
       const trk = tracksList[t];
+      const isExpanded = trk && expandedAutoTracks.has(trk.id);
       const th = document.createElement('div');
       th.className = 'pf-playlist-track-head';
       th.style.height = TRACK_HEIGHT + 'px';
@@ -345,6 +472,38 @@ export function renderPlaylist(container, opts) {
 
       const actions = document.createElement('div');
       actions.className = 'pf-track-head-actions';
+
+      const btnAuto = document.createElement('button');
+      btnAuto.className = 'pf-track-btn pf-track-btn-auto' + (isExpanded ? ' active' : '');
+      btnAuto.textContent = 'A';
+      btnAuto.title = 'Afficher/masquer les courbes d automation de la piste';
+      btnAuto.onclick = (e) => {
+        e.stopPropagation();
+        if (trk) {
+          if (expandedAutoTracks.has(trk.id)) {
+            expandedAutoTracks.delete(trk.id);
+          } else {
+            expandedAutoTracks.add(trk.id);
+            let auto = (song.automation || []).find((a) => a.trackId === trk.id);
+            if (!auto) {
+              song.automation = song.automation || [];
+              song.automation.push({
+                id: 'auto_' + Math.random().toString(36).slice(2, 8),
+                trackId: trk.id,
+                target: 'filter.cutoff',
+                points: [
+                  { step: 0, value: 400, curve: 'linear' },
+                  { step: 128, value: 8000, curve: 'linear' }
+                ]
+              });
+              onPlaylistChange?.();
+            }
+          }
+          renderTrackHeaders();
+          applyLayout();
+        }
+      };
+      actions.appendChild(btnAuto);
 
       const btnMute = document.createElement('button');
       btnMute.className = 'pf-track-btn pf-track-mute' + (trk?.mute ? ' active' : '');
@@ -376,6 +535,87 @@ export function renderPlaylist(container, opts) {
 
       th.appendChild(actions);
       trackHeaders.appendChild(th);
+
+      // Sous-en-tete de la piste d'automation
+      if (isExpanded) {
+        let auto = (song.automation || []).find((a) => a.trackId === trk.id);
+        if (!auto) {
+          auto = {
+            id: 'auto_' + Math.random().toString(36).slice(2, 8),
+            trackId: trk.id,
+            target: 'filter.cutoff',
+            points: [
+              { step: 0, value: 400, curve: 'linear' },
+              { step: 128, value: 8000, curve: 'linear' }
+            ]
+          };
+          song.automation = song.automation || [];
+          song.automation.push(auto);
+          onPlaylistChange?.();
+        }
+
+        const autoHead = document.createElement('div');
+        autoHead.className = 'pf-playlist-auto-head';
+        autoHead.style.height = AUTO_LANE_HEIGHT + 'px';
+
+        const autoTargetSelect = document.createElement('select');
+        autoTargetSelect.className = 'pf-auto-target-select';
+        Object.entries(AUTOMATION_TARGETS).forEach(([targetKey, meta]) => {
+          const opt = document.createElement('option');
+          opt.value = targetKey;
+          opt.textContent = meta.name;
+          opt.selected = auto.target === targetKey;
+          autoTargetSelect.appendChild(opt);
+        });
+        autoTargetSelect.onchange = (e) => {
+          auto.target = e.target.value;
+          const meta = AUTOMATION_TARGETS[auto.target];
+          if (auto.points && auto.points.length > 0) {
+            auto.points.forEach((pt) => {
+              pt.value = Math.max(meta.min, Math.min(meta.max, pt.value));
+            });
+          }
+          onPlaylistChange?.();
+          renderTrackHeaders();
+          applyLayout();
+        };
+
+        const readout = document.createElement('span');
+        readout.className = 'pf-auto-readout';
+        const meta = AUTOMATION_TARGETS[auto.target] || AUTOMATION_TARGETS['volume'];
+        const firstPt = auto.points?.[0];
+        readout.textContent = firstPt ? meta.format(firstPt.value) : meta.format(meta.def);
+
+        // Raccourci ouverture 8 mesures (128 pas)
+        const btnSweep8 = document.createElement('button');
+        btnSweep8.className = 'pf-track-btn';
+        btnSweep8.style.fontSize = '9px';
+        btnSweep8.style.width = 'auto';
+        btnSweep8.style.padding = '0 4px';
+        btnSweep8.textContent = '8 mes';
+        btnSweep8.title = 'Régler une ouverture sur 8 mesures (128 pas)';
+        btnSweep8.onclick = (e) => {
+          e.stopPropagation();
+          const m = AUTOMATION_TARGETS[auto.target] || AUTOMATION_TARGETS['filter.cutoff'];
+          auto.points = [
+            { step: 0, value: m.min, curve: 'linear' },
+            { step: 128, value: m.max, curve: 'linear' }
+          ];
+          onPlaylistChange?.();
+          applyLayout();
+        };
+
+        const leftWrap = document.createElement('div');
+        leftWrap.style.display = 'flex';
+        leftWrap.style.alignItems = 'center';
+        leftWrap.style.gap = '4px';
+        leftWrap.appendChild(autoTargetSelect);
+        leftWrap.appendChild(btnSweep8);
+
+        autoHead.appendChild(leftWrap);
+        autoHead.appendChild(readout);
+        trackHeaders.appendChild(autoHead);
+      }
     }
   }
   renderTrackHeaders();
@@ -430,7 +670,8 @@ export function renderPlaylist(container, opts) {
     timelineContent.style.width = contentWidth + 'px';
 
     const numT = getNumTracks();
-    tracksArea.style.height = (numT * TRACK_HEIGHT) + 'px';
+    const totalHeight = getTotalTracksHeight();
+    tracksArea.style.height = totalHeight + 'px';
 
     // Rendu de la reglette
     ruler.innerHTML = '';
@@ -444,15 +685,25 @@ export function renderPlaylist(container, opts) {
       ruler.appendChild(barEl);
     }
 
-    // Reconstruction des pistes de fond
+    // Reconstruction des pistes de fond et des sous-pistes d'automation
     tracksArea.innerHTML = '';
+    const tracksList = getTracksList();
     for (let t = 0; t < numT; t++) {
+      const trk = tracksList[t];
+      const isExpanded = trk && expandedAutoTracks.has(trk.id);
+      const trackY = getTrackY(t);
+
       const lane = document.createElement('div');
       lane.className = 'pf-playlist-lane' + (t % 2 === 1 ? ' alt' : '');
       lane.dataset.track = String(t);
-      lane.style.top = (t * TRACK_HEIGHT) + 'px';
+      lane.style.top = trackY + 'px';
       lane.style.height = TRACK_HEIGHT + 'px';
       tracksArea.appendChild(lane);
+
+      if (isExpanded) {
+        const autoLane = renderAutomationLane(trk, trackY + TRACK_HEIGHT, contentWidth);
+        tracksArea.appendChild(autoLane);
+      }
     }
 
     tracksArea.appendChild(loopRangeEl);
@@ -462,6 +713,170 @@ export function renderPlaylist(container, opts) {
     ruler.appendChild(markersContainer);
     renderMarkers();
     renderBlocks();
+  }
+
+  function renderAutomationLane(trk, topY, contentWidth) {
+    const laneEl = document.createElement('div');
+    laneEl.className = 'pf-playlist-auto-lane';
+    laneEl.style.top = topY + 'px';
+    laneEl.style.height = AUTO_LANE_HEIGHT + 'px';
+    laneEl.style.width = contentWidth + 'px';
+
+    let auto = (song.automation || []).find((a) => a.trackId === trk.id);
+    if (!auto) {
+      auto = {
+        id: 'auto_' + Math.random().toString(36).slice(2, 8),
+        trackId: trk.id,
+        target: 'filter.cutoff',
+        points: []
+      };
+      song.automation = song.automation || [];
+      song.automation.push(auto);
+    }
+
+    const targetKey = auto.target || 'filter.cutoff';
+    const gridSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    gridSvg.setAttribute('class', 'pf-auto-svg');
+    gridSvg.setAttribute('width', String(contentWidth));
+    gridSvg.setAttribute('height', String(AUTO_LANE_HEIGHT));
+
+    // Lignes de repères visuels (25%, 50%, 75%)
+    [0.25, 0.5, 0.75].forEach((frac) => {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      const yPos = AUTO_LANE_HEIGHT * (1 - frac);
+      line.setAttribute('x1', '0');
+      line.setAttribute('x2', String(contentWidth));
+      line.setAttribute('y1', String(yPos));
+      line.setAttribute('y2', String(yPos));
+      line.setAttribute('stroke', '#333c57');
+      line.setAttribute('stroke-dasharray', '2,4');
+      gridSvg.appendChild(line);
+    });
+
+    const pts = [...(auto.points || [])].sort((a, b) => a.step - b.step);
+
+    function ptCoords(pt) {
+      const x = pt.step * stepWidth;
+      const norm = valToNorm(pt.value, targetKey);
+      const y = Math.max(4, Math.min(AUTO_LANE_HEIGHT - 4, AUTO_LANE_HEIGHT - (norm * (AUTO_LANE_HEIGHT - 8) + 4)));
+      return { x, y };
+    }
+
+    if (pts.length > 0) {
+      const coords = pts.map(ptCoords);
+      const firstCoord = coords[0];
+      const lastCoord = coords[coords.length - 1];
+
+      let d = `M 0 ${firstCoord.y} L ${firstCoord.x} ${firstCoord.y}`;
+      for (let i = 1; i < coords.length; i++) {
+        d += ` L ${coords[i].x} ${coords[i].y}`;
+      }
+      d += ` L ${contentWidth} ${lastCoord.y}`;
+
+      const fillD = `${d} L ${contentWidth} ${AUTO_LANE_HEIGHT} L 0 ${AUTO_LANE_HEIGHT} Z`;
+
+      const fillPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      fillPath.setAttribute('d', fillD);
+      fillPath.setAttribute('fill', 'rgba(115, 239, 247, 0.15)');
+      gridSvg.appendChild(fillPath);
+
+      const strokePath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      strokePath.setAttribute('d', d);
+      strokePath.setAttribute('fill', 'none');
+      strokePath.setAttribute('stroke', '#73eff7');
+      strokePath.setAttribute('stroke-width', '2');
+      gridSvg.appendChild(strokePath);
+
+      pts.forEach((pt, idx) => {
+        const { x, y } = ptCoords(pt);
+        const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        circle.setAttribute('class', 'pf-auto-node');
+        circle.setAttribute('cx', String(x));
+        circle.setAttribute('cy', String(y));
+        circle.setAttribute('r', '5');
+        circle.setAttribute('fill', '#ffcd75');
+        circle.setAttribute('stroke', '#1a1c2c');
+        circle.setAttribute('stroke-width', '2');
+
+        circle.onmousedown = (e) => {
+          if (e.button !== 0) return;
+          e.preventDefault();
+          e.stopPropagation();
+
+          const startClientX = e.clientX;
+          const startClientY = e.clientY;
+          const initialStep = pt.step;
+          const initialValue = pt.value;
+
+          const onMouseMove = (moveEv) => {
+            const dx = moveEv.clientX - startClientX;
+            const dy = moveEv.clientY - startClientY;
+
+            const stepDelta = Math.round(dx / stepWidth);
+            const rawStep = Math.max(0, initialStep + stepDelta);
+            const snappedStep = e.shiftKey ? rawStep : Math.round(rawStep / snapSteps) * snapSteps;
+
+            const normDelta = -dy / (AUTO_LANE_HEIGHT - 8);
+            const currentNorm = valToNorm(initialValue, targetKey);
+            const newNorm = Math.max(0, Math.min(1, currentNorm + normDelta));
+            const newVal = normToVal(newNorm, targetKey);
+
+            pt.step = snappedStep;
+            pt.value = newVal;
+
+            applyLayout();
+          };
+
+          const onMouseUp = () => {
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('mouseup', onMouseUp);
+            auto.points.sort((a, b) => a.step - b.step);
+            onPlaylistChange?.();
+            applyLayout();
+          };
+
+          window.addEventListener('mousemove', onMouseMove);
+          window.addEventListener('mouseup', onMouseUp);
+        };
+
+        circle.oncontextmenu = (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          auto.points.splice(idx, 1);
+          onPlaylistChange?.();
+          applyLayout();
+        };
+
+        gridSvg.appendChild(circle);
+      });
+    }
+
+    laneEl.onmousedown = (e) => {
+      if (e.button !== 0) return;
+      if (e.target.closest('.pf-auto-node')) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const rect = laneEl.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+
+      const rawStep = Math.max(0, Math.floor(clickX / stepWidth));
+      const step = e.shiftKey ? rawStep : Math.round(rawStep / snapSteps) * snapSteps;
+
+      const norm = Math.max(0, Math.min(1, (AUTO_LANE_HEIGHT - 4 - clickY) / (AUTO_LANE_HEIGHT - 8)));
+      const value = normToVal(norm, targetKey);
+
+      auto.points = auto.points || [];
+      auto.points.push({ step, value, curve: 'linear' });
+      auto.points.sort((a, b) => a.step - b.step);
+
+      onPlaylistChange?.();
+      applyLayout();
+    };
+
+    laneEl.appendChild(gridSvg);
+    return laneEl;
   }
 
   function renderMarkers() {
@@ -544,7 +959,7 @@ export function renderPlaylist(container, opts) {
       clipEl.dataset.type = 'clip';
       clipEl.dataset.clipId = clip.id;
       clipEl.style.left = ((clip.start || 0) * stepWidth) + 'px';
-      clipEl.style.top = (trackIdx * TRACK_HEIGHT + 3) + 'px';
+      clipEl.style.top = (getTrackY(trackIdx) + 3) + 'px';
       clipEl.style.width = ((clip.length || 16) * stepWidth - 2) + 'px';
       clipEl.style.height = (TRACK_HEIGHT - 6) + 'px';
       clipEl.style.background = '#29366f';
@@ -697,7 +1112,7 @@ export function renderPlaylist(container, opts) {
           }
 
           clipEl.style.left = (snappedStart * stepWidth) + 'px';
-          clipEl.style.top = (newTrackIdx * TRACK_HEIGHT + 3) + 'px';
+          clipEl.style.top = (getTrackY(newTrackIdx) + 3) + 'px';
         };
 
         const onMouseUp = () => {
@@ -725,7 +1140,7 @@ export function renderPlaylist(container, opts) {
       block.className = 'pf-playlist-block';
       block.dataset.type = 'pattern';
       block.style.left = ((item.start || 0) * stepWidth) + 'px';
-      block.style.top = (trackIdx * TRACK_HEIGHT + 3) + 'px';
+      block.style.top = (getTrackY(trackIdx) + 3) + 'px';
       block.style.width = (patLength * stepWidth - 2) + 'px';
       block.style.height = (TRACK_HEIGHT - 6) + 'px';
 
@@ -851,7 +1266,7 @@ export function renderPlaylist(container, opts) {
           targetItem.track = newTrack;
 
           block.style.left = (snappedStart * stepWidth) + 'px';
-          block.style.top = (newTrack * TRACK_HEIGHT + 3) + 'px';
+          block.style.top = (getTrackY(newTrack) + 3) + 'px';
         };
 
         const onMouseUp = () => {
@@ -873,14 +1288,15 @@ export function renderPlaylist(container, opts) {
   tracksArea.onmousedown = (e) => {
     if (e.button !== 0) return;
     if (e.target.closest('.pf-playlist-block')) return;
+    if (e.target.closest('.pf-playlist-auto-lane')) return;
     if (activeTool === 'split') return;
 
     const rect = tracksArea.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const numT = getNumTracks();
-    const track = Math.max(0, Math.min(numT - 1, Math.floor(y / TRACK_HEIGHT)));
+    const track = getTrackIndexAtY(y);
+    if (track < 0) return;
     const rawStep = Math.max(0, Math.floor(x / stepWidth));
     const step = Math.floor(rawStep / snapSteps) * snapSteps;
 

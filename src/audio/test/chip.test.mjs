@@ -7,17 +7,22 @@ import { parseMidi, midiToSong } from '../midi-parser.js';
 import { parseSongText, songToText } from '../../../mcp/lib/song-text.js';
 import { SONG_PRESETS, getSongPreset, DRUM_PATTERNS } from '../presets/index.js';
 
+function createMockParam(defaultVal = 0, scheduledValues = []) {
+  return {
+    value: defaultVal,
+    setValueAtTime(v, t) { scheduledValues.push({ type: 'set', v, t }); },
+    linearRampToValueAtTime(v, t) { scheduledValues.push({ type: 'linear', v, t }); },
+    exponentialRampToValueAtTime(v, t) { scheduledValues.push({ type: 'exp', v, t }); },
+    cancelScheduledValues(t) { scheduledValues.push({ type: 'cancel', t }); }
+  };
+}
+
 function createMockAudioContext() {
   const scheduledValues = [];
   const nodes = [];
 
   function createParam(defaultVal = 0) {
-    return {
-      value: defaultVal,
-      setValueAtTime(v, t) { scheduledValues.push({ type: 'set', v, t }); },
-      linearRampToValueAtTime(v, t) { scheduledValues.push({ type: 'linear', v, t }); },
-      exponentialRampToValueAtTime(v, t) { scheduledValues.push({ type: 'exp', v, t }); }
-    };
+    return createMockParam(defaultVal, scheduledValues);
   }
 
   const mockCtx = {
@@ -975,6 +980,129 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
   assert.ok(ctrl, 'playSong doit instancier le morceau de 2 minutes');
   assert.equal(ctrl.tracks.length, 5, 'Doit instancier 5 bus de piste');
   ctrl.stop(0);
+}
+
+// ----------------------------------------------------
+// Tests DAW v2 Automation des Parametres (G6)
+// ----------------------------------------------------
+{
+  const { mockCtx, scheduledValues } = createMockAudioContext();
+  const audio = createChipAudio(mockCtx);
+
+  const automatedSong = {
+    bpm: 120,
+    tracks: [
+      {
+        id: 'trk_lead',
+        name: 'Lead',
+        volume: 0.8,
+        pan: 0,
+        instrument: 'synth_sub',
+        effects: [
+          {
+            id: 'fx_filter',
+            type: 'filter',
+            filterType: 'lowpass',
+            cutoff: 400,
+            resonance: 2.0
+          }
+        ]
+      }
+    ],
+    clips: [
+      {
+        id: 'clip_lead',
+        trackId: 'trk_lead',
+        type: 'notes',
+        start: 0,
+        length: 128,
+        notes: [
+          { step: 0, pitch: 'C4', len: 4 }
+        ]
+      }
+    ],
+    automation: [
+      {
+        id: 'auto_filter_sweep',
+        trackId: 'trk_lead',
+        target: 'filter.cutoff',
+        points: [
+          { step: 0, value: 400 },
+          { step: 128, value: 8000 }
+        ]
+      },
+      {
+        id: 'auto_vol',
+        trackId: 'trk_lead',
+        target: 'volume',
+        points: [
+          { step: 0, value: 0.2 },
+          { step: 64, value: 0.9 }
+        ]
+      }
+    ],
+    loop: { enabled: false, start: 0, end: 128 }
+  };
+
+  const ctrl = audio.playSong(automatedSong, { loop: false, volume: 1 });
+  assert.ok(ctrl, 'playSong doit instancier le morceau avec automation');
+
+  // Verification de la resolution des parametres AudioParam
+  const cutoffParam = ctrl.resolveAudioParam('trk_lead', 'filter.cutoff');
+  assert.ok(cutoffParam, 'Parametre filter.cutoff doit etre resolu');
+  const volParam = ctrl.resolveAudioParam('trk_lead', 'volume');
+  assert.ok(volParam, 'Parametre volume doit etre resolu');
+  const panParam = ctrl.resolveAudioParam('trk_lead', 'pan');
+  assert.ok(panParam, 'Parametre pan doit etre resolu');
+
+  // Verification des valeurs planifiees pour le filtre sur 8 mesures (128 pas)
+  const filterSets = scheduledValues.filter((s) => s.type === 'set' && s.v === 400);
+  assert.ok(filterSets.length > 0, 'La valeur initiale de filtre 400 Hz doit etre planifiee');
+
+  const filterRamps = scheduledValues.filter((s) => s.type === 'linear' && s.v === 8000);
+  assert.ok(filterRamps.length > 0, 'La rampe d ouverture de filtre a 8000 Hz sur 8 mesures (128 pas) doit etre planifiee');
+  assert.equal(Math.round(filterRamps[0].t * 10) / 10, 16.0, 'Le temps de la rampe 8 mesures a 120 BPM doit valoir 16.0 secondes');
+
+  // Verification de la rampe de volume
+  const volRamps = scheduledValues.filter((s) => s.type === 'linear' && s.v === 0.9);
+  assert.ok(volRamps.length > 0, 'La rampe de volume doit etre planifiee');
+
+  ctrl.stop(0);
+
+  // Test de rendu hors-ligne (renderOffline) et export WAV
+  const origWindow = globalThis.window;
+  class MockOfflineAudioContext {
+    constructor(channels, length, sampleRate) {
+      this.channels = channels;
+      this.length = length;
+      this.sampleRate = sampleRate;
+      this.currentTime = 0;
+      this.destination = { tag: 'destination' };
+      this.nodes = [];
+    }
+    createGain() {
+      return { gain: createMockParam(1), connect() {}, disconnect() {} };
+    }
+    createBiquadFilter() {
+      return { frequency: createMockParam(350), Q: createMockParam(1), gain: createMockParam(0), connect() {}, disconnect() {} };
+    }
+    createBuffer(channels, length, rate) {
+      const data = new Float32Array(length);
+      return { numberOfChannels: channels, length, sampleRate: rate, getChannelData: () => data };
+    }
+    startRendering() {
+      return Promise.resolve(this.createBuffer(this.channels, this.length, this.sampleRate));
+    }
+  }
+  globalThis.window = { OfflineAudioContext: MockOfflineAudioContext };
+  try {
+    const renderedBuf = await audio.renderOffline(automatedSong);
+    assert.ok(renderedBuf, 'renderOffline doit produire un AudioBuffer avec automation');
+    const wavBytes = encodeWav(renderedBuf);
+    assert.ok(wavBytes instanceof Uint8Array, 'encodeWav doit exporter le WAV avec automation');
+  } finally {
+    globalThis.window = origWindow;
+  }
 }
 
 console.log('Tests chip.js reussis avec succes.');

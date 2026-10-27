@@ -193,3 +193,40 @@ Le Piano Roll (`src/editors/music/pianoroll.js`) permet l'edition melodique et h
 - **Clavier maitre Web MIDI** : Detection et connexion automatique a tout peripherique MIDI USB/Bluetooth via `navigator.requestMIDIAccess`, temoin visuel de signal et prise en compte de la velocite d'appui.
 - **Enregistrement en direct** : Bouton d'enregistrement (`REC`) permettant de capturer les notes jouees en direct pendant la lecture du clip, avec option de quantification a la volee.
 
+---
+
+## 9. Automation des Parametres et Courbes sur la Timeline
+
+Le DAW v2 integre un systeme d'automation multi-parametres permettant de faire evoluer dynamiquement n'importe quel parametre audio (volume, panoramique, filtre biquad, retards, mix d'effets) au cours du morceau :
+
+### A. Modele de Donnees et Cibles
+Chaque regle d'automation est rattachee a une piste (`trackId`) ou au bus general (`'master'`) :
+```json
+{
+  "id": "auto_filter_sweep",
+  "trackId": "trk_lead",
+  "target": "filter.cutoff",
+  "points": [
+    { "step": 0, "value": 400, "curve": "linear" },
+    { "step": 128, "value": 8000, "curve": "linear" }
+  ]
+}
+```
+Cibles prises en charge :
+- `filter.cutoff` : frequence de coupure du filtre biquad (echelle logarithmique de 40 Hz a 16 000 Hz).
+- `filter.resonance` : resonance / Q du filtre (0.1 a 20.0).
+- `volume` : volume de piste ou gain maitre (0.0 a 1.0).
+- `pan` : panoramique stereo (-1.0 a +1.0).
+- `delay.mix`, `delay.feedback`, `reverb.mix` : niveaux d'effets de la piste.
+
+### B. Moteur Temps Reel et Rendu Hors-Ligne
+- **Interpolation AudioParam native** : Les points sont directement programmes sur les noeuds WebAudio correspondants (`setValueAtTime`, `linearRampToValueAtTime`, `exponentialRampToValueAtTime`).
+- **Rendu en jeu et export WAV** : L'automation est executee a l'identique dans le moteur de jeu (`game.playSong`), l'apercu temps reel du studio et le rendu hors-ligne (`renderOffline`) pour l'export WAV PCM 16-bit.
+- **Bouclage sans couture** : Lors du bouclage du morceau, le planificateur reprogramme automatiquement la passe d'automation en annulant les valeurs obsoletes (`cancelScheduledValues`).
+
+### C. Interface Timeline DAW
+- **Bouton d'automation par piste** : Bouton `A` sur chaque en-tete de piste pour deplier ou replier la sous-piste d'automation.
+- **Selecteur de parametre cible** : Menu deroulant permettant de choisir le parametre a moduler et raccourci `8 mes` pour configurer immediatement une montee sur 8 mesures.
+- **Courbe vectorielle interactive SVG** : Visualisation continue avec remplissage translucide, ajout de points au clic, deplacement interactif avec aimantation au tempo (`snapSteps`) et suppression au clic droit.
+
+

@@ -1182,9 +1182,11 @@ export function createChipAudio(ctx, destination) {
       inputNode.connect(outputNode);
       return {
         type,
+        id: effectDef.id,
         bypass: true,
         inputNode,
         outputNode,
+        params: {},
         disconnect() {
           try { inputNode.disconnect(); } catch (e) {}
           try { outputNode.disconnect(); } catch (e) {}
@@ -1193,6 +1195,7 @@ export function createChipAudio(ctx, destination) {
     }
 
     const cleanups = [];
+    const effectParams = {};
 
     switch (type) {
       case 'reverb': {
@@ -1201,6 +1204,7 @@ export function createChipAudio(ctx, destination) {
         const mix = Math.max(0, Math.min(1, effectDef.mix != null ? effectDef.mix : 0.35));
         dryGain.gain.setValueAtTime(1 - mix, ctx.currentTime);
         wetGain.gain.setValueAtTime(mix, ctx.currentTime);
+        effectParams.mix = wetGain.gain;
 
         const roomSize = Math.max(0.1, Math.min(2.0, effectDef.roomSize != null ? effectDef.roomSize : 0.7));
         const damp = Math.max(0.1, Math.min(5.0, effectDef.damp != null ? effectDef.damp : 1.0));
@@ -1263,6 +1267,12 @@ export function createChipAudio(ctx, destination) {
           filter.type = 'lowpass';
           filter.frequency.setValueAtTime(Math.max(200, Math.min(18000, effectDef.cutoff || 4000)), ctx.currentTime);
 
+          effectParams.mix = wetGain.gain;
+          effectParams.feedback = fbGain.gain;
+          effectParams.cutoff = filter.frequency;
+          effectParams.frequency = filter.frequency;
+          effectParams.time = delayNode.delayTime;
+
           inputNode.connect(dryGain);
           dryGain.connect(outputNode);
 
@@ -1301,6 +1311,10 @@ export function createChipAudio(ctx, destination) {
         high.frequency.setValueAtTime(8000, ctx.currentTime);
         if (high.gain) high.gain.setValueAtTime(effectDef.high || 0, ctx.currentTime);
 
+        if (low.gain) effectParams.low = low.gain;
+        if (mid.gain) effectParams.mid = mid.gain;
+        if (high.gain) effectParams.high = high.gain;
+
         inputNode.connect(low);
         low.connect(mid);
         mid.connect(high);
@@ -1327,6 +1341,12 @@ export function createChipAudio(ctx, destination) {
           const gainVal = Math.pow(10, (effectDef.gain || 0) / 20);
           makeup.gain.setValueAtTime(gainVal, ctx.currentTime);
 
+          if (comp.threshold) effectParams.threshold = comp.threshold;
+          if (comp.ratio) effectParams.ratio = comp.ratio;
+          if (comp.attack) effectParams.attack = comp.attack;
+          if (comp.release) effectParams.release = comp.release;
+          if (makeup.gain) effectParams.gain = makeup.gain;
+
           inputNode.connect(comp);
           comp.connect(makeup);
           makeup.connect(outputNode);
@@ -1345,14 +1365,32 @@ export function createChipAudio(ctx, destination) {
         const filt = ctx.createBiquadFilter();
         filt.type = effectDef.filterType || effectDef.type || 'lowpass';
         if (filt.type === 'filter') filt.type = 'lowpass';
-        filt.frequency.setValueAtTime(Math.max(20, Math.min(20000, effectDef.cutoff || 2000)), ctx.currentTime);
-        if (filt.Q) filt.Q.setValueAtTime(Math.max(0.1, Math.min(25, effectDef.resonance || 1.0)), ctx.currentTime);
+        if (typeof filt.frequency.setValueAtTime === 'function') {
+          filt.frequency.setValueAtTime(Math.max(20, Math.min(20000, effectDef.cutoff || 2000)), ctx.currentTime);
+        } else {
+          filt.frequency.value = Math.max(20, Math.min(20000, effectDef.cutoff || 2000));
+        }
+        if (filt.Q) {
+          if (typeof filt.Q.setValueAtTime === 'function') {
+            filt.Q.setValueAtTime(Math.max(0.1, Math.min(25, effectDef.resonance || 1.0)), ctx.currentTime);
+          } else {
+            filt.Q.value = Math.max(0.1, Math.min(25, effectDef.resonance || 1.0));
+          }
+        }
 
         const dryGain = ctx.createGain();
         const wetGain = ctx.createGain();
         const mix = Math.max(0, Math.min(1, effectDef.mix != null ? effectDef.mix : 1.0));
         dryGain.gain.setValueAtTime(1 - mix, ctx.currentTime);
         wetGain.gain.setValueAtTime(mix, ctx.currentTime);
+
+        effectParams.cutoff = filt.frequency;
+        effectParams.frequency = filt.frequency;
+        if (filt.Q) {
+          effectParams.resonance = filt.Q;
+          effectParams.Q = filt.Q;
+        }
+        effectParams.mix = wetGain.gain;
 
         inputNode.connect(dryGain);
         dryGain.connect(outputNode);
@@ -1373,6 +1411,7 @@ export function createChipAudio(ctx, destination) {
         const mix = Math.max(0, Math.min(1, effectDef.mix != null ? effectDef.mix : 0.5));
         dryGain.gain.setValueAtTime(1 - mix, ctx.currentTime);
         wetGain.gain.setValueAtTime(mix, ctx.currentTime);
+        effectParams.mix = wetGain.gain;
 
         if (typeof ctx.createWaveShaper === 'function') {
           const shaper = ctx.createWaveShaper();
@@ -1407,6 +1446,7 @@ export function createChipAudio(ctx, destination) {
         const mix = Math.max(0, Math.min(1, effectDef.mix != null ? effectDef.mix : 0.4));
         dryGain.gain.setValueAtTime(1 - mix, ctx.currentTime);
         wetGain.gain.setValueAtTime(mix, ctx.currentTime);
+        effectParams.mix = wetGain.gain;
 
         if (typeof ctx.createDelay === 'function') {
           const delay = ctx.createDelay(0.1);
@@ -1415,6 +1455,7 @@ export function createChipAudio(ctx, destination) {
           const lfoGain = ctx.createGain();
           lfo.frequency.setValueAtTime(Math.max(0.1, Math.min(20, effectDef.rate || 1.5)), ctx.currentTime);
           lfoGain.gain.setValueAtTime(Math.min(0.008, (effectDef.depth || 0.5) * 0.004), ctx.currentTime);
+          if (lfo.frequency) effectParams.rate = lfo.frequency;
 
           lfo.connect(lfoGain);
           lfoGain.connect(delay.delayTime);
@@ -1445,6 +1486,7 @@ export function createChipAudio(ctx, destination) {
         const mix = Math.max(0, Math.min(1, effectDef.mix != null ? effectDef.mix : 0.6));
         dryGain.gain.setValueAtTime(1 - mix, ctx.currentTime);
         wetGain.gain.setValueAtTime(mix, ctx.currentTime);
+        effectParams.mix = wetGain.gain;
 
         if (typeof ctx.createWaveShaper === 'function') {
           const bits = Math.max(2, Math.min(16, effectDef.bits != null ? effectDef.bits : 8));
@@ -1460,6 +1502,10 @@ export function createChipAudio(ctx, destination) {
           const lpf = ctx.createBiquadFilter();
           lpf.type = 'lowpass';
           lpf.frequency.setValueAtTime(Math.max(500, Math.min(18000, effectDef.cutoff || 6000)), ctx.currentTime);
+          if (lpf.frequency) {
+            effectParams.cutoff = lpf.frequency;
+            effectParams.frequency = lpf.frequency;
+          }
 
           inputNode.connect(dryGain);
           dryGain.connect(outputNode);
@@ -1485,8 +1531,10 @@ export function createChipAudio(ctx, destination) {
 
     return {
       type,
+      id: effectDef.id,
       inputNode,
       outputNode,
+      params: effectParams,
       disconnect() {
         cleanups.forEach((fn) => fn());
         try { inputNode.disconnect(); } catch (e) {}
@@ -1576,6 +1624,17 @@ export function createChipAudio(ctx, destination) {
       });
     }
 
+    // Prise en charge de l'horizon temporel des courbes d'automation (DAW v2)
+    if (Array.isArray(song.automation)) {
+      song.automation.forEach((auto) => {
+        (auto.points || []).forEach((pt) => {
+          if (typeof pt.step === 'number' && pt.step > maxStep && explicitEnd <= 0) {
+            maxStep = pt.step;
+          }
+        });
+      });
+    }
+
     if (maxStep <= 0) maxStep = 16;
 
     let currentStep = typeof options.startStep === 'number' ? Math.max(0, options.startStep) : 0;
@@ -1630,13 +1689,15 @@ export function createChipAudio(ctx, destination) {
         fader.connect(songGain);
       }
 
-      trackBuses.set(t.id, {
+      const trackBus = {
         id: t.id,
         name: t.name || t.id,
         trackDef: t,
         input,
         fader,
         panner,
+        volumeParam: fader.gain,
+        panParam: panner ? panner.pan : null,
         fxNodes,
         fxOutputNode: lastNode,
         volume: trackVol,
@@ -1667,7 +1728,8 @@ export function createChipAudio(ctx, destination) {
           try { fader.disconnect(); } catch (e) {}
           try { if (panner) panner.disconnect(); } catch (e) {}
         }
-      });
+      };
+      trackBuses.set(t.id, trackBus);
     });
 
     // Configuration des departs auxiliaires (sends) vers les autres bus de piste
@@ -1693,6 +1755,112 @@ export function createChipAudio(ctx, destination) {
         });
       });
     });
+
+    // Automation des parametres (DAW v2)
+    function resolveAudioParam(trackId, target) {
+      if (trackId === 'master' || trackId === 'masterGain') {
+        return songGain.gain;
+      }
+      let bus = trackBuses.get(trackId);
+      if (!bus && (typeof trackId === 'number' || !isNaN(Number(trackId)))) {
+        const trkList = Array.from(trackBuses.values());
+        bus = trkList[Number(trackId)];
+      }
+      if (!bus) return null;
+
+      const normTarget = String(target || '').toLowerCase().trim();
+      if (normTarget === 'volume' || normTarget === 'gain' || normTarget === 'vol') {
+        return bus.fader.gain;
+      }
+      if (normTarget === 'pan' || normTarget === 'panning') {
+        return bus.panner ? bus.panner.pan : null;
+      }
+
+      const parts = normTarget.split('.');
+      const fxSpec = parts[0];
+      const paramName = parts[1] || 'cutoff';
+
+      for (let i = 0; i < bus.fxNodes.length; i++) {
+        const fx = bus.fxNodes[i];
+        if (fx.type === fxSpec || String(i) === fxSpec || fx.id === fxSpec) {
+          if (fx.params && fx.params[paramName]) {
+            return fx.params[paramName];
+          }
+        }
+      }
+
+      if (normTarget === 'cutoff' || normTarget.startsWith('filter')) {
+        const filt = bus.fxNodes.find((f) => f.type === 'filter');
+        if (filt?.params?.cutoff) return filt.params.cutoff;
+      }
+      if (normTarget === 'resonance') {
+        const filt = bus.fxNodes.find((f) => f.type === 'filter');
+        if (filt?.params?.resonance) return filt.params.resonance;
+      }
+      return null;
+    }
+
+    const automationLanes = Array.isArray(song.automation) ? song.automation : [];
+    const automatedParams = [];
+
+    function scheduleAutomationPass(baseTime, fromStep, toStep) {
+      if (automationLanes.length === 0) return;
+      automationLanes.forEach((lane) => {
+        const param = resolveAudioParam(lane.trackId, lane.target);
+        if (!param || !Array.isArray(lane.points) || lane.points.length === 0) return;
+        if (!automatedParams.includes(param)) automatedParams.push(param);
+
+        const pts = [...lane.points].sort((a, b) => a.step - b.step);
+
+        let startVal = pts[0].value;
+        const exact = pts.find((p) => p.step === fromStep);
+        if (exact) {
+          startVal = exact.value;
+        } else {
+          let prev = null;
+          let next = null;
+          for (let i = 0; i < pts.length; i++) {
+            if (pts[i].step < fromStep) prev = pts[i];
+            else if (pts[i].step > fromStep && !next) next = pts[i];
+          }
+          if (prev && next) {
+            const frac = (fromStep - prev.step) / (next.step - prev.step);
+            startVal = prev.value + (next.value - prev.value) * frac;
+          } else if (prev) {
+            startVal = prev.value;
+          } else if (next) {
+            startVal = next.value;
+          }
+        }
+
+        try {
+          if (typeof param.cancelScheduledValues === 'function') {
+            param.cancelScheduledValues(baseTime);
+          }
+          param.setValueAtTime(startVal, baseTime);
+        } catch (e) {}
+
+        for (let i = 0; i < pts.length; i++) {
+          const pt = pts[i];
+          if (pt.step > fromStep && pt.step <= toStep) {
+            const ptTime = baseTime + (pt.step - fromStep) * baseStepSec;
+            try {
+              if (pt.curve === 'hold') {
+                param.setValueAtTime(pt.value, ptTime);
+              } else if (pt.curve === 'exp' || pt.curve === 'exponential') {
+                if (typeof param.exponentialRampToValueAtTime === 'function' && pt.value > 0.0001) {
+                  param.exponentialRampToValueAtTime(pt.value, ptTime);
+                } else {
+                  param.linearRampToValueAtTime(pt.value, ptTime);
+                }
+              } else {
+                param.linearRampToValueAtTime(pt.value, ptTime);
+              }
+            } catch (e) {}
+          }
+        }
+      });
+    }
 
     const SCHEDULE_INTERVAL_MS = 25;
     const LOOKAHEAD_SEC = 0.1;
@@ -1766,6 +1934,7 @@ export function createChipAudio(ctx, destination) {
         if (currentStep >= maxStep) {
           if (loop) {
             currentStep = loopStartStep;
+            scheduleAutomationPass(nextStepTime, loopStartStep, maxStep);
           } else {
             stopped = true;
             clearInterval(timerId);
@@ -1788,11 +1957,18 @@ export function createChipAudio(ctx, destination) {
       }
     }
 
+    scheduleAutomationPass(ctx.currentTime, currentStep, maxStep);
     if (options.offline && loop) throw new Error('playSong : le rendu hors-ligne exige loop: false');
     if (!options.offline) timerId = setInterval(scheduleAhead, SCHEDULE_INTERVAL_MS);
     scheduleAhead();
 
     const controller = {
+      resolveAudioParam(trackId, target) {
+        return resolveAudioParam(trackId, target);
+      },
+      scheduleAutomationPass(baseTime, fromStep, toStep) {
+        scheduleAutomationPass(baseTime, fromStep, toStep);
+      },
       setVolume(v, rampTime = 0) {
         const val = Math.max(0, Math.min(1, typeof v === 'number' ? v : 1));
         if (rampTime > 0) {
@@ -1831,6 +2007,13 @@ export function createChipAudio(ctx, destination) {
         if (timerId) { clearInterval(timerId); timerId = null; }
         for (const n of activeNotes) n.stop();
         activeNotes.length = 0;
+        automatedParams.forEach((param) => {
+          try {
+            if (typeof param.cancelScheduledValues === 'function') {
+              param.cancelScheduledValues(ctx.currentTime);
+            }
+          } catch (e) {}
+        });
         sendNodes.forEach((s) => s.disconnect());
         trackBuses.forEach((b) => b.disconnect());
         try { songGain.disconnect(); } catch (e) {}
@@ -1879,6 +2062,22 @@ export function createChipAudio(ctx, destination) {
         const pLen = (p && p.length) || 16;
         if ((item.start || 0) + pLen > totalSteps) totalSteps = (item.start || 0) + pLen;
       });
+    }
+    if (song && Array.isArray(song.clips)) {
+      song.clips.forEach((clip) => {
+        const cLen = clip.length || 16;
+        if ((clip.start || 0) + cLen > totalSteps) totalSteps = (clip.start || 0) + cLen;
+      });
+    }
+    if (song && Array.isArray(song.automation)) {
+      song.automation.forEach((auto) => {
+        (auto.points || []).forEach((pt) => {
+          if (typeof pt.step === 'number' && pt.step > totalSteps) totalSteps = pt.step;
+        });
+      });
+    }
+    if (song && song.loop && typeof song.loop.end === 'number' && song.loop.end > totalSteps) {
+      totalSteps = song.loop.end;
     }
 
     const calcDur = durationSeconds || (totalSteps * baseStepSec + 1.0);

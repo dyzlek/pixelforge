@@ -281,6 +281,30 @@
             }
           }
         },
+        "automation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["trackId", "target", "points"],
+            "properties": {
+              "id": { "type": "string" },
+              "trackId": { "type": "string" },
+              "target": { "type": "string" },
+              "points": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "required": ["step", "value"],
+                  "properties": {
+                    "step": { "type": "number", "minimum": 0 },
+                    "value": { "type": "number" },
+                    "curve": { "enum": ["linear", "hold", "exponential"], "default": "linear" }
+                  }
+                }
+              }
+            }
+          }
+        },
         "timeSignature": {
           "type": "array",
           "items": { "type": "integer", "minimum": 1 },

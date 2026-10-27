@@ -1,5 +1,30 @@
 # Journal — PixelForge
 
+## 2026-10-27 (67) — [Phase G] G6 : automation des paramètres (Issue #86)
+- **Fait** :
+  - `src/audio/chip.js` :
+    - Zero import externe strictement preserve.
+    - Exposition des parametres audio WebAudio (`params`) au sein de tous les noeuds d'effets (`createEffectNode`) : filtres (frequence de coupure, resonance Q, mix), delais (temps, feedback, filtre, mix), reverb (mix), compresseurs (seuil, ratio, gain), egaliseurs (basses, mediums, aigus) et distorsions.
+    - Exposition des parametres de fader (`volumeParam`) et panoramique (`panParam`) sur chaque bus de piste.
+    - Resolution des cibles d'automation (`resolveAudioParam`) supportant `filter.cutoff`, `volume`, `pan`, `resonance`, departs d'effets et gain maitre.
+    - Planificateur d'automation native WebAudio (`scheduleAutomationPass`) programmant de facon echantillon-precise les rampes lineaires et exponentielles (`setValueAtTime`, `linearRampToValueAtTime`, `exponentialRampToValueAtTime`).
+    - Prise en charge du bouclage automatique avec reprogrammation dynamique et annulation propre des valeurs obsolete (`cancelScheduledValues`).
+    - Extension du rendu hors-ligne (`renderOffline`) prenant en compte l'horizon temporel de l'automation pour les exports WAV PCM 16-bit.
+  - `src/core/project.js` & `src/core/ops/validate.js` & `docs/PROJECT_SCHEMA.json` :
+    - Normalisation et validation de la collection `song.automation` (piste, cible, points, pas, valeurs, type de courbe).
+  - `src/editors/music/playlist.js` & `src/editors/music/music.css` :
+    - Bouton d'automation `A` (`.pf-track-btn-auto`) sur chaque en-tete de piste pour deplier/replier la sous-piste d'automation.
+    - En-tete de sous-piste avec selecteur de cible (`.pf-auto-target-select`), affichage dynamique de la valeur survolee et raccourci d'ouverture de filtre sur 8 mesures (`8 mes`).
+    - Sous-piste vectorielle interactive SVG avec courbe continue (`#73eff7`), remplissage translucide, ajout de points au clic, deplacement avec aimantation (`snapSteps`) et suppression au clic droit.
+    - Synchronisation automatique avec `store.update` via `onPlaylistChange`.
+  - `docs/MUSIC.md` :
+    - Ajout de la section 9 documentant l'architecture d'automation, les parametres cibles, l'interpolation AudioParam et l'edition sur la timeline.
+  - Tests :
+    - Tests unitaires dans `src/audio/test/chip.test.mjs` validant la resolution des AudioParams, la programmation d'une ouverture de filtre sur 8 mesures (128 pas, 16.0 secondes a 120 BPM) et l'export WAV via `renderOffline`.
+    - Test E2E Playwright 22 dans `e2e/studio.spec.js` validant l'affichage des sous-pistes d'automation, le raccourci 8 mesures, les noeuds SVG et l'ajout de points interactifs.
+- **Verifie** : `npm test` (2628 verifications + 5 suites secondaires, 0 echec), `npm run check:doc`, `npm run build`, validation de tous les jeux de demo et `npm run test:e2e` (22/22 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/parameter-automation`, Closes #86.
+
 ## 2026-10-27 (66) — [Phase G] G5 : piano roll avancé, clavier MIDI et enregistrement en direct (Issue #85)
 - **Fait** :
   - `src/editors/music/pianoroll.js` :
