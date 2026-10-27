@@ -18,6 +18,8 @@ import {
   generateSongData,
   generateModelData,
   generateSoundData,
+  generateFullGame,
+  generateGameDesignDocument,
 } from '../agent.js';
 import { parseSongText } from '../../core/ops/song-text.js';
 import { validateProject } from '../../core/ops/validate.js';
@@ -475,5 +477,86 @@ import { readFileSync } from 'node:fs';
 const genSource = readFileSync(new URL('../generators.js', import.meta.url), 'utf-8');
 const emojiGenRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
 assert.ok(!emojiGenRegex.test(genSource), 'generators.js ne doit contenir aucun emoji');
+
+// 11. Tests Phase H (H5 - Issue #93) : Generation d'un jeu complet (2D et 3D) a partir d'une description
+
+// 11.1 Document de Conception (GDD)
+const sampleGDD = generateGameDesignDocument('fais-moi un jeu de plateforme avec 3 niveaux et un boss');
+assert.ok(sampleGDD.title, 'Le GDD doit comporter un titre');
+assert.strictEqual(sampleGDD.dimension, '2d');
+assert.strictEqual(sampleGDD.levels.length, 3, 'Le GDD doit comporter 3 niveaux');
+assert.strictEqual(sampleGDD.levels[0].name, 'Niveau 1');
+assert.strictEqual(sampleGDD.levels[1].name, 'Niveau 2');
+assert.strictEqual(sampleGDD.levels[2].name, 'Niveau 3 - Boss');
+assert.ok(sampleGDD.markdown.includes('Kishotenketsu'), 'Le GDD doit mentionner la structure Kishotenketsu');
+assert.ok(sampleGDD.markdown.includes('Coyote Time'), 'Le GDD doit mentionner le Coyote Time');
+assert.ok(!emojiGenRegex.test(sampleGDD.markdown), 'Le GDD markdown ne doit contenir aucun emoji');
+
+// 11.2 Generation d'un jeu 2D complet (3 niveaux + Boss)
+const full2D = generateFullGame('fais-moi un jeu de plateforme avec 3 niveaux et un boss');
+assert.strictEqual(full2D.gdd.dimension, '2d');
+assert.strictEqual(full2D.project.settings.dimension, '2d');
+assert.strictEqual(full2D.project.maps.length, 3, 'Le projet 2D doit comporter exactement 3 cartes');
+assert.strictEqual(full2D.project.maps[0].name, 'Niveau 1');
+assert.strictEqual(full2D.project.maps[1].name, 'Niveau 2');
+assert.strictEqual(full2D.project.maps[2].name, 'Niveau 3 - Boss');
+assert.strictEqual(full2D.project.settings.startMapId, full2D.project.maps[0].id, 'Le niveau de depart doit etre Niveau 1');
+
+// Verification des objets
+const objNames2D = full2D.project.objects.map((o) => o.name);
+assert.ok(objNames2D.includes('Player'), 'Le jeu doit contenir l\'objet Player');
+assert.ok(objNames2D.includes('Coin'), 'Le jeu doit contenir l\'objet Coin');
+assert.ok(objNames2D.includes('Enemy'), 'Le jeu doit contenir l\'objet Enemy');
+assert.ok(objNames2D.includes('Boss'), 'Le jeu doit contenir l\'objet Boss');
+assert.ok(objNames2D.includes('Portal'), 'Le jeu doit contenir l\'objet Portal');
+
+// Verification du script Player
+const playerObj2D = full2D.project.objects.find((o) => o.name === 'Player');
+assert.ok(playerObj2D.script.code.includes('coyoteTimer'), 'Le script Player doit contenir le Coyote Time');
+assert.ok(playerObj2D.script.code.includes('jumpBuffer'), 'Le script Player doit contenir le Jump Buffering');
+assert.ok(playerObj2D.script.code.includes('game.camera.follow'), 'La camera doit suivre le joueur');
+
+// Verification du Boss dans le niveau 3
+const map3Entities = full2D.project.maps[2].entities;
+const bossObjRef = full2D.project.objects.find((o) => o.name === 'Boss');
+assert.ok(map3Entities.some((e) => e.objectId === bossObjRef.id), 'Le niveau 3 doit contenir l\'entite Boss');
+
+// Verification de la validite globale du jeu 2D (0 erreur)
+const issues2D = validateProject(full2D.project);
+const errors2D = issues2D.filter((i) => i.level === 'error');
+assert.strictEqual(errors2D.length, 0, 'Le jeu 2D genere ne doit comporter aucune erreur de validation');
+
+// 11.3 Generation d'un jeu 3D complet (3 scenes + Boss)
+const full3D = generateFullGame('cree un jeu 3D de plateforme avec 3 niveaux et un boss', { dimension: '3d' });
+assert.strictEqual(full3D.gdd.dimension, '3d');
+assert.strictEqual(full3D.project.settings.dimension, '3d');
+assert.strictEqual(full3D.project.scenes3d.length, 3, 'Le projet 3D doit comporter exactement 3 scenes');
+assert.strictEqual(full3D.project.scenes3d[0].name, 'Scene 1');
+assert.strictEqual(full3D.project.scenes3d[1].name, 'Scene 2');
+assert.strictEqual(full3D.project.scenes3d[2].name, 'Scene 3 - Boss');
+assert.strictEqual(full3D.project.settings.startScene3DId, full3D.project.scenes3d[0].id, 'Scene 1 doit etre la scene de depart');
+
+const objNames3D = full3D.project.objects.map((o) => o.name);
+assert.ok(objNames3D.includes('Player'), 'Le jeu 3D doit contenir l\'objet Player');
+assert.ok(objNames3D.includes('Boss'), 'Le jeu 3D doit contenir l\'objet Boss');
+
+// Verification de la validite globale du jeu 3D (0 erreur)
+const issues3D = validateProject(full3D.project);
+const errors3D = issues3D.filter((i) => i.level === 'error');
+assert.strictEqual(errors3D.length, 0, 'Le jeu 3D genere ne doit comporter aucune erreur de validation');
+
+// 11.4 Execution de l'outil generate_game via executeTool
+const toolProject = createEmptyProject();
+const toolResult = await executeTool(toolProject, 'generate_game', {
+  description: 'fais-moi un jeu de plateforme avec 3 niveaux et un boss',
+  name: 'Super Plateforme',
+});
+assert.ok(toolResult.includes('Super Plateforme'), 'executeTool doit renvoyer le resume de generation');
+assert.ok(toolResult.includes('GDD'), 'executeTool doit renvoyer le Document de Conception');
+assert.strictEqual(toolProject.maps.length, 3, 'Le projet modifie par executeTool doit avoir 3 cartes');
+
+// 11.5 Verification de l'absence totale d'emojis dans game-generator.js
+const gameGenSource = readFileSync(new URL('../game-generator.js', import.meta.url), 'utf-8');
+assert.ok(!emojiGenRegex.test(gameGenSource), 'game-generator.js ne doit contenir aucun emoji');
 
 console.log('Tous les tests Assistant IA & Game Design sont valides !');

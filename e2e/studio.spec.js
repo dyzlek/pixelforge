@@ -1553,4 +1553,110 @@ test.describe('PixelForge Studio E2E Tests', () => {
     });
     await expect(page.locator('#tabs')).toContainText(/SautDynamique/i);
   });
+
+  test("generation de jeu complet par l'IA (Phase H - H5) : jeu de plateforme 3 niveaux avec boss en 2D et en 3D", async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Generation d un jeu de plateforme complet 2D a partir de la requete utilisateur
+    const res2D = await page.evaluate(async () => {
+      const p = window.__pfStore.project;
+      const { executeTool } = window.__pfAi;
+
+      const output = await executeTool(p, 'generate_game', {
+        description: 'fais-moi un jeu de plateforme avec 3 niveaux et un boss',
+        dimension: '2d',
+        name: 'Quete du Royaume',
+      });
+
+      const maps = p.maps || [];
+      const hasLevel1 = maps.some((m) => m.name === 'Niveau 1');
+      const hasLevel2 = maps.some((m) => m.name === 'Niveau 2');
+      const hasLevel3 = maps.some((m) => m.name === 'Niveau 3 - Boss');
+
+      const objects = p.objects || [];
+      const hasPlayer = objects.some((o) => o.name === 'Player');
+      const hasBoss = objects.some((o) => o.name === 'Boss');
+
+      const issues = window.__pfOps.validateProject(p);
+      const errors = issues.filter((i) => i.level === 'error');
+
+      return {
+        output,
+        mapCount: maps.length,
+        hasLevel1,
+        hasLevel2,
+        hasLevel3,
+        hasPlayer,
+        hasBoss,
+        errorCount: errors.length,
+      };
+    });
+
+    expect(res2D.mapCount).toBe(3);
+    expect(res2D.hasLevel1).toBe(true);
+    expect(res2D.hasLevel2).toBe(true);
+    expect(res2D.hasLevel3).toBe(true);
+    expect(res2D.hasPlayer).toBe(true);
+    expect(res2D.hasBoss).toBe(true);
+    expect(res2D.errorCount).toBe(0);
+
+    // 2. Lancement du jeu 2D genere (F5) et verification de la jouabilite immediate
+    await page.keyboard.press('F5');
+    await expect(page.locator('#tabs')).toContainText(/Jouer/i);
+    const canvas = page.locator('.play-stage canvas, canvas:visible').first();
+    await expect(canvas).toBeVisible({ timeout: 10000 });
+
+    // Verifier que le joueur existe et bouge
+    await page.waitForFunction(() => {
+      const snap = window.__pfDebugSnapshot?.();
+      return snap?.instances?.some((i) => i.name === 'Player');
+    }, { timeout: 15000 });
+
+    await page.keyboard.press('F8');
+    await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
+
+    // 3. Generation d un jeu de plateforme complet 3D
+    const res3D = await page.evaluate(async () => {
+      const p = window.__pfStore.project;
+      const { executeTool } = window.__pfAi;
+
+      const output = await executeTool(p, 'generate_game', {
+        description: 'jeu de plateforme 3D avec 3 niveaux et un boss',
+        dimension: '3d',
+        name: 'Royaume Voxel 3D',
+      });
+
+      const scenes = p.scenes3d || [];
+      const hasScene1 = scenes.some((s) => s.name === 'Scene 1');
+      const hasScene2 = scenes.some((s) => s.name === 'Scene 2');
+      const hasScene3 = scenes.some((s) => s.name === 'Scene 3 - Boss');
+
+      const objects = p.objects || [];
+      const hasPlayer = objects.some((o) => o.name === 'Player');
+      const hasBoss = objects.some((o) => o.name === 'Boss');
+
+      const issues = window.__pfOps.validateProject(p);
+      const errors = issues.filter((i) => i.level === 'error');
+
+      return {
+        output,
+        sceneCount: scenes.length,
+        hasScene1,
+        hasScene2,
+        hasScene3,
+        hasPlayer,
+        hasBoss,
+        errorCount: errors.length,
+      };
+    });
+
+    expect(res3D.sceneCount).toBe(3);
+    expect(res3D.hasScene1).toBe(true);
+    expect(res3D.hasScene2).toBe(true);
+    expect(res3D.hasScene3).toBe(true);
+    expect(res3D.hasPlayer).toBe(true);
+    expect(res3D.hasBoss).toBe(true);
+    expect(res3D.errorCount).toBe(0);
+  });
 });

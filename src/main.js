@@ -19,6 +19,8 @@ import {
   generateSongData,
   generateModelData,
   generateSoundData,
+  generateFullGame,
+  generateGameDesignDocument,
 } from './ai/agent.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
@@ -326,6 +328,8 @@ window.addEventListener('keydown', (e) => {
       generateSongData,
       generateModelData,
       generateSoundData,
+      generateFullGame,
+      generateGameDesignDocument,
     };
     window.__pfCommandPalette = palette;
     window.__pfReady = true;

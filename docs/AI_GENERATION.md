@@ -155,3 +155,47 @@ L'agent IA dispose du nouvel outil `generate_asset` :
 
 De plus, les outils standards `upsert_sprite`, `upsert_song`, `upsert_model` et `add_sound` prennent automatiquement le relais si seule une `description` est fournie par l'utilisateur ou l'assistant.
 Toute modification reste strictement atomique et reversible via `store.update` et le bouton Annuler (Ctrl+Z).
+
+---
+
+## 7. Generation de Jeu Complet (Phase H - H5)
+
+### 7.1 Vue d'ensemble
+
+Le module `src/ai/game-generator.js` permet a l'agent autonome de concevoir et generer un jeu complet (2D ou 3D) d'une seule traite a partir d'une description naturelle (ex. « Fais-moi un jeu de plateforme avec 3 niveaux et un boss »).
+
+Le processus suit un pipeline rigoureux en deux phases :
+1. **Document de Conception de Jeu (GDD)** : synthese structuree incluant le titre, le pitch, les controles, les regles d'or de Game Feel, la progression en 3 niveaux (philosophie Kishotenketsu), les entites et l'ambiance sonore. Ce document est presente a l'utilisateur et modifiable.
+2. **Construction et validation du projet** : assemblage ordonne de toutes les composantes (reglages, sprites/modeles, objets, scripts avec Game Feel, cartes/scenes, musiques et sons, HUD).
+3. **Controle qualite** : le projet genere est valide sans aucune erreur (`validateProject`) avant d'etre retourne ou injecte dans le store.
+
+### 7.2 Regles de Game Feel integrees
+
+Les scripts de joueur generes embarquent nativement les principes de Game Feel de `src/ai/knowledge.js` :
+- **Coyote Time (100 ms)** : autorise le saut meme apres avoir quitte le rebord d'une plateforme.
+- **Jump Buffering (100 ms)** : memorise la touche de saut pressee juste avant de toucher le sol.
+- **Saut a hauteur variable** : relacher le bouton reduit immediatement la velocite ascensionnelle pour un controle millimetre.
+- **Ecrasement des ennemis (Stomp)** : atterrir au-dessus d'un ennemi le detruit et propulse le joueur vers le haut.
+- **Transitions de niveaux et Boss** : portails de progression menant au niveau suivant, avec un boss a 3 points de vie au niveau 3 dont la defaite declenche la victoire.
+
+### 7.3 Structure en 3 Niveaux (Kishotenketsu)
+
+- **Niveau 1 (Introduction / Ki)** : decouverte des deplacements et sauts, plateforme securisee et collecte de pieces.
+- **Niveau 2 (Developpement / Sho)** : defis de timing, ennemis en patrouille et plateformes suspendues.
+- **Niveau 3 (Climax & Boss / Ten & Ketsu)** : arene de combat avec le Boss, patterns d'attaque sautants et portail de triomphe.
+
+### 7.4 Utilisation via l'Agent IA
+
+L'agent dispose de l'outil `generate_game` :
+```json
+{
+  "tool": "generate_game",
+  "args": {
+    "description": "jeu de plateforme avec 3 niveaux et un boss",
+    "dimension": "2d",
+    "name": "Super Plateforme"
+  }
+}
+```
+L'outil retourne a la fois le Game Design Document au format Markdown et un resume detaille de tous les elements assembles dans le projet.
+
