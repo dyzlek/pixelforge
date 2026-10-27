@@ -1,5 +1,18 @@
 # Journal — PixelForge
 
+## 2026-10-27 (50) — [Phase F] F0 : conception du nouvel editeur 3D (Issue #69)
+- **Fait** :
+  - Redaction du document de conception architecturale et technique `docs/3D-EDITOR.md` :
+    - Definition du pipeline de rendu unifie `src/runtime3d/render.js` (zero import externe, inlinable dans l'export standalone HTML, partage a 100% entre le studio et le jeu).
+    - Schema de donnees hierarchique pour les scenes 3D (`scene.nodes[]` avec position, rotation, echelle, visibilite, verrouillage, parent et types de noeuds : mesh, light, camera, collision, audio, prefab, empty).
+    - Strategie de retrocompatibilite via `normalizeProject` pour convertir automatiquement les anciennes scenes `entities[]` en `nodes[]` sans casser les jeux existants.
+    - Schema de la collection globale `materials[]` (standard, unlit, toon, texture pixel art NearestFilter).
+    - Architecture physique a double moteur (Decision V2) : mode `simple` par defaut (AABB pur JS ultra-leger) et mode `rapier` (Rapier 3D WASM pour simulations complexes).
+    - Maniabilite et navigation facon Godot 4 dans l'editeur : orbite, vol libre (clic droit + ZQSD), raccourcis pave numerique (1/3/7/5), focus F, gizmos `TransformControls`, aimantation reglable et multi-selection.
+    - Integration des modeles glTF 2.0 animes (`AnimationMixer`, cross-fade, modeles CC0).
+- **Verifie** : `npm test` (2563 verifs + test IA + test MCP e2e), `npm run check:doc`, `npm run build`, validation des jeux `exemple-plateforme-qiqv` et `cube-runner`, et `npm run test:e2e` (7 tests Playwright verts).
+- **Etat** : Branche `feat/3d-editor-design`, Closes #69.
+
 ## 2026-10-27 (49) — [Phase H] H3 : interface de l'assistant IA (actions en direct, annulation) (Issue #91)
 - **Fait** :
   - `src/ui/panels/ai-assistant.js` & `src/ui/panels/ai-assistant.css` :
