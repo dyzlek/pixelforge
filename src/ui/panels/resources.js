@@ -44,14 +44,22 @@ export function createResourcesPanel(container, store, workspace) {
 
     treeEl.innerHTML = '';
 
+    const is3D = p.settings?.dimension === '3d';
+
     const groups = [
-      {
+      ...(is3D || p.scenes3d?.length ? [{
+        id: 'scenes3d',
+        label: 'Scènes 3D',
+        iconName: 'map',
+        kind: 'scene3d',
+        items: p.scenes3d || [],
+      }] : [{
         id: 'maps',
         label: 'Scènes & Cartes',
         iconName: 'map',
         kind: 'map',
         items: p.maps || [],
-      },
+      }]),
       {
         id: 'objects',
         label: 'Objets',
@@ -59,6 +67,13 @@ export function createResourcesPanel(container, store, workspace) {
         kind: 'objects',
         items: p.objects || [],
       },
+      ...(is3D || p.models?.length ? [{
+        id: 'models',
+        label: 'Modèles 3D',
+        iconName: 'cube',
+        kind: 'model3d',
+        items: p.models || [],
+      }] : []),
       {
         id: 'sprites',
         label: 'Sprites & Tuiles',
@@ -257,6 +272,26 @@ export function createResourcesPanel(container, store, workspace) {
             p.songs.push(copy);
             workspace.open({ kind: 'song', refId: copy.id, title: copy.name });
           }
+        } else if (selectedItem.kind === 'scene3d') {
+          const src = (p.scenes3d || []).find((s) => s.id === selectedItem.id);
+          if (src) {
+            const copy = structuredClone(src);
+            copy.id = uid('scene3d');
+            copy.name = src.name + ' (copie)';
+            p.scenes3d = p.scenes3d || [];
+            p.scenes3d.push(copy);
+            workspace.open({ kind: 'scene3d', refId: copy.id, title: copy.name });
+          }
+        } else if (selectedItem.kind === 'model3d') {
+          const src = (p.models || []).find((m) => m.id === selectedItem.id);
+          if (src) {
+            const copy = structuredClone(src);
+            copy.id = uid('mod');
+            copy.name = src.name + ' (copie)';
+            p.models = p.models || [];
+            p.models.push(copy);
+            workspace.open({ kind: 'model3d', refId: copy.id, title: copy.name });
+          }
         }
       });
     } else if (act === 'del' && selectedItem) {
@@ -280,6 +315,8 @@ export function createResourcesPanel(container, store, workspace) {
 
       store.update((proj) => {
         if (selectedItem.kind === 'map') proj.maps = proj.maps.filter((m) => m.id !== selectedItem.id);
+        else if (selectedItem.kind === 'scene3d') proj.scenes3d = (proj.scenes3d || []).filter((s) => s.id !== selectedItem.id);
+        else if (selectedItem.kind === 'model3d') proj.models = (proj.models || []).filter((m) => m.id !== selectedItem.id);
         else if (selectedItem.kind === 'pixel') proj.sprites = proj.sprites.filter((s) => s.id !== selectedItem.id);
         else if (selectedItem.kind === 'objects') proj.objects = proj.objects.filter((o) => o.id !== selectedItem.id);
         else if (selectedItem.kind === 'sound') proj.sounds = proj.sounds.filter((s) => s.id !== selectedItem.id);

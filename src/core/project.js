@@ -110,12 +110,30 @@ export function createModel(name = 'Modele', width = 8, height = 8, depth = 8) {
   };
 }
 
+export function createSceneNode(name = 'Node3D', kind = 'mesh', parent = null) {
+  return {
+    id: uid('node3d'),
+    name,
+    kind,
+    parent,
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+    scale: [1, 1, 1],
+    visible: true,
+    locked: false,
+    objectId: null,
+    materialId: null,
+    props: {},
+  };
+}
+
 export function createScene3D(name = 'Scene 3D') {
   return {
     id: uid('scene3d'),
     name,
     environment: {
       skyColor: '#1a1c2c',
+      horizonColor: '#29366f',
       fog: { enabled: false, color: '#1a1c2c', density: 0.04 },
       ambientLight: { color: '#ffffff', intensity: 0.6 },
       directionalLight: { color: '#ffeedd', intensity: 1.0, position: [10, 20, 15] },
@@ -124,6 +142,7 @@ export function createScene3D(name = 'Scene 3D') {
       blockSize: 1,
       blocks: {},
     },
+    nodes: [],
     entities: [],
   };
 }
@@ -269,8 +288,8 @@ export function normalizeProject(p) {
   });
   p.models = Array.isArray(p.models) ? p.models.map((m) => ({ folder: '', ...m })) : [];
   p.materials = Array.isArray(p.materials) ? p.materials : [];
-  p.scenes3d = Array.isArray(p.scenes3d) ? p.scenes3d.map((s) => ({ folder: '', gridmap: {}, entities: [], ...s })) : [];
-  // Gridmap au format unique { blockSize, blocks } (l'ancien editeur ecrivait une map plate "x,y,z" -> couleur)
+  p.scenes3d = Array.isArray(p.scenes3d) ? p.scenes3d.map((s) => ({ folder: '', gridmap: {}, entities: [], nodes: [], ...s })) : [];
+  // Gridmap au format unique { blockSize, blocks } et migration hierarchique entities[] -> nodes[]
   for (const sc of p.scenes3d || []) {
     const g = sc.gridmap;
     if (!g || typeof g !== 'object') sc.gridmap = { blockSize: 1, blocks: {} };
@@ -280,6 +299,43 @@ export function normalizeProject(p) {
       sc.gridmap = { blockSize: typeof g.blockSize === 'number' ? g.blockSize : 1, blocks };
     }
     if (!Array.isArray(sc.entities)) sc.entities = [];
+    if (!Array.isArray(sc.nodes)) sc.nodes = [];
+
+    // Conversion entities[] -> nodes[] si nodes[] est vide
+    if (sc.entities.length > 0 && sc.nodes.length === 0) {
+      for (const e of sc.entities) {
+        const obj = (p.objects || []).find((o) => o.id === e.objectId);
+        sc.nodes.push({
+          id: e.id,
+          name: obj?.name || `Entity_${e.id.slice(-4)}`,
+          kind: 'mesh',
+          parent: null,
+          position: [e.x || 0, e.y || 0, e.z || 0],
+          rotation: [e.rotationX || 0, e.rotationY || 0, e.rotationZ || 0],
+          scale: [e.scaleX || 1, e.scaleY || 1, e.scaleZ || 1],
+          visible: e.visible !== false,
+          locked: !!e.locked,
+          objectId: e.objectId || null,
+          materialId: e.materialId || null,
+          props: e.props || {},
+        });
+      }
+    } else if (sc.nodes.length > 0 && sc.entities.length === 0) {
+      // Synchronisation inverse pour compatibilite avec les runtimes qui lisent entities[]
+      for (const n of sc.nodes) {
+        if (n.kind === 'mesh' && n.objectId) {
+          sc.entities.push({
+            id: n.id,
+            objectId: n.objectId,
+            x: Array.isArray(n.position) ? n.position[0] : 0,
+            y: Array.isArray(n.position) ? n.position[1] : 0,
+            z: Array.isArray(n.position) ? n.position[2] : 0,
+            rotationY: Array.isArray(n.rotation) ? n.rotation[1] : 0,
+            props: n.props || {},
+          });
+        }
+      }
+    }
   }
   unpackProjectVoxels(p);
   p.environment = { ...base.environment, ...(p.environment || {}) };

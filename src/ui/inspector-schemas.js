@@ -175,4 +175,92 @@ export const SCHEMAS = {
       },
     ],
   },
+
+  node3d: {
+    title: 'Noeud 3D',
+    groups: [
+      {
+        id: 'general',
+        label: 'General',
+        fields: [
+          { key: 'name', label: 'Nom', type: 'string', required: true },
+          {
+            key: 'kind',
+            label: 'Type de noeud',
+            type: 'enum',
+            options: [
+              { label: 'Maillage / Objet', value: 'mesh' },
+              { label: 'Lumiere', value: 'light' },
+              { label: 'Camera', value: 'camera' },
+              { label: 'Collision', value: 'collision' },
+              { label: 'Audio 3D', value: 'audio' },
+              { label: 'Prefab', value: 'prefab' },
+              { label: 'Noeud vide', value: 'empty' },
+            ],
+          },
+          { key: 'objectId', label: 'Modele / Objet lie', type: 'object-ref' },
+          { key: 'materialId', label: 'Materiau', type: 'material-ref' },
+          { key: 'visible', label: 'Visible', type: 'boolean', default: true },
+          { key: 'locked', label: 'Verrouille', type: 'boolean', default: false },
+        ],
+      },
+      {
+        id: 'position',
+        label: 'Position (X, Y, Z)',
+        fields: [
+          { key: 'position.0', label: 'Position X', type: 'number', step: 0.5, default: 0 },
+          { key: 'position.1', label: 'Position Y', type: 'number', step: 0.5, default: 0 },
+          { key: 'position.2', label: 'Position Z', type: 'number', step: 0.5, default: 0 },
+        ],
+      },
+      {
+        id: 'rotation',
+        label: 'Rotation (degres)',
+        fields: [
+          { key: 'rotation.0', label: 'Rotation X', type: 'number', step: 15, default: 0 },
+          { key: 'rotation.1', label: 'Rotation Y', type: 'number', step: 15, default: 0 },
+          { key: 'rotation.2', label: 'Rotation Z', type: 'number', step: 15, default: 0 },
+        ],
+      },
+      {
+        id: 'scale',
+        label: 'Echelle (X, Y, Z)',
+        fields: [
+          { key: 'scale.0', label: 'Echelle X', type: 'number', step: 0.1, default: 1 },
+          { key: 'scale.1', label: 'Echelle Y', type: 'number', step: 0.1, default: 1 },
+          { key: 'scale.2', label: 'Echelle Z', type: 'number', step: 0.1, default: 1 },
+        ],
+      },
+      {
+        id: 'instanceProps',
+        label: 'Variables d’instance (Props)',
+        type: 'instance-props',
+      },
+    ],
+  },
+
+  scene3d: {
+    title: 'Scene 3D',
+    groups: [
+      {
+        id: 'general',
+        label: 'General',
+        fields: [
+          { key: 'name', label: 'Nom', type: 'string', required: true },
+        ],
+      },
+      {
+        id: 'environment',
+        label: 'Environnement & Ambiance',
+        fields: [
+          { key: 'environment.skyColor', label: 'Couleur du ciel', type: 'color', default: '#1a1c2c' },
+          { key: 'environment.horizonColor', label: 'Degrade horizon', type: 'color', default: '#29366f' },
+          { key: 'environment.ambientLight.intensity', label: 'Lumiere ambiante', type: 'number', min: 0, max: 2, step: 0.1, default: 0.6 },
+          { key: 'environment.directionalLight.intensity', label: 'Lumiere directionnelle', type: 'number', min: 0, max: 3, step: 0.1, default: 1.0 },
+          { key: 'environment.fog.enabled', label: 'Brouillard active', type: 'boolean', default: true },
+          { key: 'environment.fog.color', label: 'Couleur brouillard', type: 'color', default: '#1a1c2c' },
+        ],
+      },
+    ],
+  },
 };

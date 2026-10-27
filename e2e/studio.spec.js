@@ -429,4 +429,64 @@ test.describe('PixelForge Studio E2E Tests', () => {
     const redoneName = await page.evaluate(() => window.__pfStore.project.name);
     expect(redoneName).toBe('Test Studio IA');
   });
+
+  test("graphe de scene 3D, arbre hierarchique et inspecteur : selection et cycle d'annulation", async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Ouvrir la scene 3D dans le workspace
+    await page.evaluate(() => {
+      const p = window.__pfStore.project;
+      const sc = p.scenes3d?.[0];
+      if (sc) {
+        window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
+      }
+      window.__pfDock.activatePanel('scene-tree');
+    });
+
+    // 3. Verifier l'affichage de l'arbre 3D
+    const treeEl = page.locator('.pf-scene-tree');
+    await expect(treeEl).toBeVisible();
+
+    const envHead = page.locator('#pf-st-env-head');
+    await expect(envHead).toBeVisible();
+
+    // 4. Ajouter un nœud via le menu d'ajout
+    const addBtn = page.locator('#pf-st-add-btn');
+    await expect(addBtn).toBeVisible();
+    await addBtn.click();
+
+    const addMenu = page.locator('#pf-st-add-menu');
+    await expect(addMenu).toBeVisible();
+
+    const addLightBtn = addMenu.locator('[data-add-kind="light"]');
+    await addLightBtn.click();
+
+    // Verifier que le nœud est present dans le graphe
+    const nodeCount = await page.evaluate(() => {
+      const sc = window.__pfStore.project.scenes3d?.[0];
+      return sc?.nodes?.length || 0;
+    });
+    expect(nodeCount).toBeGreaterThan(0);
+
+    // 5. Verifier que le nœud s'affiche dans l'inspecteur
+    const inspEl = page.locator('.pf-inspector');
+    await expect(inspEl).toBeVisible();
+
+    // 6. Annuler l'ajout avec store.undo()
+    await page.evaluate(() => {
+      window.__pfStore.undo();
+    });
+
+    const nodeCountAfterUndo = await page.evaluate(() => {
+      const sc = window.__pfStore.project.scenes3d?.[0];
+      return sc?.nodes?.length || 0;
+    });
+    expect(nodeCountAfterUndo).toBe(nodeCount - 1);
+  });
 });

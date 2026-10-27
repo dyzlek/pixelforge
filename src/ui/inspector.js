@@ -57,6 +57,14 @@ export function createInspector(container, store) {
       } else if (sel.type === 'song') {
         const sng = p.songs?.find((s) => s.id === sel.id);
         if (sng) return { type: 'song', data: sng, title: sng.name, subtitle: 'Musique chiptune' };
+      } else if (sel.type === 'node3d') {
+        const sc = p.scenes3d?.find((s) => s.id === sel.sceneId) || p.scenes3d?.[0];
+        const node = sc?.nodes?.find((n) => n.id === sel.id);
+        const obj = p.objects?.find((o) => o.id === node?.objectId);
+        if (node) return { type: 'node3d', data: node, scene: sc, obj, title: node.name, subtitle: `Noeud 3D (${node.kind})` };
+      } else if (sel.type === 'scene3d') {
+        const sc = p.scenes3d?.find((s) => s.id === sel.id);
+        if (sc) return { type: 'scene3d', data: sc, title: sc.name, subtitle: 'Scene 3D' };
       } else if (sel.type === 'settings') {
         return { type: 'settings', data: p.settings, title: 'Réglages', subtitle: p.name };
       }
@@ -276,6 +284,38 @@ export function createInspector(container, store) {
       }
       sel.onchange = () => commitUpdate(target, f.key, sel.value);
       control.appendChild(sel);
+    } else if (f.type === 'object-ref') {
+      const sel = document.createElement('select');
+      sel.className = 'pf-insp-input';
+      const optEmpty = document.createElement('option');
+      optEmpty.value = '';
+      optEmpty.textContent = '(Aucun)';
+      sel.appendChild(optEmpty);
+      for (const o of store.project.objects || []) {
+        const opt = document.createElement('option');
+        opt.value = o.id;
+        opt.textContent = o.name;
+        if (o.id === curVal) opt.selected = true;
+        sel.appendChild(opt);
+      }
+      sel.onchange = () => commitUpdate(target, f.key, sel.value || null);
+      control.appendChild(sel);
+    } else if (f.type === 'material-ref') {
+      const sel = document.createElement('select');
+      sel.className = 'pf-insp-input';
+      const optEmpty = document.createElement('option');
+      optEmpty.value = '';
+      optEmpty.textContent = '(Defaut)';
+      sel.appendChild(optEmpty);
+      for (const m of store.project.materials || []) {
+        const opt = document.createElement('option');
+        opt.value = m.id;
+        opt.textContent = m.name;
+        if (m.id === curVal) opt.selected = true;
+        sel.appendChild(opt);
+      }
+      sel.onchange = () => commitUpdate(target, f.key, sel.value || null);
+      control.appendChild(sel);
     } else {
       // string
       const input = document.createElement('input');
@@ -464,6 +504,17 @@ export function createInspector(container, store) {
       store.update((p) => {
         const snd = p.sounds.find((s) => s.id === target.data.id);
         if (snd) setDeep(snd, key, value);
+      }, 'inspector', recordUndo);
+    } else if (target.type === 'node3d') {
+      store.update((p) => {
+        const sc = p.scenes3d?.find((s) => s.id === target.scene?.id);
+        const node = sc?.nodes?.find((n) => n.id === target.data.id);
+        if (node) setDeep(node, key, value);
+      }, 'inspector', recordUndo);
+    } else if (target.type === 'scene3d') {
+      store.update((p) => {
+        const sc = p.scenes3d?.find((s) => s.id === target.data.id);
+        if (sc) setDeep(sc, key, value);
       }, 'inspector', recordUndo);
     } else if (target.type === 'settings') {
       store.update((p) => {
