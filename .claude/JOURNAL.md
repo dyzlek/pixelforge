@@ -1,5 +1,37 @@
 # Journal — PixelForge
 
+## 2026-10-27 (59) — [Phase G] G4 : arrangement multipiste (timeline) (Issue #84)
+- **Fait** :
+  - `src/audio/presets/epic-2min.js` & `src/audio/presets/index.js` :
+    - Creation du morceau de demonstration epique de 2 minutes a 120 BPM (`epic_2min`, "Odyssee 2 Minutes") structure en 5 sections distinctes :
+      - Intro (16s / 128 pas) : arpege lead et nappe de soutien
+      - Couplet 1 (32s / 256 pas) : basse rythmique et batterie 808
+      - Refrain (32s / 256 pas) : synthese complete polyphonique, clap et cymbale
+      - Pont (24s / 192 pas) : piano FM et roulements de toms
+      - Fin (16s / 128 pas) : accord de resolution heroique final
+    - Duree totale : 60 mesures = 960 pas = 120 secondes.
+    - Configuration de 5 pistes instrumentales, 5 motifs musicaux, 5 clips DAW v2, 5 marqueurs temporels et boucle active.
+  - `src/editors/music/playlist.js` :
+    - Refonte en Timeline multipiste DAW v2 :
+      - En-tetes de pistes avec nom reel, pastille de couleur, boutons Mute (M) et Solo (S) temps reel.
+      - Prise en charge unifiee des clips (`song.clips`) et des patterns historiques (`song.playlist`).
+      - Deplacement de clips avec aimantation parametrable (16, 8, 4, 1 pas), duplication par Ctrl/Alt+glisser.
+      - Poignee de redimensionnement et etirement (`.pf-clip-resize-handle`) sur le bord droit de chaque clip.
+      - Outil Decouper (Split / Ciseaux) permettant de scinder n'importe quel clip en deux a la position du clic avec recalcul des pas de notes relatifs.
+      - Marqueurs de boucle visuels (LOOP IN / LOOP OUT) et zone ombree de boucle sur toute la hauteur des pistes.
+      - Marqueurs temporels de section sur la reglette (`Intro`, `Couplet 1`, `Refrain`, `Pont`, `Fin`) avec saut automatique de tete de lecture au clic.
+      - Bouton "+ Marqueur" pour insertion directe de marqueurs.
+      - Bouton "Charger Odyssee 2 min" chargeant instantanement le morceau de 2 minutes complet.
+      - Zoom horizontal interactif reglable de 6px a 28px par pas avec mise a l'echelle dynamique.
+  - `src/core/project.js` & `src/core/ops/validate.js` & `docs/PROJECT_SCHEMA.json` :
+    - Normalisation et validation de `song.timeSignature`, `song.markers` et `song.clips`.
+    - Synchronisation bidirectionnelle complete preservee entre `tracks[]` et `channels[]`.
+  - Tests :
+    - `src/audio/test/chip.test.mjs` : test de structure et lecture du morceau 2 minutes dans le mock WebAudio.
+    - `e2e/studio.spec.js` : test 14 Playwright validant l'affichage de la timeline, le chargement d'Odyssee 2 min, les marqueurs, les clips, l'outil decoupage, le zoom et la persistence dans le store.
+- **Verifie** : `npm test`, `npm run check:doc`, `npm run build`, validation des jeux et `npm run test:e2e` (14 tests Playwright 100% verts). Strictement zero emoji.
+- **Etat** : Branche `feat/audio-timeline`, Closes #84.
+
 ## 2026-10-27 (58) — [Phase G] G3 : effets audio par piste et en départ (Issue #83)
 - **Fait** :
   - `src/audio/chip.js` :

@@ -601,7 +601,7 @@
 
 /* En-tetes de pistes a gauche */
 .pf-playlist-track-headers {
-  width: 90px;
+  width: 140px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -627,12 +627,121 @@
   height: 44px;
   display: flex;
   align-items: center;
-  padding-left: 8px;
+  justify-content: space-between;
+  padding: 0 6px 0 8px;
   font-size: 11px;
   font-weight: 500;
   color: var(--text-dim, #8b90a8);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   box-sizing: border-box;
+}
+
+.pf-track-head-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  margin-right: 4px;
+}
+
+.pf-track-head-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.pf-track-btn {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-dim, #8b90a8);
+  font-size: 9px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+  padding: 0;
+}
+
+.pf-track-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.pf-track-btn.active.pf-track-mute {
+  background: #ef7d57;
+  border-color: #ef7d57;
+  color: #fff;
+}
+
+.pf-track-btn.active.pf-track-solo {
+  background: #ffcd75;
+  border-color: #ffcd75;
+  color: #1a1c2c;
+}
+
+/* Poignee d'etirement / redimensionnement du clip */
+.pf-clip-resize-handle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 8px;
+  bottom: 0;
+  cursor: ew-resize;
+  background: rgba(255, 255, 255, 0.15);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  z-index: 2;
+  transition: background 0.1s ease;
+}
+
+.pf-clip-resize-handle:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Marqueurs sur la reglette */
+.pf-playlist-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px solid #ffcd75;
+  z-index: 4;
+  cursor: pointer;
+}
+
+.pf-marker-flag {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 9px;
+  font-weight: bold;
+  font-family: monospace;
+  background: #ffcd75;
+  color: #1a1c2c;
+  padding: 1px 4px;
+  border-radius: 2px;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Zone ombree de boucle */
+.pf-playlist-loop-range {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgba(167, 240, 112, 0.08);
+  border-left: 2px solid #a7f070;
+  border-right: 2px solid #a7f070;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Mode decoupage (razor) */
+.pf-playlist-content.tool-split .pf-playlist-block {
+  cursor: crosshair;
 }
 
 /* Timeline scrollable */

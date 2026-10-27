@@ -5,9 +5,11 @@ import { createBossSong } from './boss.js';
 import { createMenuSong } from './menu.js';
 import { createVictorySong } from './victory.js';
 import { createGameOverSong } from './gameover.js';
+import { createEpic2MinSong } from './epic-2min.js';
 import { DRUM_PATTERNS } from './drums.js';
 
 export { DRUM_PATTERNS } from './drums.js';
+export { createEpic2MinSong } from './epic-2min.js';
 
 export const SONG_PRESETS = [
   {
@@ -45,6 +47,12 @@ export const SONG_PRESETS = [
     name: 'Defaite (Game Over)',
     description: 'Chute melancolique et triste en do mineur.',
     create: createGameOverSong
+  },
+  {
+    id: 'epic_2min',
+    name: 'Odyssee (2 minutes)',
+    description: 'Morceau complet de demonstration avec intro, couplets, refrain et fin.',
+    create: createEpic2MinSong
   }
 ];
 

@@ -757,4 +757,75 @@ test.describe('PixelForge Studio E2E Tests', () => {
       await btnUp.click();
     }
   });
+
+  test('arrangement multipiste timeline, clips, marqueurs et morceau 2 min', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // Ouvrir l'editeur musical via workspace
+    await page.evaluate(async () => {
+      await window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
+    });
+    await expect(page.locator('.pf-music-rack')).toBeVisible({ timeout: 10000 });
+
+    // Basculer sur la vue Playlist / Timeline
+    const btnPlaylist = page.locator('.pf-transport-btn', { hasText: 'PLAYLIST' });
+    await expect(btnPlaylist).toBeVisible();
+    await btnPlaylist.click();
+
+    // Verifier la presence de la timeline
+    const timelineRoot = page.locator('.pf-playlist-root');
+    await expect(timelineRoot).toBeVisible();
+
+    const trackHeaders = page.locator('.pf-playlist-track-headers');
+    await expect(trackHeaders).toBeVisible();
+
+    // Charger le morceau Odyssee 2 minutes
+    const btnLoadDemo = page.locator('.pf-playlist-toolbar button', { hasText: 'Charger Odyssee 2 min' });
+    await expect(btnLoadDemo).toBeVisible();
+    await btnLoadDemo.click();
+
+    // Verifier que les 5 pistes sont chargees
+    const heads = page.locator('.pf-playlist-track-head');
+    await expect(heads).toHaveCount(8); // Au moins 8 pistes affichees (5 tracks + 3 lanes)
+    await expect(heads.first()).toContainText(/Lead Synth/i);
+
+    // Verifier les marqueurs temporels sur la reglette
+    const markers = page.locator('.pf-marker-flag');
+    await expect(markers.first()).toBeVisible();
+    const markerTexts = await markers.allTextContents();
+    expect(markerTexts).toContain('Intro');
+    expect(markerTexts).toContain('Couplet 1');
+    expect(markerTexts).toContain('Refrain');
+    expect(markerTexts).toContain('Pont');
+    expect(markerTexts).toContain('Fin');
+
+    // Verifier les clips places
+    const clips = page.locator('.pf-playlist-block[data-type="clip"]');
+    await expect(clips.first()).toBeVisible();
+    await expect(clips).toHaveCount(5);
+
+    // Tester l'outil Decouper (Split)
+    const btnSplit = page.locator('.pf-playlist-toolbar button', { hasText: 'Decouper' });
+    const btnMove = page.locator('.pf-playlist-toolbar button', { hasText: 'Deplacer' });
+    await btnSplit.click();
+    await expect(page.locator('.pf-playlist-content')).toHaveClass(/tool-split/);
+    await btnMove.click();
+    await expect(page.locator('.pf-playlist-content')).not.toHaveClass(/tool-split/);
+
+    // Tester le zoom horizontal
+    const zoomText = page.locator('.pf-playlist-toolbar span', { hasText: /px/ });
+    await expect(zoomText).toContainText('12px');
+    const btnZoomIn = page.locator('.pf-playlist-toolbar button[title*="Zoomer"]');
+    await btnZoomIn.click();
+    await expect(zoomText).toContainText('14px');
+
+    // Verifier la persistence dans le store du projet
+    const projectSong = await page.evaluate(() => {
+      return window.__pfStore.project.songs?.[0];
+    });
+    expect(projectSong.bpm).toBe(120);
+    expect(projectSong.markers.length).toBe(5);
+    expect(projectSong.clips.length).toBe(5);
+  });
 });

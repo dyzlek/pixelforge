@@ -1528,7 +1528,8 @@ export function createChipAudio(ctx, destination) {
       playlist = [{ pattern: song.patterns[0].id, start: 0, track: 0 }];
     }
 
-    let maxStep = typeof song.loopEnd === 'number' && song.loopEnd > 0 ? song.loopEnd : 0;
+    const explicitEnd = typeof song.loopEnd === 'number' && song.loopEnd > 0 ? song.loopEnd : (loopCfg && Number.isInteger(loopCfg.end) && loopCfg.end > 0 ? loopCfg.end : 0);
+    let maxStep = explicitEnd;
     const eventsByStep = {};
 
     playlist.forEach((item) => {
@@ -1536,7 +1537,7 @@ export function createChipAudio(ctx, destination) {
       if (!pat) return;
       const startStep = item.start || 0;
       const pLen = pat.length || 16;
-      if (startStep + pLen > maxStep && (!song.loopEnd || song.loopEnd <= 0)) maxStep = startStep + pLen;
+      if (startStep + pLen > maxStep && explicitEnd <= 0) maxStep = startStep + pLen;
 
       (pat.notes || []).forEach((note) => {
         const noteStep = Math.round(Number(note.step) || 0);
@@ -1558,7 +1559,7 @@ export function createChipAudio(ctx, destination) {
         if (clip.type === 'notes' && Array.isArray(clip.notes)) {
           const startStep = clip.start || 0;
           const cLen = clip.length || 16;
-          if (startStep + cLen > maxStep && (!song.loopEnd || song.loopEnd <= 0)) maxStep = startStep + cLen;
+          if (startStep + cLen > maxStep && explicitEnd <= 0) maxStep = startStep + cLen;
           clip.notes.forEach((note) => {
             const noteStep = Math.round(Number(note.step) || 0);
             if (noteStep < 0 || noteStep >= cLen) return;

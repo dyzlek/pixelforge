@@ -277,6 +277,16 @@ export function validateProject(p) {
     for (const pl of song.playlist || []) {
       if (!patIds.has(pl.pattern)) add('error', sw, `playlist references unknown pattern id "${pl.pattern}"`);
     }
+    for (const clip of song.clips || []) {
+      if (clip.trackId && !chIds.has(clip.trackId) && !(song.tracks || []).some((t) => t.id === clip.trackId)) {
+        add('error', `${sw} clip "${clip.name || clip.id}"`, `clip references unknown track id "${clip.trackId}"`);
+      }
+    }
+    for (const mk of song.markers || []) {
+      if (typeof mk.step !== 'number' || mk.step < 0) {
+        add('error', `${sw} marker "${mk.name || ''}"`, `invalid marker step "${mk.step}"`);
+      }
+    }
   }
 
   // ----- modeles 3D -----

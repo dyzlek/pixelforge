@@ -263,6 +263,23 @@
         "clips": {
           "type": "array"
         },
+        "markers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["step", "name"],
+            "properties": {
+              "step": { "type": "integer", "minimum": 0 },
+              "name": { "type": "string" }
+            }
+          }
+        },
+        "timeSignature": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 1 },
+          "minItems": 2,
+          "maxItems": 2
+        },
         "loop": {
           "type": "object",
           "description": "Boucle de lecture : repart de start (en pas) a la fin de l'arrangement. end est conserve mais n'est pas utilise par le moteur.",
