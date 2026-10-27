@@ -1,8 +1,10 @@
 /**
- * PixelForge Studio — Editeur de Scene 3D (GridMap, Entites, Gizmos et Test F6)
+ * PixelForge Studio — Editeur de Scene 3D (GridMap, Entites, Gizmos, Navigation Godot 4 et Test F6)
  * Permet de construire des niveaux 3D a la souris, de peindre la GridMap par etage,
  * de positionner des entites d'objets, de selectionner (simple / multiple / rectangle),
- * et de manipuler les objets via gizmos TransformControls (deplacer W, tourner E, echelle R, aimantation).
+ * de manipuler les objets via gizmos TransformControls (W/E/R, aimantation, local/monde),
+ * et de naviguer librement facon Godot 4 : orbite, vol libre (clic droit + ZQSD),
+ * centrage F, vues de face/dessus/cote (pave num 1/3/7) et bascule perspective/orthographique (pave 5).
  */
 
 import { GridMap3D } from './gridmap.js';
@@ -44,6 +46,13 @@ export function mount(container, store, { refId } = {}) {
   let dragInitialTransforms = new Map();
   let nodeClipboard = [];
 
+  // Navigation Vue 3D & Caméra
+  let isOrtho = false;
+  let isFlycamActive = false;
+  let camYaw = 0;
+  let camPitch = 0;
+  const keysFlycam = { forward: false, backward: false, left: false, right: false, up: false, down: false, boost: false };
+
   const palette = store.project?.palette || [
     '#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', '#ffcd75', '#a7f070', '#38b764', '#257179',
     '#29366f', '#3b5dc9', '#41a6f6', '#73eff7', '#f4f4f4', '#94b0c2', '#566c86', '#333c57',
@@ -74,6 +83,9 @@ export function mount(container, store, { refId } = {}) {
           </select>
         </div>
         <span style="width:1px;height:18px;background:var(--border);margin:0 4px;"></span>
+        <button class="pf-scene3d-btn" id="pf-s3d-focus-btn" title="Centrer la vue sur la selection (F)">${getIconSvg('zoom', 12)} Focus (F)</button>
+        <button class="pf-scene3d-btn" id="pf-s3d-proj-btn" title="Basculer Perspective / Orthographique (Pave 5)">Persp</button>
+        <span style="width:1px;height:18px;background:var(--border);margin:0 4px;"></span>
         <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--fg-1);">
           <span>Etage Y :</span>
           <button class="pf-scene3d-btn" id="pf-s3d-lvl-down" style="padding:2px 6px;">-</button>
@@ -90,7 +102,7 @@ export function mount(container, store, { refId } = {}) {
 
     <div class="pf-scene3d-workspace">
       <div class="pf-scene3d-viewport" id="pf-s3d-viewport">
-        <div class="pf-scene3d-overlay-hint">Clic : Selectionner / Placer | Maj+Clic / Rectangle : Multi-selection | W/E/R : Gizmos | Q : Monde/Local | Ctrl : Sans aimant | Ctrl+C/V/D : Copier / Coller / Dupliquer</div>
+        <div class="pf-scene3d-overlay-hint">Clic Droit : Orbite | Clic Droit + ZQSD : Vol libre | F : Focus | 1/3/7 : Vues | 5 : Persp/Ortho | W/E/R : Gizmos | Maj+Clic : Multi-select</div>
         <div class="pf-s3d-marquee" id="pf-s3d-marquee" style="display:none;"></div>
       </div>
 
@@ -190,6 +202,7 @@ export function mount(container, store, { refId } = {}) {
     activeLevel = Math.max(-10, Math.min(30, lvl));
     lvlLabel.textContent = activeLevel;
     if (gridHelper) gridHelper.position.y = activeLevel;
+    if (axesHelper) axesHelper.position.y = activeLevel + 0.01;
   }
   lvlUp.onclick = () => setLevel(activeLevel + 1);
   lvlDown.onclick = () => setLevel(activeLevel - 1);
@@ -345,6 +358,131 @@ export function mount(container, store, { refId } = {}) {
     pasteNodes();
   }
 
+  // --- Initialisation Three.js Viewport ---
+  const viewportContainer = container.querySelector('#pf-s3d-viewport');
+  const marqueeEl = container.querySelector('#pf-s3d-marquee');
+  let scene, camera, cameraPersp, cameraOrtho, renderer, ThreeLib;
+  let gridHelper, axesHelper;
+  let blockGroup, entityGroup;
+  let transformControls = null;
+  let transformHelper = null;
+  let ro = null;
+  let renderLoop = null;
+  const cubeGeo = { geo: null };
+  const materialCache = new Map();
+  const disposables = [];
+
+  let camRadius = 28;
+  let camTheta = Math.PI / 4;
+  let camPhi = Math.PI / 6;
+  const camTarget = { x: 0, y: 0, z: 0 };
+
+  function updateOrbitCamera() {
+    if (!camera || !ThreeLib) return;
+    camRadius = Math.max(4, Math.min(150, camRadius));
+    camPhi = Math.max(0.02, Math.min(Math.PI / 2 - 0.02, camPhi));
+
+    const cx = camTarget.x + camRadius * Math.sin(camTheta) * Math.cos(camPhi);
+    const cy = camTarget.y + camRadius * Math.sin(camPhi);
+    const cz = camTarget.z + camRadius * Math.cos(camTheta) * Math.cos(camPhi);
+
+    if (cameraPersp) {
+      cameraPersp.position.set(cx, cy, cz);
+      cameraPersp.lookAt(camTarget.x, camTarget.y, camTarget.z);
+    }
+    if (cameraOrtho) {
+      cameraOrtho.position.set(cx, cy, cz);
+      cameraOrtho.lookAt(camTarget.x, camTarget.y, camTarget.z);
+      const w = viewportContainer.clientWidth || 400;
+      const h = viewportContainer.clientHeight || 300;
+      const aspect = w / h;
+      const d = camRadius;
+      cameraOrtho.left = (-d * aspect) / 2;
+      cameraOrtho.right = (d * aspect) / 2;
+      cameraOrtho.top = d / 2;
+      cameraOrtho.bottom = -d / 2;
+      cameraOrtho.updateProjectionMatrix();
+    }
+  }
+
+  function focusSelection() {
+    const ids = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedEntityId ? [selectedEntityId] : []);
+    if (ids.length > 0) {
+      let sumX = 0, sumY = 0, sumZ = 0;
+      let count = 0;
+      for (const id of ids) {
+        const node = (sceneData.nodes || []).find((n) => n.id === id);
+        if (node && Array.isArray(node.position)) {
+          sumX += node.position[0];
+          sumY += node.position[1];
+          sumZ += node.position[2];
+          count++;
+        }
+      }
+      if (count > 0) {
+        camTarget.x = sumX / count;
+        camTarget.y = sumY / count;
+        camTarget.z = sumZ / count;
+        camRadius = 12;
+        updateOrbitCamera();
+        return;
+      }
+    }
+    camTarget.x = 0;
+    camTarget.y = activeLevel;
+    camTarget.z = 0;
+    camRadius = 24;
+    updateOrbitCamera();
+  }
+
+  function setView(viewName) {
+    if (viewName === 'front') {
+      camTheta = 0;
+      camPhi = 0.05;
+      updateOrbitCamera();
+    } else if (viewName === 'side') {
+      camTheta = Math.PI / 2;
+      camPhi = 0.05;
+      updateOrbitCamera();
+    } else if (viewName === 'top') {
+      camTheta = 0;
+      camPhi = Math.PI / 2 - 0.02;
+      updateOrbitCamera();
+    } else if (viewName === 'toggle-ortho') {
+      toggleProjection();
+    }
+  }
+
+  function toggleProjection() {
+    isOrtho = !isOrtho;
+    if (cameraPersp && cameraOrtho) {
+      if (isOrtho) {
+        cameraOrtho.position.copy(cameraPersp.position);
+        cameraOrtho.rotation.copy(cameraPersp.rotation);
+        camera = cameraOrtho;
+      } else {
+        cameraPersp.position.copy(cameraOrtho.position);
+        cameraPersp.rotation.copy(cameraOrtho.rotation);
+        camera = cameraPersp;
+      }
+      if (transformControls) {
+        transformControls.camera = camera;
+      }
+      updateOrbitCamera();
+    }
+    const projBtn = container.querySelector('#pf-s3d-proj-btn');
+    if (projBtn) projBtn.textContent = isOrtho ? 'Ortho' : 'Persp';
+  }
+
+  container.querySelector('#pf-s3d-focus-btn').onclick = focusSelection;
+  container.querySelector('#pf-s3d-proj-btn').onclick = toggleProjection;
+
+  // Evenements globaux de raccourcis
+  const onFocusEvent = () => { if (isActive && !isDisposed) focusSelection(); };
+  const onViewEvent = (e) => { if (isActive && !isDisposed) setView(e.detail); };
+  window.addEventListener('pixelforge:view3d:focus', onFocusEvent);
+  window.addEventListener('pixelforge:view3d:view', onViewEvent);
+
   // Raccourcis clavier
   function onKeyDown(e) {
     if (isDisposed || !isActive) return;
@@ -373,14 +511,41 @@ export function mount(container, store, { refId } = {}) {
         e.preventDefault();
         deleteSelectedEntity();
       }
-    } else if (e.key.toLowerCase() === 'w') {
-      setGizmoMode('translate');
-    } else if (e.key.toLowerCase() === 'e') {
-      setGizmoMode('rotate');
-    } else if (e.key.toLowerCase() === 'r') {
-      setGizmoMode('scale');
-    } else if (e.key.toLowerCase() === 'q') {
-      toggleGizmoSpace();
+    } else if (isFlycamActive) {
+      const k = e.key.toLowerCase();
+      if (k === 'w' || k === 'z') keysFlycam.forward = true;
+      else if (k === 's') keysFlycam.backward = true;
+      else if (k === 'a' || k === 'q') keysFlycam.left = true;
+      else if (k === 'd') keysFlycam.right = true;
+      else if (k === 'e' || k === ' ') keysFlycam.up = true;
+      else if (k === 'c') keysFlycam.down = true;
+      else if (e.shiftKey) keysFlycam.boost = true;
+    } else {
+      const k = e.key.toLowerCase();
+      if (k === 'f') {
+        e.preventDefault();
+        focusSelection();
+      } else if (e.code === 'Numpad1' || k === '1') {
+        e.preventDefault();
+        setView('front');
+      } else if (e.code === 'Numpad3' || k === '3') {
+        e.preventDefault();
+        setView('side');
+      } else if (e.code === 'Numpad7' || k === '7') {
+        e.preventDefault();
+        setView('top');
+      } else if (e.code === 'Numpad5' || k === '5') {
+        e.preventDefault();
+        toggleProjection();
+      } else if (k === 'w') {
+        setGizmoMode('translate');
+      } else if (k === 'e') {
+        setGizmoMode('rotate');
+      } else if (k === 'r') {
+        setGizmoMode('scale');
+      } else if (k === 'q') {
+        toggleGizmoSpace();
+      }
     }
   }
 
@@ -388,24 +553,18 @@ export function mount(container, store, { refId } = {}) {
     if (e.key === 'Control') {
       applySnapping(false);
     }
+    const k = e.key.toLowerCase();
+    if (k === 'w' || k === 'z') keysFlycam.forward = false;
+    else if (k === 's') keysFlycam.backward = false;
+    else if (k === 'a' || k === 'q') keysFlycam.left = false;
+    else if (k === 'd') keysFlycam.right = false;
+    else if (k === 'e' || k === ' ') keysFlycam.up = false;
+    else if (k === 'c') keysFlycam.down = false;
+    if (!e.shiftKey) keysFlycam.boost = false;
   }
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
-
-  // --- Initialisation Three.js Viewport ---
-  const viewportContainer = container.querySelector('#pf-s3d-viewport');
-  const marqueeEl = container.querySelector('#pf-s3d-marquee');
-  let scene, camera, renderer, ThreeLib;
-  let gridHelper;
-  let blockGroup, entityGroup;
-  let transformControls = null;
-  let transformHelper = null;
-  let ro = null;
-  let renderLoop = null;
-  const cubeGeo = { geo: null };
-  const materialCache = new Map();
-  const disposables = [];
 
   function getMaterial(color) {
     if (!materialCache.has(color)) {
@@ -431,10 +590,19 @@ export function mount(container, store, { refId } = {}) {
 
     const width = viewportContainer.clientWidth || 400;
     const height = viewportContainer.clientHeight || 300;
+    const aspect = width / height;
 
-    camera = new ThreeLib.PerspectiveCamera(55, width / height, 0.1, 500);
-    camera.position.set(16, 16, 20);
-    camera.lookAt(0, 0, 0);
+    cameraPersp = new ThreeLib.PerspectiveCamera(55, aspect, 0.1, 500);
+    const frustumSize = 24;
+    cameraOrtho = new ThreeLib.OrthographicCamera(
+      (-frustumSize * aspect) / 2,
+      (frustumSize * aspect) / 2,
+      frustumSize / 2,
+      -frustumSize / 2,
+      0.1,
+      500
+    );
+    camera = cameraPersp;
 
     renderer = new ThreeLib.WebGLRenderer({ antialias: true });
     renderer.setSize(width, height);
@@ -448,10 +616,15 @@ export function mount(container, store, { refId } = {}) {
     dir.position.set(15, 25, 20);
     scene.add(dir);
 
-    // Grille de travail a l'etage Y actif
-    gridHelper = new ThreeLib.GridHelper(32, 32, 0x41a6f6, 0x333c57);
+    // Grille de travail a l'etage Y actif (etendue 64x64)
+    gridHelper = new ThreeLib.GridHelper(64, 64, 0x41a6f6, 0x272c3d);
     gridHelper.position.y = activeLevel;
     scene.add(gridHelper);
+
+    // Repere d'axes a l'origine de l'etage (Rouge = X, Vert = Y, Bleu = Z)
+    axesHelper = new ThreeLib.AxesHelper(3);
+    axesHelper.position.set(0, activeLevel + 0.01, 0);
+    scene.add(axesHelper);
 
     // Groupes pour les blocs et les entites
     blockGroup = new ThreeLib.Group();
@@ -465,7 +638,7 @@ export function mount(container, store, { refId } = {}) {
     const cursorGeo = new ThreeLib.BoxGeometry(1.02, 1.02, 1.02);
     const cursorMat = new ThreeLib.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.7 });
     selWireMat = new ThreeLib.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
-    disposables.push(cubeGeo.geo, cursorGeo, cursorMat, selWireMat, gridHelper.geometry, gridHelper.material);
+    disposables.push(cubeGeo.geo, cursorGeo, cursorMat, selWireMat, gridHelper.geometry, gridHelper.material, axesHelper.geometry, axesHelper.material);
     const cursorBox = new ThreeLib.Mesh(cursorGeo, cursorMat);
     cursorBox.visible = false;
     scene.add(cursorBox);
@@ -480,7 +653,6 @@ export function mount(container, store, { refId } = {}) {
     transformControls.addEventListener('dragging-changed', (event) => {
       isTransformDragging = event.value;
       if (event.value) {
-        // Debut du deplacement
         dragInitialTransforms.clear();
         const ids = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedEntityId ? [selectedEntityId] : []);
         for (const id of ids) {
@@ -494,7 +666,6 @@ export function mount(container, store, { refId } = {}) {
           }
         }
       } else {
-        // Fin du deplacement : sauvegarde atomique dans store.update
         commitTransformFromGizmo();
       }
     });
@@ -526,25 +697,11 @@ export function mount(container, store, { refId } = {}) {
     rebuildBlocks();
     rebuildEntities();
     updateGizmoAttachment();
+    updateOrbitCamera();
 
-    // Controles orbite / deplacement
+    // Controles orbite / vol libre
     let isOrbiting = false;
     let prevMouseX = 0, prevMouseY = 0;
-    let camRadius = 28;
-    let camTheta = Math.PI / 4;
-    let camPhi = Math.PI / 6;
-    const camTarget = new ThreeLib.Vector3(0, 0, 0);
-
-    function updateCamera() {
-      camRadius = Math.max(6, Math.min(120, camRadius));
-      camPhi = Math.max(0.05, Math.min(Math.PI / 2 - 0.05, camPhi));
-
-      camera.position.x = camTarget.x + camRadius * Math.sin(camTheta) * Math.cos(camPhi);
-      camera.position.y = camTarget.y + camRadius * Math.sin(camPhi);
-      camera.position.z = camTarget.z + camRadius * Math.cos(camTheta) * Math.cos(camPhi);
-      camera.lookAt(camTarget);
-    }
-    updateCamera();
 
     const canvas = renderer.domElement;
     canvas.oncontextmenu = (e) => e.preventDefault();
@@ -554,10 +711,20 @@ export function mount(container, store, { refId } = {}) {
 
     canvas.onpointerdown = (e) => {
       if (isTransformDragging) return;
-      // Ne pas intercepter si le pointeur est sur le gizmo
       if (transformControls && transformControls.axis !== null) return;
 
-      if (e.button === 2 || e.button === 1 || (e.altKey && e.button === 0)) {
+      if (e.button === 2) {
+        // Clic droit : Vol libre (Flycam)
+        isFlycamActive = true;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+        const fwd = new ThreeLib.Vector3();
+        camera.getWorldDirection(fwd);
+        camYaw = Math.atan2(fwd.x, fwd.z);
+        camPitch = Math.asin(Math.max(-0.99, Math.min(0.99, fwd.y)));
+        canvas.setPointerCapture(e.pointerId);
+      } else if (e.button === 1 || (e.altKey && e.button === 0)) {
+        // Clic milieu ou Alt+Clic : Orbite
         isOrbiting = true;
         prevMouseX = e.clientX;
         prevMouseY = e.clientY;
@@ -565,7 +732,6 @@ export function mount(container, store, { refId } = {}) {
       } else if (e.button === 0) {
         const { hitEntity, hitBlock } = getRaycastHits(e);
         if (activeTool === 'select' && !hitEntity && !hitBlock) {
-          // Debut de rectangle de selection sur le fond vide
           isMarquee = true;
           marqueeStartX = e.clientX;
           marqueeStartY = e.clientY;
@@ -582,7 +748,26 @@ export function mount(container, store, { refId } = {}) {
     };
 
     canvas.onpointermove = (e) => {
-      if (isOrbiting) {
+      if (isFlycamActive) {
+        const dx = e.clientX - prevMouseX;
+        const dy = e.clientY - prevMouseY;
+        prevMouseX = e.clientX;
+        prevMouseY = e.clientY;
+
+        camYaw -= dx * 0.003;
+        camPitch = Math.max(-Math.PI / 2 + 0.05, Math.min(Math.PI / 2 - 0.05, camPitch - dy * 0.003));
+
+        const fwd = new ThreeLib.Vector3(
+          Math.sin(camYaw) * Math.cos(camPitch),
+          Math.sin(camPitch),
+          Math.cos(camYaw) * Math.cos(camPitch)
+        ).normalize();
+
+        camera.lookAt(camera.position.clone().add(fwd));
+        camTarget.x = camera.position.x + fwd.x * camRadius;
+        camTarget.y = camera.position.y + fwd.y * camRadius;
+        camTarget.z = camera.position.z + fwd.z * camRadius;
+      } else if (isOrbiting) {
         const dx = e.clientX - prevMouseX;
         const dy = e.clientY - prevMouseY;
         prevMouseX = e.clientX;
@@ -590,7 +775,7 @@ export function mount(container, store, { refId } = {}) {
 
         camTheta -= dx * 0.01;
         camPhi += dy * 0.01;
-        updateCamera();
+        updateOrbitCamera();
       } else if (isMarquee) {
         const minX = Math.min(marqueeStartX, e.clientX);
         const minY = Math.min(marqueeStartY, e.clientY);
@@ -607,7 +792,22 @@ export function mount(container, store, { refId } = {}) {
     };
 
     canvas.onpointerup = (e) => {
-      if (isOrbiting) {
+      if (isFlycamActive && e.button === 2) {
+        isFlycamActive = false;
+        keysFlycam.forward = false;
+        keysFlycam.backward = false;
+        keysFlycam.left = false;
+        keysFlycam.right = false;
+        keysFlycam.up = false;
+        keysFlycam.down = false;
+        keysFlycam.boost = false;
+        try { canvas.releasePointerCapture(e.pointerId); } catch {}
+
+        const fwd = new ThreeLib.Vector3();
+        camera.getWorldDirection(fwd);
+        camTheta = Math.atan2(-fwd.x, -fwd.z);
+        camPhi = Math.asin(Math.max(-0.99, Math.min(0.99, -fwd.y)));
+      } else if (isOrbiting) {
         isOrbiting = false;
         try { canvas.releasePointerCapture(e.pointerId); } catch {}
       } else if (isMarquee) {
@@ -661,15 +861,26 @@ export function mount(container, store, { refId } = {}) {
     canvas.onwheel = (e) => {
       e.preventDefault();
       camRadius += e.deltaY * 0.03;
-      updateCamera();
+      updateOrbitCamera();
     };
 
     ro = new ResizeObserver(() => {
       if (isDisposed) return;
       const w = viewportContainer.clientWidth || 400;
       const h = viewportContainer.clientHeight || 300;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
+      const a = w / h;
+      if (cameraPersp) {
+        cameraPersp.aspect = a;
+        cameraPersp.updateProjectionMatrix();
+      }
+      if (cameraOrtho) {
+        const d = camRadius;
+        cameraOrtho.left = (-d * a) / 2;
+        cameraOrtho.right = (d * a) / 2;
+        cameraOrtho.top = d / 2;
+        cameraOrtho.bottom = -d / 2;
+        cameraOrtho.updateProjectionMatrix();
+      }
       renderer.setSize(w, h);
     });
     ro.observe(viewportContainer);
@@ -678,6 +889,33 @@ export function mount(container, store, { refId } = {}) {
       animId = null;
       if (isDisposed || !isActive) return;
       animId = requestAnimationFrame(loop);
+
+      // Mise a jour du deplacement Flycam a chaque trame
+      if (isFlycamActive) {
+        const speed = keysFlycam.boost ? 35 : 14;
+        const fwd = new ThreeLib.Vector3();
+        camera.getWorldDirection(fwd);
+        const right = new ThreeLib.Vector3();
+        right.crossVectors(fwd, camera.up).normalize();
+
+        const move = new ThreeLib.Vector3();
+        if (keysFlycam.forward) move.add(fwd);
+        if (keysFlycam.backward) move.sub(fwd);
+        if (keysFlycam.right) move.add(right);
+        if (keysFlycam.left) move.sub(right);
+        if (keysFlycam.up) move.y += 1;
+        if (keysFlycam.down) move.y -= 1;
+
+        if (move.lengthSq() > 0) {
+          move.normalize();
+          const dt = 0.016;
+          camera.position.addScaledVector(move, speed * dt);
+          camTarget.x = camera.position.x + fwd.x * camRadius;
+          camTarget.y = camera.position.y + fwd.y * camRadius;
+          camTarget.z = camera.position.z + fwd.z * camRadius;
+        }
+      }
+
       renderer.render(scene, camera);
     };
     renderLoop();
@@ -1047,6 +1285,8 @@ export function mount(container, store, { refId } = {}) {
       animId = null;
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
+      window.removeEventListener('pixelforge:view3d:focus', onFocusEvent);
+      window.removeEventListener('pixelforge:view3d:view', onViewEvent);
       offLoad();
       offChange();
       offSel();

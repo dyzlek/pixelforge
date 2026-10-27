@@ -549,4 +549,52 @@ test.describe('PixelForge Studio E2E Tests', () => {
     await snapChk.check();
     await expect(snapChk).toBeChecked();
   });
+
+  test("navigation vue 3D : boutons focus, perspective/ortho et raccourcis dans la palette", async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Ouvrir la scene 3D
+    await page.evaluate(() => {
+      const p = window.__pfStore.project;
+      const sc = p.scenes3d?.[0];
+      if (sc) {
+        window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
+      }
+    });
+
+    await page.waitForSelector('.pf-scene3d-viewport canvas');
+
+    // 3. Boutons Focus et Projection
+    const focusBtn = page.locator('#pf-s3d-focus-btn');
+    const projBtn = page.locator('#pf-s3d-proj-btn');
+
+    await expect(focusBtn).toBeVisible();
+    await expect(projBtn).toBeVisible();
+    await expect(projBtn).toHaveText(/Persp/);
+
+    // 4. Basculer la projection
+    await projBtn.click();
+    await expect(projBtn).toHaveText(/Ortho/);
+    await projBtn.click();
+    await expect(projBtn).toHaveText(/Persp/);
+
+    // 5. Verifier que les raccourcis 3D sont enregistres dans la palette de commandes
+    const commands = await page.evaluate(() => {
+      return window.__pfCommandPalette?.shortcuts?.getCommands() || [];
+    });
+
+    const hasFocusCmd = commands.some((c) => c.id === 'view-3d-focus');
+    const hasFrontCmd = commands.some((c) => c.id === 'view-3d-front');
+    const hasOrthoCmd = commands.some((c) => c.id === 'view-3d-persp-ortho');
+
+    expect(hasFocusCmd).toBe(true);
+    expect(hasFrontCmd).toBe(true);
+    expect(hasOrthoCmd).toBe(true);
+  });
 });
