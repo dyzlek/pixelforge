@@ -185,6 +185,7 @@ test.describe('PixelForge Studio E2E Tests', () => {
 
   test('jeu 2D plateforme sous Phaser 4 : verification du rendu WebGL, FPS et deplacement', async ({ page }) => {
     await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
     await expect(page.locator('#app')).toBeVisible();
 
     // Ouvrir le jeu 2D d'exemple plateforme
@@ -217,10 +218,14 @@ test.describe('PixelForge Studio E2E Tests', () => {
 
     const startX = player.x;
 
-    // Deplacer le joueur vers la droite
+    // Retirer le focus des champs de texte et focus sur le canvas
+    await page.evaluate(() => document.activeElement?.blur());
+    await canvas.click();
     await page.keyboard.down('ArrowRight');
-    await page.waitForTimeout(300);
+    await page.keyboard.down('KeyD');
+    await page.waitForTimeout(600);
     await page.keyboard.up('ArrowRight');
+    await page.keyboard.up('KeyD');
     await page.waitForTimeout(100);
 
     const movedSnapshot = await page.evaluate(() => window.__pfDebugSnapshot());
@@ -1345,5 +1350,72 @@ test.describe('PixelForge Studio E2E Tests', () => {
     });
     expect(updatedPointsCount).toBe(3);
     await expect(autoLane.locator('.pf-auto-node')).toHaveCount(3);
+  });
+
+  test('console de mixage DAW v2, routage de bus, vumetres, exports et enregistrement micro', async ({ page }) => {
+    // 1. Chargement du studio et ouverture de l editeur de musique
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    await page.evaluate(async () => {
+      await window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
+    });
+    await expect(page.locator('.pf-music-root')).toBeVisible();
+
+    // 2. Bascule vers la vue Mixeur
+    const btnMixerTab = page.locator('.pf-transport-btn', { hasText: 'MIXER' });
+    await expect(btnMixerTab).toBeVisible();
+    await btnMixerTab.click();
+    await expect(btnMixerTab).toHaveClass(/active/);
+
+    // 3. Verifier la console de mixage et ses barres d outils
+    const mixerRoot = page.locator('.pf-mixer-root');
+    await expect(mixerRoot).toBeVisible();
+
+    const btnExportWav = mixerRoot.locator('.pf-btn-export-wav');
+    await expect(btnExportWav).toBeVisible();
+
+    const btnExportStems = mixerRoot.locator('.pf-btn-export-stems');
+    await expect(btnExportStems).toBeVisible();
+
+    const btnMicRecord = mixerRoot.locator('.pf-btn-mic-record');
+    await expect(btnMicRecord).toBeVisible();
+
+    const btnImportMidi = mixerRoot.locator('.pf-btn-import-midi');
+    await expect(btnImportMidi).toBeVisible();
+
+    // 4. Verifier la tranche Master et les tranches de pistes avec vumetres
+    const masterStrip = mixerRoot.locator('.pf-mixer-strip.master');
+    await expect(masterStrip).toBeVisible();
+    await expect(masterStrip.locator('.pf-strip-meter')).toBeVisible();
+
+    const trackStrips = mixerRoot.locator('.pf-mixer-strip:not(.master)');
+    const trackCount = await trackStrips.count();
+    expect(trackCount).toBeGreaterThan(0);
+
+    // 5. Verifier le selecteur de routage de bus sur la premiere piste
+    const firstBusSelect = trackStrips.first().locator('.pf-strip-bus-select');
+    await expect(firstBusSelect).toBeVisible();
+
+    // 6. Test de simulation d enregistrement micro
+    await page.evaluate(async () => {
+      if (typeof window.__pfSimulateMicRecord === 'function') {
+        await window.__pfSimulateMicRecord();
+      }
+    });
+
+    const hasAudioClip = await page.evaluate(() => {
+      const s = window.__pfStore.project.songs?.[0];
+      return Array.isArray(s?.clips) && s.clips.some((c) => c.type === 'audio');
+    });
+    expect(hasAudioClip).toBe(true);
+
+    // 7. Bascule vers la Playlist et verification du clip audio
+    const btnPlaylistTab = page.locator('.pf-transport-btn', { hasText: 'PLAYLIST' });
+    await btnPlaylistTab.click();
+    await expect(page.locator('.pf-playlist-root')).toBeVisible();
+
+    const clips = page.locator('.pf-playlist-block');
+    await expect(clips.first()).toBeVisible();
   });
 });

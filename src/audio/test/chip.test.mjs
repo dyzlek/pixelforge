@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { noteFreq, chiptuneToSong, createChipAudio, PRESETS, INSTRUMENTS, INSTRUMENT_PRESETS, VALID_EFFECTS, MASTER_GAIN, generateSfxr, mutateSfxr, drumPiece } from '../chip.js';
 import { pitchToMidi, midiToPitch, SCALES, CHORDS, isBlackKey } from '../../editors/music/pianoroll.js';
-import { encodeWav } from '../wav-encoder.js';
+import { encodeWav, audioBufferToDataUrl, audioBufferToWavBlob } from '../wav-encoder.js';
 import { parseMidi, midiToSong } from '../midi-parser.js';
 import { parseSongText, songToText } from '../../../mcp/lib/song-text.js';
 import { SONG_PRESETS, getSongPreset, DRUM_PATTERNS } from '../presets/index.js';
@@ -1100,6 +1100,163 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
     assert.ok(renderedBuf, 'renderOffline doit produire un AudioBuffer avec automation');
     const wavBytes = encodeWav(renderedBuf);
     assert.ok(wavBytes instanceof Uint8Array, 'encodeWav doit exporter le WAV avec automation');
+  } finally {
+    globalThis.window = origWindow;
+  }
+}
+
+// 24. Mixeur, enregistrement micro, exports stems et import MIDI General MIDI (Issue #87, G7)
+{
+  const { mockCtx } = createMockAudioContext();
+  const audio = createChipAudio(mockCtx);
+
+  // (a) Construction et verification d'un flux MIDI General MIDI synthetique
+  // Format 0, 1 piste, 96 ticks par noire
+  // Tempo 1 : 120 BPM (500 000 us/noire) a tick 0
+  // Tempo 2 : 140 BPM (428 571 us/noire) a tick 96
+  // Canal 0 (melodique) : Note 60 (C4)
+  // Canal 9 (General MIDI canal 10 = batterie) : Note 36 (kick), 38 (snare), 42 (closed hat), 46 (open hat)
+  const trackBytes = [
+    // Tick 0 : Set Tempo 120 BPM (0x07A120 = 500000)
+    0x00, 0xFF, 0x51, 0x03, 0x07, 0xA1, 0x20,
+    // Tick 0 : NoteOn canal 0, note 60, vel 100
+    0x00, 0x90, 0x3C, 0x64,
+    // Delta 24 : NoteOff canal 0, note 60
+    0x18, 0x80, 0x3C, 0x40,
+    // Delta 0 : NoteOn canal 9 (batterie GM), note 36 (kick), vel 110
+    0x00, 0x99, 0x24, 0x6E,
+    // Delta 24 : NoteOff canal 9, note 36
+    0x18, 0x89, 0x24, 0x00,
+    // Delta 0 : NoteOn canal 9, note 38 (snare), vel 100
+    0x00, 0x99, 0x26, 0x64,
+    // Delta 24 : NoteOff canal 9, note 38
+    0x18, 0x89, 0x26, 0x00,
+    // Delta 24 : NoteOn canal 9, note 42 (hat closed), vel 90
+    0x18, 0x99, 0x2A, 0x5A,
+    // Delta 0 : Set Tempo 140 BPM (0x068A2B = 428571) a tick 96
+    0x00, 0xFF, 0x51, 0x03, 0x06, 0x8A, 0x2B,
+    // Delta 24 : NoteOff canal 9, note 42
+    0x18, 0x89, 0x2A, 0x00,
+    // Delta 0 : NoteOn canal 9, note 46 (hat open), vel 90
+    0x00, 0x99, 0x2E, 0x5A,
+    // Delta 24 : NoteOff canal 9, note 46
+    0x18, 0x89, 0x2E, 0x00,
+    // Fin de piste
+    0x00, 0xFF, 0x2F, 0x00
+  ];
+
+  const headerBytes = [
+    // MThd
+    0x4D, 0x54, 0x68, 0x64,
+    // Longueur en-tete = 6
+    0x00, 0x00, 0x00, 0x06,
+    // Format 0
+    0x00, 0x00,
+    // 1 piste
+    0x00, 0x01,
+    // Division 96 ticks / noire
+    0x00, 0x60,
+    // MTrk
+    0x4D, 0x54, 0x72, 0x6B,
+    // Longueur de piste
+    (trackBytes.length >> 24) & 0xFF,
+    (trackBytes.length >> 16) & 0xFF,
+    (trackBytes.length >> 8) & 0xFF,
+    trackBytes.length & 0xFF
+  ];
+
+  const midiBuf = new Uint8Array([...headerBytes, ...trackBytes]).buffer;
+
+  // Analyse et conversion MIDI
+  const parsed = parseMidi(midiBuf);
+  assert.equal(parsed.format, 0, 'Format MIDI doit valoir 0');
+  assert.equal(parsed.division, 96, 'Division temporelle doit valoir 96');
+  assert.ok(parsed.tempoChanges.length >= 2, 'Doit detecter les changements de tempo');
+  assert.equal(parsed.tempoChanges[0].bpm, 120, 'Premier tempo doit valoir 120');
+  assert.equal(parsed.tempoChanges[1].bpm, 140, 'Deuxieme tempo doit valoir 140');
+
+  const songFromMidi = midiToSong(midiBuf, 'Theme General MIDI');
+  assert.equal(songFromMidi.name, 'Theme General MIDI');
+  assert.ok(songFromMidi.tempoChanges.length >= 2, 'Song doit enregistrer les changements de tempo');
+
+  // Verification que le canal 9 (Canal 10 en base 1) est mappe a la batterie
+  const drumTrack = songFromMidi.tracks.find((t) => t.drumKit === true);
+  assert.ok(drumTrack, 'Une piste batterie drumKit doit etre presente');
+  assert.equal(drumTrack.instrument, 'drum_machine', 'Instrument de batterie doit etre drum_machine');
+
+  const drumClip = songFromMidi.clips.find((c) => c.trackId === drumTrack.id);
+  assert.ok(drumClip, 'Un clip de notes doit exister pour la batterie');
+  const drumPitches = drumClip.notes.map((n) => n.pitch);
+  assert.ok(drumPitches.includes('kick'), 'Doit mapper note 36 en kick');
+  assert.ok(drumPitches.includes('snare'), 'Doit mapper note 38 en snare');
+  assert.ok(drumPitches.includes('hat_closed'), 'Doit mapper note 42 en hat_closed');
+  assert.ok(drumPitches.includes('hat_open'), 'Doit mapper note 46 en hat_open');
+
+  // (b) Test de routage de sous-bus (outputBusId) et vumetres temps-reel
+  const busSong = {
+    bpm: 120,
+    tracks: [
+      { id: 'trk_master_sub', name: 'Drums Bus', volume: 0.9, pan: 0, outputBusId: 'master' },
+      { id: 'trk_sub_child', name: 'Snare Track', volume: 0.8, pan: 0.2, outputBusId: 'trk_master_sub' }
+    ],
+    clips: [
+      {
+        trackId: 'trk_sub_child',
+        type: 'notes',
+        start: 0,
+        length: 16,
+        notes: [{ step: 0, pitch: 'D4', length: 2, velocity: 0.8 }]
+      }
+    ]
+  };
+
+  const ctrlBus = audio.playSong(busSong, { loop: false, volume: 1 });
+  assert.ok(ctrlBus, 'Controleur de bus instancie');
+  assert.equal(typeof ctrlBus.getTrackLevel, 'function', 'getTrackLevel doit etre expose sur le controleur');
+  assert.equal(typeof audio.getTrackLevel, 'function', 'getTrackLevel doit etre expose sur chipAudio');
+
+  // Niveaux initiaux
+  const masterLvl = ctrlBus.getTrackLevel('master');
+  assert.equal(typeof masterLvl, 'number', 'getTrackLevel master renvoie un nombre');
+  const trkLvl = ctrlBus.getTrackLevel('trk_sub_child');
+  assert.equal(typeof trkLvl, 'number', 'getTrackLevel piste renvoie un nombre');
+
+  ctrlBus.stop(0);
+
+  // (c) Test de rendu offline des pistes isolees (Stems) et encodage WAV
+  const origWindow = globalThis.window;
+  class MockOfflineAudioContext {
+    constructor(channels, length, sampleRate) {
+      this.channels = channels;
+      this.length = length;
+      this.sampleRate = sampleRate;
+      this.currentTime = 0;
+      this.destination = { tag: 'destination' };
+      this.nodes = [];
+    }
+    createGain() {
+      return { gain: createMockParam(1), connect() {}, disconnect() {} };
+    }
+    createStereoPanner() {
+      return { pan: createMockParam(0), connect() {}, disconnect() {} };
+    }
+    createBuffer(channels, length, rate) {
+      const data = new Float32Array(length);
+      return { numberOfChannels: channels, length, sampleRate: rate, getChannelData: () => data };
+    }
+    startRendering() {
+      return Promise.resolve(this.createBuffer(this.channels, this.length, this.sampleRate));
+    }
+  }
+  globalThis.window = { OfflineAudioContext: MockOfflineAudioContext };
+  try {
+    const stemBuf = await audio.renderStemOffline(busSong, 'trk_sub_child');
+    assert.ok(stemBuf, 'renderStemOffline doit produire un AudioBuffer pour la piste');
+    const stemWav = encodeWav(stemBuf);
+    assert.ok(stemWav instanceof Uint8Array, 'encodeWav doit exporter le stem WAV');
+
+    const dataUrl = audioBufferToDataUrl(stemBuf);
+    assert.ok(dataUrl.startsWith('data:audio/wav;base64,'), 'audioBufferToDataUrl doit produire un data URL WAV base64');
   } finally {
     globalThis.window = origWindow;
   }

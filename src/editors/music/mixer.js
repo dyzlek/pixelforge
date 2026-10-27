@@ -1,6 +1,6 @@
 // PixelForge Music Studio — Console de mixage audio avec tranches, rack d'effets et departs auxiliaires
 import { getIconSvg } from '../../ui/icons.js';
-import { audioBufferToWavBlob } from '../../audio/wav-encoder.js';
+import { audioBufferToWavBlob, audioBufferToDataUrl, blobToDataUrl } from '../../audio/wav-encoder.js';
 import { midiToSong } from '../../audio/midi-parser.js';
 import { VALID_EFFECTS } from '../../audio/chip.js';
 
@@ -34,6 +34,7 @@ export function renderMixer(container, opts) {
     chip,
     onChannelChange,
     onSongImport,
+    onSongUpdate,
     selectedTrackId: initialSelectedId = null
   } = opts;
 
@@ -43,12 +44,16 @@ export function renderMixer(container, opts) {
   const root = document.createElement('div');
   root.className = 'pf-mixer-root';
 
-  // 1. Barre d'outils du mixeur (Actions Export WAV / Import MIDI)
+  // 1. Barre d'outils du mixeur (Actions Export WAV / Stems / Record Mic / Import MIDI)
   const toolbar = document.createElement('div');
   toolbar.className = 'pf-mixer-toolbar';
 
+  const rawTracks = (song.tracks && song.tracks.length > 0) ? song.tracks : (song.channels || []);
+  let selectedTrackId = initialSelectedId || rawTracks[0]?.id || 'master';
+
+  // Bouton Export WAV (Master)
   const btnExportWav = document.createElement('button');
-  btnExportWav.className = 'pf-btn-add-channel';
+  btnExportWav.className = 'pf-btn-add-channel pf-btn-export-wav';
   btnExportWav.innerHTML = getIconSvg('save', 13) + ' Exporter en WAV';
   btnExportWav.title = 'Generer et telecharger le fichier audio .wav (16-bit PCM)';
 
@@ -84,6 +89,188 @@ export function renderMixer(container, opts) {
   };
   toolbar.appendChild(btnExportWav);
 
+  // Bouton Export Stems (Piste par piste)
+  const btnExportStems = document.createElement('button');
+  btnExportStems.className = 'pf-btn-add-channel pf-btn-export-stems';
+  btnExportStems.innerHTML = getIconSvg('download', 13) + ' Exporter les pistes (Stems)';
+  btnExportStems.title = 'Generer et telecharger chaque piste separement en WAV 16-bit';
+
+  btnExportStems.onclick = async () => {
+    if (!chip) {
+      alert('Moteur audio non initialise');
+      return;
+    }
+    const oldText = btnExportStems.innerHTML;
+    btnExportStems.disabled = true;
+
+    try {
+      for (let i = 0; i < rawTracks.length; i++) {
+        const trk = rawTracks[i];
+        btnExportStems.innerHTML = getIconSvg('refresh', 13) + ` Rendu piste ${i + 1}/${rawTracks.length}...`;
+        const audioBuffer = await chip.renderOffline(song, { trackId: trk.id });
+        const wavBlob = audioBufferToWavBlob(audioBuffer);
+
+        const url = URL.createObjectURL(wavBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        const cleanName = (trk.name || trk.id).replace(/[^a-zA-Z0-9_-]/g, '_');
+        a.download = `${song.name || 'pixelforge'}-${cleanName}.wav`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (err) {
+      alert('Erreur lors de l\'export des stems : ' + err.message);
+    } finally {
+      btnExportStems.innerHTML = oldText;
+      btnExportStems.disabled = false;
+    }
+  };
+  toolbar.appendChild(btnExportStems);
+
+  // Bouton Enregistrement Microphone
+  let isRecording = false;
+  let mediaRecorder = null;
+  let mediaStream = null;
+  let recordedChunks = [];
+  let recordTimerId = null;
+  let recordStartSec = 0;
+
+  const btnMicRecord = document.createElement('button');
+  btnMicRecord.className = 'pf-btn-add-channel pf-btn-mic-record';
+  btnMicRecord.innerHTML = getIconSvg('mic', 13) + ' Enregistrer micro';
+  btnMicRecord.title = 'Enregistrer une prise micro directe dans le morceau';
+
+  function updateRecordUI(recording) {
+    if (recording) {
+      btnMicRecord.classList.add('recording');
+      btnMicRecord.innerHTML = getIconSvg('stop', 13) + ' Arreter (0.0s)';
+      recordStartSec = Date.now();
+      recordTimerId = setInterval(() => {
+        const elapsed = ((Date.now() - recordStartSec) / 1000).toFixed(1);
+        btnMicRecord.innerHTML = getIconSvg('stop', 13) + ` Arreter (${elapsed}s)`;
+      }, 100);
+    } else {
+      btnMicRecord.classList.remove('recording');
+      btnMicRecord.innerHTML = getIconSvg('mic', 13) + ' Enregistrer micro';
+      if (recordTimerId) { clearInterval(recordTimerId); recordTimerId = null; }
+    }
+  }
+
+  async function addRecordedAudioClip(audioDataUrl, durationSec = 2.0) {
+    const bpm = Math.max(20, Math.min(300, song.bpm || 120));
+    const stepsPerBeat = Math.max(1, song.stepsPerBeat || 4);
+    const stepDurationSec = (60 / bpm) / stepsPerBeat;
+    const clipSteps = Math.max(16, Math.ceil(durationSec / stepDurationSec));
+
+    const targetTrackId = (selectedTrackId && selectedTrackId !== 'master')
+      ? selectedTrackId
+      : (rawTracks[0]?.id || 'ch_lead');
+
+    const clipCount = ((song.clips || []).filter((c) => c.type === 'audio')).length + 1;
+    const newClip = {
+      id: 'clp_rec_' + Math.random().toString(36).slice(2, 9),
+      name: 'Prise Micro ' + clipCount,
+      trackId: targetTrackId,
+      type: 'audio',
+      start: 0,
+      length: clipSteps,
+      audioData: audioDataUrl
+    };
+
+    const updatedClips = [...(song.clips || []), newClip];
+    if (onSongUpdate) {
+      onSongUpdate({ clips: updatedClips });
+    } else if (onChannelChange) {
+      song.clips = updatedClips;
+      renderStrips();
+    }
+    return newClip;
+  }
+
+  btnMicRecord.onclick = async () => {
+    if (!isRecording) {
+      // Demarrage de l'enregistrement
+      if (typeof window !== 'undefined' && typeof window.__pfMockMediaRecord === 'function') {
+        isRecording = true;
+        updateRecordUI(true);
+        return;
+      }
+
+      if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        try {
+          mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(mediaStream);
+          recordedChunks = [];
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+          };
+          mediaRecorder.onstop = async () => {
+            const blob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+            if (mediaStream) {
+              mediaStream.getTracks().forEach((trk) => trk.stop());
+              mediaStream = null;
+            }
+            const dataUrl = await blobToDataUrl(blob);
+            const dur = Math.max(0.5, (Date.now() - recordStartSec) / 1000);
+            await addRecordedAudioClip(dataUrl, dur);
+          };
+          mediaRecorder.start();
+          isRecording = true;
+          updateRecordUI(true);
+        } catch (err) {
+          alert('Impossible d\'acceder au microphone : ' + err.message);
+        }
+      } else {
+        alert('Enregistrement microphone non supporte par ce navigateur.');
+      }
+    } else {
+      // Arret de l'enregistrement
+      isRecording = false;
+      updateRecordUI(false);
+      if (typeof window !== 'undefined' && typeof window.__pfMockMediaRecord === 'function') {
+        const mockResult = await window.__pfMockMediaRecord();
+        await addRecordedAudioClip(mockResult.dataUrl || mockResult, mockResult.duration || 2.0);
+        return;
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+    }
+  };
+
+  // Crochet de simulation pour tests unitaires et Playwright
+  if (typeof window !== 'undefined') {
+    window.__pfSimulateMicRecord = async (wavBlobOrBuffer, durationSec = 2.0) => {
+      let dataUrl = '';
+      let dur = durationSec;
+      if (wavBlobOrBuffer && typeof wavBlobOrBuffer.getChannelData === 'function') {
+        dataUrl = audioBufferToDataUrl(wavBlobOrBuffer);
+        dur = wavBlobOrBuffer.duration || durationSec;
+      } else if (wavBlobOrBuffer instanceof Blob) {
+        dataUrl = await blobToDataUrl(wavBlobOrBuffer);
+      } else if (typeof wavBlobOrBuffer === 'string') {
+        dataUrl = wavBlobOrBuffer;
+      } else {
+        const dummyData = new Float32Array(44100);
+        const dummyBuf = {
+          numberOfChannels: 1,
+          sampleRate: 44100,
+          length: 44100,
+          duration: 1.0,
+          getChannelData: () => dummyData
+        };
+        dataUrl = audioBufferToDataUrl(dummyBuf);
+        dur = 1.0;
+      }
+      return addRecordedAudioClip(dataUrl, dur);
+    };
+    cleanups.push(() => { delete window.__pfSimulateMicRecord; });
+  }
+
+  toolbar.appendChild(btnMicRecord);
+
   // Bouton Import MIDI
   const fileInput = document.createElement('input');
   fileInput.type = 'file';
@@ -110,7 +297,7 @@ export function renderMixer(container, opts) {
   root.appendChild(fileInput);
 
   const btnImportMidi = document.createElement('button');
-  btnImportMidi.className = 'pf-btn-add-channel';
+  btnImportMidi.className = 'pf-btn-add-channel pf-btn-import-midi';
   btnImportMidi.innerHTML = getIconSvg('import', 13) + ' Importer un fichier MIDI (.mid)';
   btnImportMidi.title = 'Convertir un fichier Standard MIDI en morceaux chiptune PixelForge';
   btnImportMidi.onclick = () => fileInput.click();
@@ -128,11 +315,12 @@ export function renderMixer(container, opts) {
   const fxPanel = document.createElement('div');
   fxPanel.className = 'pf-mixer-fx-panel';
 
-  const rawTracks = (song.tracks && song.tracks.length > 0) ? song.tracks : (song.channels || []);
-  let selectedTrackId = initialSelectedId || rawTracks[0]?.id || 'master';
+  const trackMeterFills = new Map();
+  let masterMeterFill = null;
 
   function renderStrips() {
     stripsContainer.innerHTML = '';
+    trackMeterFills.clear();
 
     // Tranche Master
     const masterStrip = document.createElement('div');
@@ -150,9 +338,9 @@ export function renderMixer(container, opts) {
 
     const masterMeter = document.createElement('div');
     masterMeter.className = 'pf-strip-meter';
-    const masterMeterFill = document.createElement('div');
+    masterMeterFill = document.createElement('div');
     masterMeterFill.className = 'pf-meter-fill';
-    masterMeterFill.style.height = '60%';
+    masterMeterFill.style.height = '0%';
     masterMeter.appendChild(masterMeterFill);
     masterStrip.appendChild(masterMeter);
 
@@ -235,6 +423,46 @@ export function renderMixer(container, opts) {
       panRow.appendChild(panSlider);
       strip.appendChild(panRow);
 
+      // Selecteur de routage vers bus de sortie (Master ou sous-bus)
+      const busRow = document.createElement('div');
+      busRow.className = 'pf-strip-bus-row';
+      busRow.style.width = '100%';
+      busRow.style.fontSize = '9px';
+      busRow.style.color = '#717791';
+
+      const busSelect = document.createElement('select');
+      busSelect.className = 'pf-strip-bus-select';
+      busSelect.style.width = '100%';
+      busSelect.style.background = '#0d0f18';
+      busSelect.style.color = '#94b0c2';
+      busSelect.style.border = '1px solid #23273c';
+      busSelect.style.borderRadius = '3px';
+      busSelect.style.fontSize = '9px';
+      busSelect.title = 'Routage de sortie : envoyer vers le Master ou vers une autre piste (sous-bus)';
+      busSelect.onclick = (e) => e.stopPropagation();
+
+      const optMaster = document.createElement('option');
+      optMaster.value = 'master';
+      optMaster.textContent = '-> Master';
+      optMaster.selected = !ch.outputBusId || ch.outputBusId === 'master';
+      busSelect.appendChild(optMaster);
+
+      rawTracks.forEach((otherTrk) => {
+        if (otherTrk.id !== ch.id) {
+          const optBus = document.createElement('option');
+          optBus.value = otherTrk.id;
+          optBus.textContent = '-> ' + (otherTrk.name || otherTrk.id);
+          optBus.selected = ch.outputBusId === otherTrk.id;
+          busSelect.appendChild(optBus);
+        }
+      });
+
+      busSelect.onchange = (e) => {
+        onChannelChange?.(ch.id, { outputBusId: e.target.value });
+      };
+      busRow.appendChild(busSelect);
+      strip.appendChild(busRow);
+
       // Pastilles effets
       const fxCount = (ch.effects || []).length;
       if (fxCount > 0) {
@@ -250,10 +478,10 @@ export function renderMixer(container, opts) {
       meter.className = 'pf-strip-meter';
       const meterFill = document.createElement('div');
       meterFill.className = 'pf-meter-fill';
-      const volPct = Math.round((ch.volume != null ? ch.volume : 0.8) * 80);
-      meterFill.style.height = (ch.mute ? 0 : volPct) + '%';
+      meterFill.style.height = '0%';
       meter.appendChild(meterFill);
       strip.appendChild(meter);
+      trackMeterFills.set(ch.id, meterFill);
 
       // Fader vertical de volume
       const sliderWrap = document.createElement('div');
@@ -282,6 +510,27 @@ export function renderMixer(container, opts) {
       stripsContainer.appendChild(strip);
     });
   }
+
+  // Animation temps-reel des vumetres pendant la lecture
+  const meterInterval = setInterval(() => {
+    if (!chip || typeof chip.getTrackLevel !== 'function') return;
+    const mLevel = chip.getTrackLevel('master');
+    if (masterMeterFill) {
+      masterMeterFill.style.height = Math.round(mLevel * 100) + '%';
+    }
+    rawTracks.forEach((t) => {
+      const fill = trackMeterFills.get(t.id);
+      if (fill) {
+        if (t.mute) {
+          fill.style.height = '0%';
+        } else {
+          const lvl = chip.getTrackLevel(t.id);
+          fill.style.height = Math.round(lvl * 100) + '%';
+        }
+      }
+    });
+  }, 50);
+  cleanups.push(() => clearInterval(meterInterval));
 
   function renderFxRack() {
     fxPanel.innerHTML = '';

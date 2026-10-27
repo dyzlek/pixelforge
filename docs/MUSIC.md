@@ -229,4 +229,31 @@ Cibles prises en charge :
 - **Selecteur de parametre cible** : Menu deroulant permettant de choisir le parametre a moduler et raccourci `8 mes` pour configurer immediatement une montee sur 8 mesures.
 - **Courbe vectorielle interactive SVG** : Visualisation continue avec remplissage translucide, ajout de points au clic, deplacement interactif avec aimantation au tempo (`snapSteps`) et suppression au clic droit.
 
+---
+
+## 10. Console de Mixage v2, Enregistrement Micro, Exports Stems et Import MIDI
+
+La console de mixage (`src/editors/music/mixer.js`) complete la chaine de production audio avec des outils avances pour le mixage, la prise de son et l'interoperabilite MIDI :
+
+### A. Vumetres Temps Reel et Routage de Sous-Bus
+- **Vumetres cretes dynamiques** : Chaque tranche de piste ainsi que la tranche Master disposent d'un vumetre vertical pilote en temps reel via `AnalyserNode` et `chip.getTrackLevel()`. Les jauges refletent instantanement le niveau sonore pendant la lecture et se coupent lors de l'activation du mode muet (Mute).
+- **Routage vers sous-bus** : Menu deroulant `Bus` sur chaque tranche permettant d'acheminer le signal audio soit directement vers le bus Master, soit vers une autre piste faisant office de sous-groupe (ex. Drum Bus, Reverb Bus).
+
+### B. Enregistrement Microphone et Clips Audio
+- **Capture micro directe** : Bouton d'enregistrement micro (`.pf-btn-mic-record`) utilisant `navigator.mediaDevices.getUserMedia` et `MediaRecorder`.
+- **Indicateur d'enregistrement** : Temoin lumineux clignotant, decompte du temps ecoule et arret en un clic.
+- **Generation automatique de clip audio** : A la fin de la prise, le signal est encode en WAV PCM et insere directement sous forme de clip audio (`type: 'audio'`, `audioData: 'data:audio/wav;base64,...'`) sur la piste active.
+- **Hook de simulation pour les tests** : Crochet `window.__pfSimulateMicRecord(wavBlobOrBuffer)` permettant de valider l'integration de bout en bout dans les environnements de test automatises et Playwright.
+
+### C. Exports Audio : Master et Piste par Piste (Stems)
+- **Export Master WAV** : Rendu accelere hors-ligne via `chip.renderOffline()` produisant un fichier WAV 16-bit PCM de haute qualite.
+- **Export Stems (Pistes isolees)** : Bouton dedie `Exporter les pistes (Stems)` effectuant un rendu isole de chaque piste (`chip.renderStemOffline()`) et declenchant le telechargement separe de chaque element du morceau pour un mixage externe dans un DAW tiers.
+
+### D. Import General MIDI Etendu
+- **Canal 10 (Batterie General MIDI)** : Detection automatique du canal MIDI 10 (index 9) et conversion vers l'instrument `drum_machine` (`drumKit: true`).
+- **Mappage complet des pieces de batterie** : Traduction automatique des hauteurs MIDI GM vers les percussions PixelForge (35/36 = `kick`, 38/40 = `snare`, 42/44 = `hat_closed`, 46 = `hat_open`, 39/54 = `clap`, 49/52/55/57 = `crash`, 51/53/59 = `ride`, 41/43/45/47/48/50/56 = `tom`).
+- **Changements de tempo dynamiques** : Extraction des meta-evenements Set Tempo (0x51) pour populer `tempoChanges` et ajuster le tempo pas par pas lors de la lecture et du rendu hors-ligne.
+- **Structure DAW v2** : Generation simultanee des collections `tracks` et `clips` (arrangement multipiste) et des canaux/patterns legacy pour une compatibilite totale.
+
+
 

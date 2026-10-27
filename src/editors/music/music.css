@@ -1043,6 +1043,36 @@
   background: var(--bg-surface, #141724);
   border-bottom: 1px solid var(--border, #262a3f);
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.pf-btn-mic-record.recording {
+  background: #b13e53 !important;
+  color: #fff !important;
+  border-color: #ef7d57 !important;
+  animation: pf-pulse-record 1s infinite;
+}
+
+@keyframes pf-pulse-record {
+  0% { box-shadow: 0 0 0 0 rgba(177, 62, 83, 0.7); }
+  70% { box-shadow: 0 0 0 6px rgba(177, 62, 83, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(177, 62, 83, 0); }
+}
+
+.pf-strip-bus-row {
+  display: flex;
+  width: 100%;
+}
+
+.pf-strip-bus-select {
+  width: 100%;
+  background: #0d0f18;
+  color: #94b0c2;
+  border: 1px solid #23273c;
+  border-radius: 3px;
+  font-size: 9px;
+  padding: 2px;
+  cursor: pointer;
 }
 
 .pf-mixer-body {
