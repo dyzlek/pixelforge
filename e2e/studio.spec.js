@@ -376,4 +376,57 @@ test.describe('PixelForge Studio E2E Tests', () => {
     expect(result.songTextLength).toBeGreaterThan(0);
     expect(result.summaryLength).toBeGreaterThan(50);
   });
+
+  test("panneau assistant IA : activation, boutons d'annulation et historique atomique", async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir un jeu pour avoir un projet actif avec historique
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('exemple-plateforme-qiqv');
+    });
+    await expect(page.locator('#project-name')).toHaveValue(/Plateforme/i);
+
+    // 2. Activation du panneau Assistant IA
+    await page.evaluate(() => {
+      window.__pfDock.activatePanel('ai-assistant');
+    });
+
+    const panelEl = page.locator('.pf-ai-panel');
+    await expect(panelEl).toBeVisible();
+
+    const undoBtn = page.locator('#ai-undo-btn');
+    const redoBtn = page.locator('#ai-redo-btn');
+    const sendBtn = page.locator('#ai-send-btn');
+    const promptInput = page.locator('#ai-prompt-input');
+
+    await expect(undoBtn).toBeVisible();
+    await expect(redoBtn).toBeVisible();
+    await expect(sendBtn).toBeVisible();
+    await expect(promptInput).toBeVisible();
+
+    // 2. Verification de l'etat initial des boutons d'historique
+    await expect(undoBtn).toBeDisabled();
+    await expect(redoBtn).toBeDisabled();
+
+    // 3. Simulation d'une action atomique via le store
+    await page.evaluate(() => {
+      window.__pfStore.update((p) => {
+        p.name = 'Test Studio IA';
+      }, 'ai-agent');
+    });
+
+    await expect(undoBtn).toBeEnabled();
+
+    // 4. Annulation par le bouton Annuler
+    await undoBtn.click();
+    const revertedName = await page.evaluate(() => window.__pfStore.project.name);
+    expect(revertedName).not.toBe('Test Studio IA');
+
+    // 5. Retablissement par le bouton Refaire
+    await expect(redoBtn).toBeEnabled();
+    await redoBtn.click();
+    const redoneName = await page.evaluate(() => window.__pfStore.project.name);
+    expect(redoneName).toBe('Test Studio IA');
+  });
 });

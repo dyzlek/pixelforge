@@ -6,7 +6,7 @@ import assert from 'node:assert';
 import { extractCodeBlocks } from '../client.js';
 import { buildSystemPrompt, PIXELFORGE_SCRIPT_API, BLUEPRINT_SCHEMA_GUIDE } from '../knowledge.js';
 import { GAMEDESIGN_PRINCIPLES, SCRIPT_TEMPLATES } from '../gamedesign.js';
-import { AGENT_TOOLS, parseJsonPlan, executeTool, executePlan, buildAgentSystemPrompt } from '../agent.js';
+import { AGENT_TOOLS, parseJsonPlan, executeTool, executePlan, buildAgentSystemPrompt, runAgent } from '../agent.js';
 import { createEmptyProject, createMap, normalizeProject } from '../../core/project.js';
 
 console.log('=== Tests Assistant IA & Game Design ===');
@@ -256,5 +256,31 @@ assert.ok(agentPrompt.includes('PixelForge Studio'), 'System prompt agent doit m
 assert.ok(agentPrompt.includes('upsert_sprite'), 'System prompt agent doit mentionner les outils');
 const emojiAgentRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
 assert.ok(!emojiAgentRegex.test(agentPrompt), 'System prompt agent ne doit contenir aucun emoji');
+
+// 9. Verification de l'interruption (signal d'arret) sans laisser le projet a moitie modifie
+const abortProj = createEmptyProject();
+abortProj.maps = [createMap('Main', 20, 10, 16)];
+const storeAbort = createMockStore(abortProj);
+
+const ac = new AbortController();
+ac.abort(); // Interrompu des le demarrage
+
+try {
+  await runAgent({
+    project: storeAbort.project,
+    prompt: 'Cree une piece et place-en 5 sur la carte',
+    store: storeAbort,
+    signal: ac.signal,
+  });
+  assert.fail('Une interruption aurait du arreter l\'execution');
+} catch (err) {
+  assert.ok(err.message.includes('annulee'), 'L\'erreur doit mentionner l\'annulation');
+}
+
+// Verification que le store n'a JAMAIS ete modifie (zero entree d'annulation, zero ressource parasite)
+assert.strictEqual(storeAbort.undoStack.length, 0, 'Aucune modification ne doit etre validee en cas d\'arret');
+assert.strictEqual(storeAbort.project.sprites.length, 0, 'Aucun sprite ne doit persister en cas d\'arret');
+assert.strictEqual(storeAbort.project.objects.length, 0, 'Aucun objet ne doit persister en cas d\'arret');
+assert.strictEqual(storeAbort.project.maps[0].entities.length, 0, 'Aucune entite ne doit persister en cas d\'arret');
 
 console.log('Tous les tests Assistant IA & Game Design sont valides !');
