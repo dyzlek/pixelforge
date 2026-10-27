@@ -49,6 +49,12 @@ export const dock = new DockManager({
     workspace.open({ kind: 'play', title: 'Jouer' });
   },
   onPlayCurrent: () => {
+    if (store.ui?.editorCamera3D) {
+      store.ui.playFromCamera = { ...store.ui.editorCamera3D };
+      if (store.ui.editorCamera3D.sceneId) {
+        store.ui.playScene3DId = store.ui.editorCamera3D.sceneId;
+      }
+    }
     workspace.open({ kind: 'play', title: 'Jouer' });
   },
   onStop: () => {
@@ -75,6 +81,12 @@ dock.mount(appEl);
 
 // Bouton « Tester la scene » des editeurs (la scene a lancer est dans store.ui)
 window.addEventListener('pixelforge:play', () => dock.triggerPlayCurrent());
+window.addEventListener('pixelforge:play-from-camera', (e) => {
+  if (e.detail?.spawnPlayerPosition) {
+    store.ui.spawnPlayerPosition = e.detail.spawnPlayerPosition;
+  }
+  dock.triggerPlayCurrent();
+});
 
 // Structure de la zone centrale
 const centerBody = dock.getAreaBody('center');

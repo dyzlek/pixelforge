@@ -24,6 +24,10 @@ export function mount(container, store) {
         <label>Carte <select data-role="run-map">${mapOptions(s.startMapId)}</select></label>
         <button data-act="fullscreen">Plein écran</button>
         <span class="play-sep"></span>
+        <button data-act="toggle-pause" class="pf-dock-btn" title="Pause / Reprendre (P)">Pause</button>
+        <button data-act="step-frame" class="pf-dock-btn" title="Image par image (O)">Image</button>
+        <button data-act="toggle-colliders" class="pf-dock-btn" title="Boites de collision (F9)">Colliders</button>
+        <span class="play-sep"></span>
         <label>Largeur <input type="number" data-set="width" min="64" max="1920" step="16" value="${s.width}"></label>
         <label>Hauteur <input type="number" data-set="height" min="64" max="1080" step="9" value="${s.height}"></label>
         <label>Gravité <input type="number" data-set="gravity" min="0" max="5000" step="50" value="${s.gravity}"></label>
@@ -97,12 +101,18 @@ export function mount(container, store) {
         // Scene demandee par l'editeur de scene 3D (« Tester la scene »), une seule fois
         const startScene3DId = store.ui.playScene3DId || null;
         store.ui.playScene3DId = null;
+        const playFromCamera = store.ui.playFromCamera || null;
+        store.ui.playFromCamera = null;
+        const spawnPlayerPosition = store.ui.spawnPlayerPosition || null;
+        store.ui.spawnPlayerPosition = null;
         state.game = createGame3D(structuredClone(store.project), screen, THREE, {
           onLog: addLog,
           createChipAudio,
           startScene3DId,
           GLTFLoader,
           rapier: RAPIER,
+          playFromCamera,
+          spawnPlayerPosition,
         });
       } catch (e) {
         addLog('Impossible de lancer le jeu 3D : ' + e.message, 'error');
@@ -139,6 +149,22 @@ export function mount(container, store) {
       const el = $('.play-stage');
       if (document.fullscreenElement) document.exitFullscreen();
       else el.requestFullscreen?.().catch((err) => addLog('Plein écran impossible : ' + err.message, 'warn'));
+    } else if (act === 'toggle-pause') {
+      const btn = $('[data-act="toggle-pause"]');
+      if (state.game?.isPaused?.()) {
+        state.game.resume();
+        btn.textContent = 'Pause';
+      } else {
+        state.game?.pause?.();
+        btn.textContent = 'Reprendre';
+      }
+    } else if (act === 'step-frame') {
+      state.game?.stepFrame?.();
+      const btn = $('[data-act="toggle-pause"]');
+      if (btn) btn.textContent = 'Reprendre';
+    } else if (act === 'toggle-colliders') {
+      const shown = state.game?.setDebugColliders?.();
+      $('[data-act="toggle-colliders"]')?.classList.toggle('active', !!shown);
     }
   });
 
@@ -166,9 +192,34 @@ export function mount(container, store) {
     fpsEl.textContent = g && g.loop ? '· ' + Math.round(g.loop.actualFps) + ' FPS' : '';
   }, 500);
 
+  const onGlobalKey = (e) => {
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (e.key === 'p' || e.key === 'P') {
+      const btn = $('[data-act="toggle-pause"]');
+      if (state.game?.isPaused?.()) {
+        state.game.resume();
+        if (btn) btn.textContent = 'Pause';
+      } else {
+        state.game?.pause?.();
+        if (btn) btn.textContent = 'Reprendre';
+      }
+    } else if (e.key === 'o' || e.key === 'O') {
+      state.game?.stepFrame?.();
+      const btn = $('[data-act="toggle-pause"]');
+      if (btn) btn.textContent = 'Reprendre';
+    } else if (e.key === 'F9') {
+      e.preventDefault();
+      const shown = state.game?.setDebugColliders?.();
+      $('[data-act="toggle-colliders"]')?.classList.toggle('active', !!shown);
+    }
+  };
+  window.addEventListener('keydown', onGlobalKey);
+  state.offs.push(() => window.removeEventListener('keydown', onGlobalKey));
+
   addLog('Jeu lancé. Flèches / Q D pour bouger, Espace pour sauter (selon les scripts).', 'sys');
   start();
-  return { dispose: unmount }; // onglet unique (play:main) : l'état de module suffit
+  return { dispose: () => { state.offs.forEach((fn) => fn()); unmount(); } }; // onglet unique (play:main) : l'état de module suffit
 }
 
 export function unmount() {
@@ -195,4 +246,8 @@ export function getDebugSnapshot() {
 
 if (typeof globalThis !== 'undefined') {
   globalThis.__pfDebugSnapshot = getDebugSnapshot;
+  globalThis.__pfPlayPause = () => ctx?.game?.pause?.();
+  globalThis.__pfPlayResume = () => ctx?.game?.resume?.();
+  globalThis.__pfPlayStep = () => ctx?.game?.stepFrame?.();
+  globalThis.__pfPlayToggleColliders = (val) => ctx?.game?.setDebugColliders?.(val);
 }

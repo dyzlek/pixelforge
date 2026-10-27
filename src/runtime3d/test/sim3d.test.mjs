@@ -62,7 +62,7 @@ class Color {
   }
 }
 class Obj3D {
-  constructor() { this.position = new Vec3(); this.rotation = new Vec3(); this.children = []; }
+  constructor() { this.position = new Vec3(); this.rotation = new Vec3(); this.scale = new Vec3(1, 1, 1); this.children = []; }
   add(c) { this.children.push(c); }
   remove(c) { this.children = this.children.filter((x) => x !== c); }
   lookAt() {}
@@ -81,6 +81,7 @@ const THREE = {
   DirectionalLight: class extends Obj3D { constructor() { super(); this.color = new Color('#ffffff'); this.intensity = 1; this.shadow = { mapSize: {}, camera: {} }; } },
   BoxGeometry: class { dispose() {} },
   MeshLambertMaterial: class { constructor(o) { this.opts = o; } dispose() {} },
+  MeshBasicMaterial: class { constructor(o) { this.opts = o; } dispose() {} },
   Mesh: class extends Obj3D { constructor(g, m) { super(); this.geometry = g; this.material = m; } },
   BufferGeometry: class { constructor() { this.attributes = {}; } setAttribute(n, a) { this.attributes[n] = a; } dispose() {} },
   Float32BufferAttribute: class { constructor(arr, size) { this.array = arr; this.itemSize = size; this.count = arr.length / size; } },
@@ -480,6 +481,126 @@ if (RAPIER) {
   assert.ok(Math.abs(player.y - 3.95) < 0.2, `le joueur est atterri et repose sur le pic a Y=3 (y = ${player.y})`);
   assert.strictEqual(player.onGround, true, 'le joueur est detecte au sol sur le pic sculpte par Rapier');
   game.destroy();
+}
+
+// 8. Jouer depuis la camera de l editeur et debogage 3D (Issue #77)
+{
+  const project = normalizeProject({
+    name: 'DebugCamera3D',
+    settings: { dimension: '3d' },
+    objects: [
+      {
+        id: 'o_hero',
+        name: 'Player',
+        physics: { enabled: true, gravity: false },
+        script: {
+          code: `
+            on('update', () => {
+              if (game.vars.moving) {
+                self.x += 1;
+              }
+            });
+          `,
+        },
+      },
+      {
+        id: 'o_box',
+        name: 'Crate',
+        physics: { enabled: false },
+      },
+    ],
+    scenes3d: [
+      {
+        id: 's_debug',
+        name: 'DebugLevel',
+        gridmap: {
+          '0': { '0,0': 4, '1,0': 4 },
+        },
+        nodes: [
+          { id: 'n_hero', name: 'Player', kind: 'mesh', objectId: 'o_hero', position: [0, 0, 0] },
+          { id: 'n_box', name: 'Crate', kind: 'mesh', objectId: 'o_box', position: [5, 1, 5] },
+        ],
+      },
+    ],
+  });
+
+  // 8.1 Jouer depuis la camera (playFromCamera)
+  {
+    const { game, step } = startGame(project, {
+      playFromCamera: {
+        position: [12, 8, 12],
+        target: [10, 2, 10],
+      },
+    });
+    const snap = game.debugSnapshot();
+    const hero = snap.instances.find((i) => i.name === 'Player');
+    assert.ok(hero, 'Hero present');
+    assert.strictEqual(hero.x, 10, 'hero repositionne au target de la camera');
+    assert.strictEqual(hero.y, 3, 'hero positionne au dessus du target');
+    assert.strictEqual(hero.z, 10, 'hero coordonnee Z ajustee');
+    game.destroy();
+  }
+
+  // 8.2 Placement direct (spawnPlayerPosition)
+  {
+    const { game } = startGame(project, {
+      spawnPlayerPosition: [4, 7, -2],
+    });
+    const snap = game.debugSnapshot();
+    const hero = snap.instances.find((i) => i.name === 'Player');
+    assert.strictEqual(hero.x, 4);
+    assert.strictEqual(hero.y, 7);
+    assert.strictEqual(hero.z, -2);
+    game.destroy();
+  }
+
+  // 8.3 Pause, Pas-a-pas et Colliders debogage
+  {
+    const { game, step } = startGame(project);
+    game.game.vars.moving = true;
+    assert.strictEqual(game.isPaused(), false, 'le jeu demarre en execution');
+    assert.strictEqual(game.hasDebugColliders(), false, 'colliders desactives par defaut');
+
+    // Activation des colliders
+    const toggled = game.setDebugColliders(true);
+    assert.strictEqual(toggled, true);
+    assert.strictEqual(game.hasDebugColliders(), true);
+
+    const snapColl = game.debugSnapshot();
+    assert.strictEqual(snapColl.debugColliders, true, 'snapshot reflete debugColliders');
+
+    // Pause du jeu
+    game.pause();
+    assert.strictEqual(game.isPaused(), true, 'le jeu est mis en pause');
+    const snapPaused = game.debugSnapshot();
+    assert.strictEqual(snapPaused.isPaused, true, 'snapshot reflete isPaused');
+
+    const heroBefore = snapPaused.instances.find((i) => i.name === 'Player');
+    const xBefore = heroBefore.x;
+
+    // Pendant la pause, step() ne doit pas avancer la simulation automatique
+    step(5);
+    const snapDuringPause = game.debugSnapshot();
+    const heroDuring = snapDuringPause.instances.find((i) => i.name === 'Player');
+    assert.strictEqual(heroDuring.x, xBefore, 'la physique est figee en pause');
+
+    // stepFrame avance manuellement d une image
+    game.stepFrame();
+    const snapAfterStep = game.debugSnapshot();
+    const heroAfterStep = snapAfterStep.instances.find((i) => i.name === 'Player');
+    assert.strictEqual(heroAfterStep.x, xBefore + 1, 'stepFrame a avance d une image');
+    assert.strictEqual(game.isPaused(), true, 'le jeu reste en pause apres stepFrame');
+
+    // Reprise
+    game.resume();
+    assert.strictEqual(game.isPaused(), false, 'le jeu a repris');
+    step(2);
+    const snapResumed = game.debugSnapshot();
+    const heroResumed = snapResumed.instances.find((i) => i.name === 'Player');
+    assert.ok(heroResumed.x > heroAfterStep.x, 'le jeu continue de s executer normalement');
+
+    game.destroy();
+  }
 }
 
 assert.deepStrictEqual(logs.filter((l) => l.startsWith('[error]')), [], 'aucune erreur de script');

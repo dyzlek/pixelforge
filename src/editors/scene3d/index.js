@@ -67,6 +67,7 @@ export function mount(container, store, { refId } = {}) {
         <button class="pf-scene3d-btn" data-tool="erase" title="Gomme (Supprimer le bloc clique)">Gomme bloc</button>
         <button class="pf-scene3d-btn" data-tool="entity" title="Poser une instance d'objet 3D">Poser entite</button>
         <button class="pf-scene3d-btn" data-tool="select" title="Selectionner / manipuler les objets (W/E/R)">Selectionner</button>
+        <button class="pf-scene3d-btn" data-tool="spawn-play" title="Cliquer pour placer le joueur n'importe ou et jouer immediatement">Placer &amp; Jouer</button>
         <span style="width:1px;height:18px;background:var(--border);margin:0 4px;"></span>
         <button class="pf-scene3d-btn" data-tool="terrain-raise" title="Monter le terrain (sculpture)">Monter terrain</button>
         <button class="pf-scene3d-btn" data-tool="terrain-lower" title="Creuser le terrain (sculpture)">Creuser terrain</button>
@@ -101,6 +102,7 @@ export function mount(container, store, { refId } = {}) {
       </div>
 
       <div style="display:flex;align-items:center;gap:6px;">
+        <button class="pf-scene3d-btn" id="pf-s3d-play-cam-btn" title="Jouer depuis la vue de la camera (F6)">Vue (F6)</button>
         <button class="pf-scene3d-btn primary" id="pf-s3d-play-btn" title="Tester cette scene (F6)">${getIconSvg('playScene', 12)} Tester la scene (F6)</button>
         <span id="pf-s3d-stats" style="font-size:11px;color:var(--fg-2);">0 blocs</span>
       </div>
@@ -237,6 +239,21 @@ export function mount(container, store, { refId } = {}) {
     store.ui.playScene3DId = sceneData.id;
     window.dispatchEvent(new CustomEvent('pixelforge:play'));
   };
+
+  const playCamBtn = container.querySelector('#pf-s3d-play-cam-btn');
+  if (playCamBtn) {
+    playCamBtn.onclick = () => {
+      store.ui.playScene3DId = sceneData.id;
+      if (camera) {
+        store.ui.editorCamera3D = {
+          position: [camera.position.x, camera.position.y, camera.position.z],
+          target: [camTarget.x, camTarget.y, camTarget.z],
+          sceneId: sceneData.id,
+        };
+      }
+      window.dispatchEvent(new CustomEvent('pixelforge:play-from-camera'));
+    };
+  }
 
   // Toute modification passe par store.update (Ctrl+Z)
   function commit(mutate) {
@@ -928,6 +945,14 @@ export function mount(container, store, { refId } = {}) {
         }
       }
 
+      if (store.ui && camera) {
+        store.ui.editorCamera3D = {
+          position: [camera.position.x, camera.position.y, camera.position.z],
+          target: [camTarget.x, camTarget.y, camTarget.z],
+          sceneId: sceneData?.id || null,
+        };
+      }
+
       renderer.render(scene, camera);
     };
     renderLoop();
@@ -1292,12 +1317,12 @@ export function mount(container, store, { refId } = {}) {
     if (hitBlock) {
       const norm = hitBlock.face?.normal || new ThreeLib.Vector3(0, 1, 0);
       const pos = hitBlock.object.position.clone();
-      if (activeTool === 'block') {
+      if (activeTool === 'block' || activeTool === 'spawn-play') {
         pos.add(norm);
       }
       cursorBox.position.copy(pos);
       cursorBox.visible = true;
-    } else if (hitGrid && activeTool === 'block') {
+    } else if (hitGrid && (activeTool === 'block' || activeTool === 'spawn-play')) {
       const gx = Math.round(hitGrid.x);
       const gz = Math.round(hitGrid.z);
       cursorBox.position.set(gx, activeLevel, gz);
@@ -1343,6 +1368,29 @@ export function mount(container, store, { refId } = {}) {
         rebuildEntities();
         updateGizmoAttachment();
       }
+      return;
+    }
+
+    if (activeTool === 'spawn-play') {
+      let sx = 0, sy = activeLevel, sz = 0;
+      if (hitBlock) {
+        const norm = hitBlock.face?.normal || new ThreeLib.Vector3(0, 1, 0);
+        sx = hitBlock.object.position.x + norm.x;
+        sy = hitBlock.object.position.y + norm.y;
+        sz = hitBlock.object.position.z + norm.z;
+      } else if (hitGrid) {
+        sx = Math.round(hitGrid.x);
+        sy = activeLevel;
+        sz = Math.round(hitGrid.z);
+      } else if (hitEntity) {
+        sx = hitEntity.position[0];
+        sy = hitEntity.position[1] + 1;
+        sz = hitEntity.position[2];
+      }
+      store.ui.playScene3DId = sceneData.id;
+      window.dispatchEvent(new CustomEvent('pixelforge:play-from-camera', {
+        detail: { spawnPlayerPosition: [sx, sy, sz] },
+      }));
       return;
     }
 
