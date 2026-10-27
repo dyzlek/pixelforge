@@ -511,6 +511,25 @@ export function mount(container, store, { refId = null } = {}) {
       activePatternId,
       currentStep,
       selectedChannelId,
+      onAudition(ch) {
+        if (!sharedChipAudio) return;
+        const instType = typeof ch.instrument === 'string' ? ch.instrument : (ch.instrument?.type || 'pulse50');
+        const presetKey = ch.preset || ch.instrument?.preset;
+        if (presetKey && sharedChipAudio.previewPreset) {
+          sharedChipAudio.previewPreset(presetKey, ch.defaultPitch || 'C4');
+        } else {
+          sharedChipAudio.scheduleNote({
+            time: sharedAudioCtx.currentTime,
+            duration: 0.35,
+            instrument: instType,
+            preset: presetKey,
+            params: ch.params || ch.instrument?.params,
+            pitch: ch.defaultPitch || 'C4',
+            volume: (ch.volume != null ? ch.volume : 0.8) * 0.85,
+            drumKit: ch.drumKit
+          });
+        }
+      },
       onChannelSelect(chId) {
         selectedChannelId = chId;
         setView('pianoroll');
@@ -559,10 +578,14 @@ export function mount(container, store, { refId = null } = {}) {
         if (active && sharedChipAudio) {
           const ch = (song.channels || []).find((c) => c.id === chId);
           if (ch) {
+            const instType = typeof ch.instrument === 'string' ? ch.instrument : (ch.instrument?.type || 'pulse50');
+            const presetKey = ch.preset || ch.instrument?.preset;
             sharedChipAudio.scheduleNote({
               time: sharedAudioCtx.currentTime,
               duration: 0.1,
-              instrument: ch.instrument,
+              instrument: instType,
+              preset: presetKey,
+              params: ch.params || ch.instrument?.params,
               pitch: pitch || ch.defaultPitch || 'C4',
               volume: (ch.volume != null ? ch.volume : 0.8) * 0.7,
               drumKit: ch.drumKit
@@ -579,7 +602,7 @@ export function mount(container, store, { refId = null } = {}) {
         }, 'song:channel_patch');
         render();
       },
-      onAddChannel(instrument, name) {
+      onAddChannel(instrument, name, extra = {}) {
         const newId = uid();
         const ch = {
           id: newId,
@@ -589,9 +612,10 @@ export function mount(container, store, { refId = null } = {}) {
           pan: 0,
           mute: false,
           solo: false,
-          env: { a: 0.005, d: 0.08, s: 0.6, r: 0.05 }
+          env: { a: 0.005, d: 0.08, s: 0.6, r: 0.05 },
+          ...extra
         };
-        if (instrument === 'noise') ch.drumKit = true;
+        if (instrument === 'noise' || instrument === 'drum_machine') ch.drumKit = true;
 
         store.update((p) => {
           const curSong = (p.songs || []).find((s) => s.id === song.id);

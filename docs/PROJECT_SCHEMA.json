@@ -281,7 +281,7 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "instrument": {
-          "enum": ["pulse12", "pulse25", "pulse50", "triangle", "saw", "noise", "wave", "sample"]
+          "enum": ["pulse12", "pulse25", "pulse50", "triangle", "saw", "noise", "wave", "sample", "synth_sub", "synth_fm", "sampler", "drum_machine"]
         },
         "volume": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.8 },
         "pan": { "type": "number", "minimum": -1, "maximum": 1, "default": 0 },

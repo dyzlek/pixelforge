@@ -1,6 +1,7 @@
 // PixelForge Music Studio — Channel Rack (FL Studio style)
 import { getIconSvg } from '../../ui/icons.js';
 import { DRUM_PATTERNS } from '../../audio/presets/drums.js';
+import { INSTRUMENT_PRESETS } from '../../audio/chip.js';
 
 const DRUM_KIT_VOICES = [
   { id: 'kick', name: 'Grosse caisse (Kick)', pitch: 'C3' },
@@ -17,7 +18,11 @@ const INSTRUMENT_OPTIONS = [
   { id: 'triangle', name: 'Triangle (Basse NES)' },
   { id: 'saw', name: 'Dent de scie (Lead epique)' },
   { id: 'noise', name: 'Bruit LFSR (Batterie / Percussion)' },
-  { id: 'wave', name: 'Table d\'onde (SCC / Game Boy)' }
+  { id: 'wave', name: 'Table d\'onde (SCC / Game Boy)' },
+  { id: 'synth_sub', name: 'Synthe Soustractif (2 Osc + Filtre + LFO)' },
+  { id: 'synth_fm', name: 'Synthe FM 4 Operateurs (DX)' },
+  { id: 'drum_machine', name: 'Boite a Rythmes (Pads)' },
+  { id: 'sampler', name: 'Sampler Polyphonique' }
 ];
 
 export function renderChannelRack(container, opts) {
@@ -31,7 +36,8 @@ export function renderChannelRack(container, opts) {
     onDeleteChannel,
     onChannelSelect,
     selectedChannelId = null,
-    onApplyDrumPattern = null
+    onApplyDrumPattern = null,
+    onAudition = null
   } = opts;
 
   container.innerHTML = '';
@@ -114,26 +120,39 @@ export function renderChannelRack(container, opts) {
     btnSolo.title = 'Solo';
     btnSolo.onclick = (e) => { e.stopPropagation(); onChannelChange?.(ch.id, { solo: !ch.solo }); };
 
+    const btnAudition = document.createElement('button');
+    btnAudition.className = 'pf-transport-btn';
+    btnAudition.style.width = '20px';
+    btnAudition.style.height = '20px';
+    btnAudition.innerHTML = getIconSvg('play', 10);
+    btnAudition.title = 'Ecouter l\'instrument / prereglage (1-clic)';
+    btnAudition.onclick = (e) => {
+      e.stopPropagation();
+      onAudition?.(ch);
+    };
+
     const nameSpan = document.createElement('div');
     nameSpan.className = 'pf-channel-name';
     nameSpan.textContent = ch.name || 'Canal';
-    nameSpan.title = 'Cliquer pour selectionner';
+    const presetLabel = ch.preset && INSTRUMENT_PRESETS[ch.preset] ? ` [${INSTRUMENT_PRESETS[ch.preset].name}]` : '';
+    nameSpan.title = 'Cliquer pour selectionner' + (presetLabel ? ' - ' + presetLabel : '');
     nameSpan.onclick = () => onChannelSelect?.(ch.id);
 
     // Instrument selector
     const instBadge = document.createElement('select');
     instBadge.className = 'pf-channel-inst';
+    const currentInstId = typeof ch.instrument === 'string' ? ch.instrument : (ch.instrument?.type || 'pulse50');
     INSTRUMENT_OPTIONS.forEach((opt) => {
       const o = document.createElement('option');
       o.value = opt.id;
       o.textContent = opt.id;
-      o.selected = ch.instrument === opt.id;
+      o.selected = currentInstId === opt.id;
       instBadge.appendChild(o);
     });
     instBadge.onchange = (e) => {
       const newInst = e.target.value;
       const patch = { instrument: newInst };
-      if (newInst === 'noise' && ch.drumKit === undefined) patch.drumKit = true;
+      if ((newInst === 'noise' || newInst === 'drum_machine') && ch.drumKit === undefined) patch.drumKit = true;
       onChannelChange?.(ch.id, patch);
     };
 
@@ -167,21 +186,22 @@ export function renderChannelRack(container, opts) {
 
     info.appendChild(btnMute);
     info.appendChild(btnSolo);
+    info.appendChild(btnAudition);
     info.appendChild(nameSpan);
     info.appendChild(instBadge);
     info.appendChild(knobs);
     row.appendChild(info);
 
     // Pas du canal (si pas en drumKit expanse)
-    const isDrumKit = ch.instrument === 'noise' && ch.drumKit;
+    const isDrumKit = (currentInstId === 'noise' || currentInstId === 'drum_machine') && ch.drumKit;
     if (!isDrumKit) {
       const stepsDiv = document.createElement('div');
       stepsDiv.className = 'pf-rack-steps';
 
-      const instClass = ch.instrument.startsWith('pulse') ? 'inst-pulse'
-        : ch.instrument === 'triangle' ? 'inst-triangle'
-        : ch.instrument === 'saw' ? 'inst-saw'
-        : ch.instrument === 'noise' ? 'inst-noise' : '';
+      const instClass = currentInstId.startsWith('pulse') ? 'inst-pulse'
+        : currentInstId === 'triangle' ? 'inst-triangle'
+        : currentInstId === 'saw' ? 'inst-saw'
+        : (currentInstId === 'noise' || currentInstId === 'drum_machine') ? 'inst-noise' : '';
 
       for (let s = 0; s < patternLength; s++) {
         const btn = document.createElement('button');
@@ -278,22 +298,46 @@ export function renderChannelRack(container, opts) {
 
   const addMenu = document.createElement('select');
   addMenu.className = 'pf-btn-add-channel';
-  addMenu.innerHTML = '<option value="" disabled selected>+ Ajouter un canal chiptune...</option>'
-    + INSTRUMENT_OPTIONS.map((o) => `<option value="${o.id}">${o.name}</option>`).join('');
+  addMenu.innerHTML = '<option value="" disabled selected>+ Ajouter un canal ou prereglage...</option>'
+    + '<optgroup label="Prereglages d\'instruments (1-clic)">'
+    + Object.entries(INSTRUMENT_PRESETS).map(([k, p]) => `<option value="preset:${k}">${p.name} (${p.category})</option>`).join('')
+    + '</optgroup>'
+    + '<optgroup label="Instruments DAW">'
+    + '<option value="inst:synth_sub">Synthe Soustractif (2 Osc + Filtre + LFO)</option>'
+    + '<option value="inst:synth_fm">Synthe FM 4 Operateurs (DX)</option>'
+    + '<option value="inst:drum_machine">Boite a Rythmes (Pads)</option>'
+    + '<option value="inst:sampler">Sampler Polyphonique</option>'
+    + '</optgroup>'
+    + '<optgroup label="Chiptune Authentique">'
+    + INSTRUMENT_OPTIONS.slice(0, 7).map((o) => `<option value="inst:${o.id}">${o.name}</option>`).join('')
+    + '</optgroup>';
 
   addMenu.onchange = (e) => {
-    const inst = e.target.value;
-    if (!inst) return;
-    const defaultNames = {
-      pulse50: 'Lead',
-      pulse25: 'Lead 2',
-      pulse12: 'Pluck',
-      triangle: 'Basse',
-      saw: 'Synth Saw',
-      noise: 'Batterie 8-bit',
-      wave: 'Arpege Wave'
-    };
-    onAddChannel?.(inst, defaultNames[inst] || 'Canal');
+    const val = e.target.value;
+    if (!val) return;
+    if (val.startsWith('preset:')) {
+      const presetKey = val.slice(7);
+      const p = INSTRUMENT_PRESETS[presetKey];
+      if (p) {
+        onAddChannel?.(p.type, p.name, { preset: presetKey, params: p.params });
+      }
+    } else if (val.startsWith('inst:')) {
+      const inst = val.slice(5);
+      const defaultNames = {
+        pulse50: 'Lead',
+        pulse25: 'Lead 2',
+        pulse12: 'Pluck',
+        triangle: 'Basse',
+        saw: 'Synth Saw',
+        noise: 'Batterie 8-bit',
+        wave: 'Arpege Wave',
+        synth_sub: 'Basse / Lead Sub',
+        synth_fm: 'FM Keys',
+        drum_machine: 'Boite Rythmes',
+        sampler: 'Sampler'
+      };
+      onAddChannel?.(inst, defaultNames[inst] || 'Canal');
+    }
     addMenu.selectedIndex = 0;
   };
 

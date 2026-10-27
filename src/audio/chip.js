@@ -4,7 +4,135 @@
 
 export const MASTER_GAIN = 0.6;
 export const PRESETS = ['jump', 'coin', 'hit', 'powerup', 'explosion', 'laser', 'blip', 'portal'];
-export const INSTRUMENTS = ['pulse12', 'pulse25', 'pulse50', 'triangle', 'saw', 'noise', 'wave', 'sample'];
+export const INSTRUMENTS = [
+  'pulse12', 'pulse25', 'pulse50', 'triangle', 'saw', 'noise', 'wave', 'sample',
+  'synth_sub', 'synth_fm', 'sampler', 'drum_machine'
+];
+
+export const INSTRUMENT_PRESETS = {
+  bass_808: {
+    type: 'synth_sub',
+    name: 'Basse 808',
+    category: 'bass',
+    params: {
+      osc1: { wave: 'sine', octave: -1, tune: 0, mix: 0.9 },
+      osc2: { wave: 'triangle', octave: -1, tune: 0, mix: 0.3 },
+      filter: { type: 'lowpass', cutoff: 350, resonance: 1.0, envAmount: 0.4 },
+      envAmp: { a: 0.005, d: 0.25, s: 0.4, r: 0.1 },
+      envFilter: { a: 0.005, d: 0.1, s: 0.2, r: 0.05 },
+    }
+  },
+  bass_synth: {
+    type: 'synth_sub',
+    name: 'Basse Synth Punchy',
+    category: 'bass',
+    params: {
+      osc1: { wave: 'saw', octave: -1, tune: 0, mix: 0.8 },
+      osc2: { wave: 'pulse50', octave: -1, tune: 7, mix: 0.5 },
+      filter: { type: 'lowpass', cutoff: 1200, resonance: 3.0, envAmount: 0.7 },
+      envAmp: { a: 0.01, d: 0.15, s: 0.6, r: 0.08 },
+      envFilter: { a: 0.005, d: 0.12, s: 0.1, r: 0.05 },
+    }
+  },
+  bass_fm: {
+    type: 'synth_fm',
+    name: 'Basse FM Solide',
+    category: 'bass',
+    params: {
+      algorithm: 1,
+      op1: { ratio: 1.0, level: 1.0, env: { a: 0.005, d: 0.2, s: 0.5, r: 0.08 } },
+      op2: { ratio: 2.0, level: 0.7, env: { a: 0.005, d: 0.1, s: 0.2, r: 0.05 } },
+      op3: { ratio: 1.0, level: 0.3, env: { a: 0.01, d: 0.15, s: 0.1, r: 0.05 } },
+      op4: { ratio: 3.5, level: 0.15, env: { a: 0.005, d: 0.08, s: 0.05, r: 0.05 } },
+      feedback: 0.25
+    }
+  },
+  lead_retro: {
+    type: 'synth_sub',
+    name: 'Lead Retro Chiptune',
+    category: 'lead',
+    params: {
+      osc1: { wave: 'pulse50', octave: 0, tune: 0, mix: 0.7 },
+      osc2: { wave: 'saw', octave: 0, tune: 8, mix: 0.6 },
+      filter: { type: 'lowpass', cutoff: 3800, resonance: 2.5, envAmount: 0.3 },
+      envAmp: { a: 0.005, d: 0.1, s: 0.8, r: 0.12 },
+      lfo: { target: 'pitch', rate: 5.5, depth: 0.08 }
+    }
+  },
+  lead_poly: {
+    type: 'synth_sub',
+    name: 'Lead Polyphonique Cuivre',
+    category: 'lead',
+    params: {
+      osc1: { wave: 'saw', octave: 0, tune: 0, mix: 0.75 },
+      osc2: { wave: 'saw', octave: 0, tune: 12, mix: 0.6 },
+      filter: { type: 'lowpass', cutoff: 2800, resonance: 2.0, envAmount: 0.5 },
+      envAmp: { a: 0.02, d: 0.2, s: 0.7, r: 0.15 },
+      envFilter: { a: 0.03, d: 0.3, s: 0.3, r: 0.1 }
+    }
+  },
+  pad_warm: {
+    type: 'synth_sub',
+    name: 'Nappe Chaude Analogique',
+    category: 'pad',
+    params: {
+      osc1: { wave: 'saw', octave: 0, tune: -6, mix: 0.7 },
+      osc2: { wave: 'saw', octave: 0, tune: 6, mix: 0.7 },
+      filter: { type: 'lowpass', cutoff: 1400, resonance: 1.5, envAmount: 0.2 },
+      envAmp: { a: 0.15, d: 0.4, s: 0.85, r: 0.35 },
+      lfo: { target: 'filter', rate: 1.2, depth: 0.15 }
+    }
+  },
+  pad_retro: {
+    type: 'synth_sub',
+    name: 'Nappe Espace 8-Bit',
+    category: 'pad',
+    params: {
+      osc1: { wave: 'pulse25', octave: 0, tune: 0, mix: 0.6 },
+      osc2: { wave: 'triangle', octave: 1, tune: 4, mix: 0.5 },
+      filter: { type: 'bandpass', cutoff: 1800, resonance: 2.2, envAmount: 0.1 },
+      envAmp: { a: 0.1, d: 0.3, s: 0.8, r: 0.3 },
+      lfo: { target: 'pitch', rate: 4.0, depth: 0.05 }
+    }
+  },
+  piano_vintage: {
+    type: 'synth_fm',
+    name: 'Piano Electrique FM',
+    category: 'keys',
+    params: {
+      algorithm: 5,
+      op1: { ratio: 1.0, level: 1.0, env: { a: 0.005, d: 0.5, s: 0.3, r: 0.2 } },
+      op2: { ratio: 1.0, level: 0.4, env: { a: 0.005, d: 0.2, s: 0.1, r: 0.1 } },
+      op3: { ratio: 1.0, level: 0.9, env: { a: 0.005, d: 0.6, s: 0.3, r: 0.2 } },
+      op4: { ratio: 14.0, level: 0.2, env: { a: 0.002, d: 0.08, s: 0.01, r: 0.05 } },
+      feedback: 0.1
+    }
+  },
+  strings_ensemble: {
+    type: 'synth_sub',
+    name: 'Cordes Orchestrales',
+    category: 'strings',
+    params: {
+      osc1: { wave: 'saw', octave: 0, tune: -8, mix: 0.65 },
+      osc2: { wave: 'saw', octave: 0, tune: 8, mix: 0.65 },
+      filter: { type: 'lowpass', cutoff: 2600, resonance: 1.2, envAmount: 0.15 },
+      envAmp: { a: 0.12, d: 0.35, s: 0.9, r: 0.3 },
+      lfo: { target: 'pitch', rate: 5.0, depth: 0.03 }
+    }
+  },
+  drums_808: {
+    type: 'drum_machine',
+    name: 'Batterie Vintage 808',
+    category: 'drums',
+    params: { kit: '808' }
+  },
+  drums_acoustic: {
+    type: 'drum_machine',
+    name: 'Batterie Hybride Retro',
+    category: 'drums',
+    params: { kit: 'acoustic' }
+  }
+};
 
 const NOTE_SEMITONES = { c: 0, d: 2, e: 4, f: 5, g: 7, a: 9, b: 11 };
 
@@ -296,6 +424,71 @@ export function mutateSfxr(params, seed = 0) {
 export function createChipAudio(ctx, destination) {
   const dest = destination || ctx.destination;
   let activeSong = null;
+  const samplesCache = new Map();
+
+  function loadAudioSample(id, dataOrBuffer) {
+    if (!id) return Promise.reject(new Error('id requis'));
+    if (dataOrBuffer && typeof dataOrBuffer === 'object' && typeof dataOrBuffer.getChannelData === 'function') {
+      samplesCache.set(id, dataOrBuffer);
+      return Promise.resolve(dataOrBuffer);
+    }
+    if (typeof dataOrBuffer === 'string' && dataOrBuffer.startsWith('data:')) {
+      try {
+        const comma = dataOrBuffer.indexOf(',');
+        const base64 = comma >= 0 ? dataOrBuffer.slice(comma + 1) : dataOrBuffer;
+        if (typeof atob === 'function') {
+          const bin = atob(base64);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          if (typeof ctx.decodeAudioData === 'function') {
+            return new Promise((resolve) => {
+              ctx.decodeAudioData(bytes.buffer, (buf) => {
+                samplesCache.set(id, buf);
+                resolve(buf);
+              }, () => {
+                const fallbackBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.2), ctx.sampleRate);
+                samplesCache.set(id, fallbackBuf);
+                resolve(fallbackBuf);
+              });
+            });
+          }
+        }
+      } catch (e) {
+        // repli
+      }
+    } else if (dataOrBuffer instanceof ArrayBuffer && typeof ctx.decodeAudioData === 'function') {
+      return new Promise((resolve) => {
+        ctx.decodeAudioData(dataOrBuffer, (buf) => {
+          samplesCache.set(id, buf);
+          resolve(buf);
+        }, () => {
+          const fallbackBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.2), ctx.sampleRate);
+          samplesCache.set(id, fallbackBuf);
+          resolve(fallbackBuf);
+        });
+      });
+    }
+    const fallbackBuf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.2), ctx.sampleRate);
+    samplesCache.set(id, fallbackBuf);
+    return Promise.resolve(fallbackBuf);
+  }
+
+  function getAudioSample(id) {
+    return samplesCache.get(id) || null;
+  }
+
+  function previewPreset(presetId, pitch = 'C4', duration = 0.5) {
+    const preset = INSTRUMENT_PRESETS[presetId];
+    if (!preset) return null;
+    return scheduleNote({
+      instrument: preset.type,
+      preset: presetId,
+      params: preset.params,
+      pitch,
+      duration,
+      volume: 0.85
+    });
+  }
 
   // Joue une note avec glissando f0 -> f1 et enveloppe exponentielle (utilise pour les presets sfx)
   function playTone(type, f0, f1, t, dur, vol, targetDest) {
@@ -480,8 +673,9 @@ export function createChipAudio(ctx, destination) {
     const vibrato = opts.vibrato || null;
     const arp = Array.isArray(opts.arp) && opts.arp.length > 0 ? opts.arp : null;
 
-    if (!Number.isFinite(baseFreq) || !Number.isFinite(vol) || !Number.isFinite(time)) return null;
-    if (inst !== 'noise' && baseFreq <= 0) return null;
+    if (!Number.isFinite(vol) || !Number.isFinite(time)) return null;
+    const isDrumInst = inst === 'noise' || inst === 'drum_machine' || inst === 'drums';
+    if (!isDrumInst && (!Number.isFinite(baseFreq) || baseFreq <= 0)) return null;
 
     // Chaine de gain et panoramique
     const noteGain = ctx.createGain();
@@ -574,6 +768,343 @@ export function createChipAudio(ctx, destination) {
       src.start(time);
       src.stop(stopTime);
       return { stop: () => { try { src.stop(); } catch (e) {} } };
+    }
+
+    // Synthe soustractif (2 oscillateurs, filtre, 2 enveloppes, LFO)
+    if (inst === 'synth_sub' || inst === 'subtractive') {
+      const presetDef = (opts.preset && INSTRUMENT_PRESETS[opts.preset]) || null;
+      const subParams = Object.assign({}, presetDef?.params || {}, opts.params || opts.instParams || {});
+      const osc1Cfg = Object.assign({ wave: 'saw', octave: 0, tune: 0, mix: 0.8 }, subParams.osc1 || {});
+      const osc2Cfg = Object.assign({ wave: 'pulse50', octave: -1, tune: 7, mix: 0.5 }, subParams.osc2 || {});
+      const filtCfg = Object.assign({ type: 'lowpass', cutoff: 2400, resonance: 2.0, envAmount: 0.5 }, subParams.filter || {});
+      const envFilt = Object.assign({ a: 0.01, d: 0.2, s: 0.3, r: 0.1 }, subParams.envFilter || {});
+      const lfoCfg = subParams.lfo || null;
+
+      function createSubOsc(cfg) {
+        const o = ctx.createOscillator();
+        const w = cfg.wave || 'saw';
+        if (w === 'pulse12') o.setPeriodicWave(getPulseWave(ctx, 0.125));
+        else if (w === 'pulse25') o.setPeriodicWave(getPulseWave(ctx, 0.25));
+        else if (w === 'pulse50') o.setPeriodicWave(getPulseWave(ctx, 0.5));
+        else if (w === 'saw' || w === 'sawtooth') o.type = 'sawtooth';
+        else if (w === 'triangle') o.type = 'triangle';
+        else if (w === 'sine') o.type = 'sine';
+        else o.type = 'square';
+
+        const freq = Math.max(10, Math.min(20000, baseFreq * Math.pow(2, (cfg.octave || 0) + (cfg.tune || 0) / 1200)));
+        o.frequency.setValueAtTime(freq, time);
+
+        const og = ctx.createGain();
+        og.gain.setValueAtTime(Math.max(0, Math.min(1, cfg.mix != null ? cfg.mix : 0.8)), time);
+        o.connect(og);
+        return { osc: o, gain: og, freq };
+      }
+
+      const o1 = createSubOsc(osc1Cfg);
+      const o2 = createSubOsc(osc2Cfg);
+
+      const filter = ctx.createBiquadFilter();
+      filter.type = filtCfg.type || 'lowpass';
+      const cutoff = Math.max(20, Math.min(20000, filtCfg.cutoff || 2400));
+      filter.frequency.setValueAtTime(cutoff, time);
+      if (filter.Q) filter.Q.setValueAtTime(Math.max(0.1, Math.min(25, filtCfg.resonance || 2.0)), time);
+
+      if (filtCfg.envAmount && Math.abs(filtCfg.envAmount) > 0.01) {
+        const fA = Math.max(0.001, envFilt.a || 0.01);
+        const fD = Math.max(0.001, envFilt.d || 0.2);
+        const fS = Math.max(0.0001, Math.min(1, envFilt.s != null ? envFilt.s : 0.3));
+        const fR = Math.max(0.001, envFilt.r || 0.1);
+        const peakCutoff = Math.max(20, Math.min(20000, cutoff * (1 + filtCfg.envAmount * 3)));
+        const sustainCutoff = Math.max(20, Math.min(20000, cutoff + (peakCutoff - cutoff) * fS));
+        filter.frequency.setValueAtTime(cutoff, time);
+        filter.frequency.linearRampToValueAtTime(peakCutoff, time + fA);
+        filter.frequency.exponentialRampToValueAtTime(sustainCutoff, time + fA + fD);
+        filter.frequency.setValueAtTime(sustainCutoff, releaseStart);
+        filter.frequency.exponentialRampToValueAtTime(cutoff, releaseStart + fR);
+      }
+
+      o1.gain.connect(filter);
+      o2.gain.connect(filter);
+      filter.connect(noteGain);
+
+      let lfoOsc = null;
+      if (lfoCfg && (lfoCfg.depth || 0) > 0) {
+        lfoOsc = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfoOsc.type = 'sine';
+        lfoOsc.frequency.setValueAtTime(Math.max(0.1, Math.min(40, lfoCfg.rate || 5)), time);
+        if (lfoCfg.target === 'filter') {
+          lfoGain.gain.setValueAtTime(cutoff * (lfoCfg.depth || 0.2), time);
+          lfoOsc.connect(lfoGain);
+          lfoGain.connect(filter.frequency);
+        } else if (lfoCfg.target === 'amp') {
+          lfoGain.gain.setValueAtTime(vol * 0.4 * (lfoCfg.depth || 0.2), time);
+          lfoOsc.connect(lfoGain);
+          lfoGain.connect(noteGain.gain);
+        } else {
+          lfoGain.gain.setValueAtTime(baseFreq * (lfoCfg.depth || 0.05), time);
+          lfoOsc.connect(lfoGain);
+          lfoGain.connect(o1.osc.frequency);
+          lfoGain.connect(o2.osc.frequency);
+        }
+        lfoOsc.start(time);
+        lfoOsc.stop(stopTime);
+      }
+
+      o1.osc.start(time);
+      o1.osc.stop(stopTime);
+      o2.osc.start(time);
+      o2.osc.stop(stopTime);
+
+      return {
+        stop() {
+          try { o1.osc.stop(); } catch (e) {}
+          try { o2.osc.stop(); } catch (e) {}
+          if (lfoOsc) { try { lfoOsc.stop(); } catch (e) {} }
+        }
+      };
+    }
+
+    // Synthe FM 4 operateurs (DX-style)
+    if (inst === 'synth_fm' || inst === 'fm') {
+      const presetDef = (opts.preset && INSTRUMENT_PRESETS[opts.preset]) || null;
+      const fmParams = Object.assign({}, presetDef?.params || {}, opts.params || opts.instParams || {});
+      const algo = Number(fmParams.algorithm) || 1;
+      const opDefs = [
+        Object.assign({ ratio: 1.0, level: 1.0, env: { a: 0.005, d: 0.3, s: 0.5, r: 0.1 } }, fmParams.op1 || {}),
+        Object.assign({ ratio: 2.0, level: 0.7, env: { a: 0.005, d: 0.2, s: 0.2, r: 0.08 } }, fmParams.op2 || {}),
+        Object.assign({ ratio: 1.0, level: 0.4, env: { a: 0.01, d: 0.2, s: 0.1, r: 0.05 } }, fmParams.op3 || {}),
+        Object.assign({ ratio: 3.5, level: 0.2, env: { a: 0.005, d: 0.1, s: 0.05, r: 0.05 } }, fmParams.op4 || {})
+      ];
+
+      const ops = opDefs.map((def) => {
+        const o = ctx.createOscillator();
+        o.type = 'sine';
+        const opFreq = Math.max(1, baseFreq * (def.ratio || 1));
+        o.frequency.setValueAtTime(opFreq, time);
+
+        const g = ctx.createGain();
+        const e = Object.assign({ a: 0.005, d: 0.2, s: 0.4, r: 0.1 }, def.env || {});
+        const opLvl = Math.max(0.0001, def.level != null ? def.level : 0.5);
+        g.gain.setValueAtTime(0.0001, time);
+        g.gain.linearRampToValueAtTime(opLvl, time + Math.max(0.001, e.a));
+        g.gain.exponentialRampToValueAtTime(Math.max(0.0001, opLvl * (e.s != null ? e.s : 0.4)), time + Math.max(0.001, e.a) + Math.max(0.001, e.d));
+        g.gain.setValueAtTime(Math.max(0.0001, opLvl * (e.s != null ? e.s : 0.4)), releaseStart);
+        g.gain.exponentialRampToValueAtTime(0.0001, releaseStart + Math.max(0.001, e.r));
+
+        o.connect(g);
+        return { osc: o, gain: g, def, freq: opFreq };
+      });
+
+      function connectModulator(modIdx, carrierIdx) {
+        const modGainNode = ctx.createGain();
+        const modDepth = ops[carrierIdx].freq * 2.5;
+        modGainNode.gain.setValueAtTime(modDepth, time);
+        ops[modIdx].gain.connect(modGainNode);
+        modGainNode.connect(ops[carrierIdx].osc.frequency);
+      }
+
+      if (algo === 5) {
+        connectModulator(3, 0);
+        connectModulator(3, 1);
+        connectModulator(3, 2);
+        ops[0].gain.connect(noteGain);
+        ops[1].gain.connect(noteGain);
+        ops[2].gain.connect(noteGain);
+      } else if (algo === 4) {
+        connectModulator(3, 2);
+        connectModulator(1, 0);
+        ops[2].gain.connect(noteGain);
+        ops[0].gain.connect(noteGain);
+      } else if (algo === 6) {
+        ops.forEach((op) => op.gain.connect(noteGain));
+      } else {
+        connectModulator(3, 2);
+        connectModulator(2, 1);
+        connectModulator(1, 0);
+        ops[0].gain.connect(noteGain);
+      }
+
+      ops.forEach((op) => {
+        op.osc.start(time);
+        op.osc.stop(stopTime);
+      });
+
+      return {
+        stop() {
+          ops.forEach((op) => {
+            try { op.osc.stop(); } catch (e) {}
+          });
+        }
+      };
+    }
+
+    // Boite a rythmes (pads proceduraux / analogiques)
+    if (inst === 'drum_machine' || inst === 'drums') {
+      const piece = opts.piece || drumPiece(rawPitch);
+      const kit = opts.kit || (opts.params?.kit) || '808';
+
+      if (piece === 'kick') {
+        const kickOsc = ctx.createOscillator();
+        kickOsc.type = 'sine';
+        const startF = kit === '808' ? 160 : 130;
+        const endF = kit === '808' ? 42 : 36;
+        const sweepDur = Math.min(0.08, duration);
+        kickOsc.frequency.setValueAtTime(startF, time);
+        kickOsc.frequency.exponentialRampToValueAtTime(endF, time + sweepDur);
+        kickOsc.connect(noteGain);
+        kickOsc.start(time);
+        kickOsc.stop(stopTime);
+        return { stop: () => { try { kickOsc.stop(); } catch (e) {} } };
+      }
+
+      if (piece === 'snare') {
+        const toneOsc = ctx.createOscillator();
+        toneOsc.type = 'triangle';
+        toneOsc.frequency.setValueAtTime(180, time);
+        toneOsc.frequency.exponentialRampToValueAtTime(80, time + 0.05);
+
+        const noiseSrc = ctx.createBufferSource();
+        noiseSrc.buffer = getWhiteNoiseBuffer(ctx);
+        noiseSrc.loop = true;
+
+        const noiseFilt = ctx.createBiquadFilter();
+        noiseFilt.type = 'bandpass';
+        noiseFilt.frequency.setValueAtTime(1600, time);
+        if (noiseFilt.Q) noiseFilt.Q.setValueAtTime(1.8, time);
+
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.7, time);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, time + Math.min(0.18, duration));
+
+        toneOsc.connect(noteGain);
+        noiseSrc.connect(noiseFilt);
+        noiseFilt.connect(noiseGain);
+        noiseGain.connect(noteGain);
+
+        toneOsc.start(time);
+        toneOsc.stop(stopTime);
+        noiseSrc.start(time);
+        noiseSrc.stop(stopTime);
+        return {
+          stop: () => {
+            try { toneOsc.stop(); } catch (e) {}
+            try { noiseSrc.stop(); } catch (e) {}
+          }
+        };
+      }
+
+      if (piece === 'hat_closed' || piece === 'hat_open') {
+        const isOpen = piece === 'hat_open';
+        const noiseSrc = ctx.createBufferSource();
+        noiseSrc.buffer = getWhiteNoiseBuffer(ctx);
+        noiseSrc.loop = true;
+
+        const hpf = ctx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.setValueAtTime(isOpen ? 7000 : 8500, time);
+
+        const hatGain = ctx.createGain();
+        hatGain.gain.setValueAtTime(0.6, time);
+        hatGain.gain.exponentialRampToValueAtTime(0.0001, time + (isOpen ? Math.min(0.35, duration) : 0.04));
+
+        noiseSrc.connect(hpf);
+        hpf.connect(hatGain);
+        hatGain.connect(noteGain);
+
+        noiseSrc.start(time);
+        noiseSrc.stop(stopTime);
+        return { stop: () => { try { noiseSrc.stop(); } catch (e) {} } };
+      }
+
+      if (piece === 'tom') {
+        const tomOsc = ctx.createOscillator();
+        tomOsc.type = 'sine';
+        const tomBase = baseFreq > 0 ? baseFreq : 140;
+        tomOsc.frequency.setValueAtTime(tomBase * 1.5, time);
+        tomOsc.frequency.exponentialRampToValueAtTime(tomBase * 0.7, time + Math.min(0.15, duration));
+        tomOsc.connect(noteGain);
+        tomOsc.start(time);
+        tomOsc.stop(stopTime);
+        return { stop: () => { try { tomOsc.stop(); } catch (e) {} } };
+      }
+
+      if (piece === 'clap') {
+        const clapGain = ctx.createGain();
+        const bpf = ctx.createBiquadFilter();
+        bpf.type = 'bandpass';
+        bpf.frequency.setValueAtTime(1200, time);
+        if (bpf.Q) bpf.Q.setValueAtTime(1.5, time);
+
+        const noiseSrc = ctx.createBufferSource();
+        noiseSrc.buffer = getWhiteNoiseBuffer(ctx);
+        noiseSrc.loop = true;
+
+        noiseSrc.connect(bpf);
+        bpf.connect(clapGain);
+        clapGain.connect(noteGain);
+
+        const cDur = Math.min(0.25, duration);
+        clapGain.gain.setValueAtTime(0.6, time);
+        clapGain.gain.exponentialRampToValueAtTime(0.01, time + 0.01);
+        clapGain.gain.setValueAtTime(0.6, time + 0.012);
+        clapGain.gain.exponentialRampToValueAtTime(0.01, time + 0.022);
+        clapGain.gain.setValueAtTime(0.7, time + 0.024);
+        clapGain.gain.exponentialRampToValueAtTime(0.0001, time + cDur);
+
+        noiseSrc.start(time);
+        noiseSrc.stop(stopTime);
+        return { stop: () => { try { noiseSrc.stop(); } catch (e) {} } };
+      }
+
+      const cymSrc = ctx.createBufferSource();
+      cymSrc.buffer = getWhiteNoiseBuffer(ctx);
+      cymSrc.loop = true;
+      const cymFilt = ctx.createBiquadFilter();
+      cymFilt.type = 'highpass';
+      cymFilt.frequency.setValueAtTime(6500, time);
+      const cymGain = ctx.createGain();
+      cymGain.gain.setValueAtTime(0.5, time);
+      cymGain.gain.exponentialRampToValueAtTime(0.0001, time + Math.min(0.6, duration));
+      cymSrc.connect(cymFilt);
+      cymFilt.connect(cymGain);
+      cymGain.connect(noteGain);
+      cymSrc.start(time);
+      cymSrc.stop(stopTime);
+      return { stop: () => { try { cymSrc.stop(); } catch (e) {} } };
+    }
+
+    // Echantillonneur (Sampler) polyphonique avec suivi de hauteur
+    if (inst === 'sampler' || inst === 'sample') {
+      let buf = opts.sampleBuffer || null;
+      const sampleKey = opts.sampleId || opts.sample || opts.preset;
+      if (!buf && sampleKey && samplesCache.has(sampleKey)) {
+        buf = samplesCache.get(sampleKey);
+      }
+      if (buf) {
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        src.loop = !!opts.loop;
+        if (opts.loopStart != null) src.loopStart = opts.loopStart;
+        if (opts.loopEnd != null) src.loopEnd = opts.loopEnd;
+        const rootFreq = noteFreq(opts.rootPitch || 'C4') || 261.63;
+        const rate = baseFreq > 0 ? (baseFreq / rootFreq) : 1;
+        if (src.playbackRate) {
+          src.playbackRate.setValueAtTime(Math.max(0.05, Math.min(16, rate)), time);
+        }
+        src.connect(noteGain);
+        src.start(time);
+        src.stop(stopTime);
+        return { stop: () => { try { src.stop(); } catch (e) {} } };
+      } else {
+        const fallbackOsc = ctx.createOscillator();
+        fallbackOsc.type = 'sine';
+        fallbackOsc.frequency.setValueAtTime(baseFreq > 0 ? baseFreq : 440, time);
+        fallbackOsc.connect(noteGain);
+        fallbackOsc.start(time);
+        fallbackOsc.stop(stopTime);
+        return { stop: () => { try { fallbackOsc.stop(); } catch (e) {} } };
+      }
     }
 
     // Oscillateur pour pulse12, pulse25, pulse50, triangle, saw
@@ -832,10 +1363,15 @@ export function createChipAudio(ctx, destination) {
             const dur = (Number(n.len) || 1) * baseStepSec;
             // Une note invalide ne doit pas bloquer le planificateur : elle est ignoree
             try {
+              const instType = typeof ch.instrument === 'string' ? ch.instrument : (ch.instrument?.type || 'pulse50');
+              const presetKey = ch.preset || ch.instrument?.preset;
+              const instParams = ch.params || ch.instrument?.params || (presetKey ? INSTRUMENT_PRESETS[presetKey]?.params : null);
               const handle = scheduleNote({
                 time: nextStepTime,
                 duration: dur,
-                instrument: typeof ch.instrument === 'string' ? ch.instrument : (ch.instrument?.type || 'pulse50'),
+                instrument: instType,
+                preset: presetKey,
+                params: instParams,
                 pitch: n.pitch,
                 vel: n.vel,
                 volume: trackBus ? 1.0 : (ch.volume != null ? ch.volume : 0.8),
@@ -845,6 +1381,8 @@ export function createChipAudio(ctx, destination) {
                 arp: ch.arp,
                 drumKit: ch.drumKit,
                 waveTable: ch.waveTable,
+                sampleId: ch.sampleId,
+                rootPitch: ch.rootPitch,
                 destination: trackBus ? trackBus.input : songGain
               });
               if (handle) activeNotes.push({ stop: handle.stop, end: nextStepTime + dur + 1 });
@@ -1032,7 +1570,11 @@ export function createChipAudio(ctx, destination) {
     renderOffline,
     generateSfxr,
     mutateSfxr,
-    measureSchedulingPerformance
+    measureSchedulingPerformance,
+    loadAudioSample,
+    getAudioSample,
+    previewPreset,
+    presets: INSTRUMENT_PRESETS
   };
 }
 
