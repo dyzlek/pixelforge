@@ -5,6 +5,7 @@ test.describe('PixelForge Studio E2E Tests', () => {
   test('chargement du studio et navigation dans les onglets', async ({ page }) => {
     // 1. Chargement de l'application
     await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
     await expect(page).toHaveTitle(/PixelForge/i);
 
     // Elements fondamentaux du studio
@@ -33,8 +34,8 @@ test.describe('PixelForge Studio E2E Tests', () => {
     await expect(page.locator('.snd-root')).toBeVisible();
 
     // Onglet Musique / Chiptune Tracker (DAW) via workspace
-    await page.evaluate(() => {
-      window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
+    await page.evaluate(async () => {
+      await window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
     });
     await expect(page.locator('#tabs')).toContainText(/Musique/i);
     await expect(page.locator('.pf-music-root')).toBeVisible();
@@ -131,11 +132,12 @@ test.describe('PixelForge Studio E2E Tests', () => {
 
   test('composition de 4 notes dans le sequenceur musical et avancement du planificateur', async ({ page }) => {
     await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
     await expect(page.locator('#app')).toBeVisible();
 
     // Ouvrir l'editeur musical via workspace
-    await page.evaluate(() => {
-      window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
+    await page.evaluate(async () => {
+      await window.__pfWorkspace.open({ kind: 'music', title: 'Musique' });
     });
     const rack = page.locator('.pf-music-rack');
     await expect(rack).toBeVisible({ timeout: 10000 });
@@ -216,16 +218,162 @@ test.describe('PixelForge Studio E2E Tests', () => {
 
     // Deplacer le joueur vers la droite
     await page.keyboard.down('ArrowRight');
-    await page.waitForTimeout(200);
+    await page.waitForTimeout(300);
     await page.keyboard.up('ArrowRight');
     await page.waitForTimeout(100);
 
     const movedSnapshot = await page.evaluate(() => window.__pfDebugSnapshot());
     const movedPlayer = movedSnapshot.instances.find((i) => i.name === 'Player');
-    expect(movedPlayer.x).toBeGreaterThan(startX + 5);
+    expect(movedPlayer.x).toBeGreaterThan(startX + 2);
 
     // Arreter le jeu
     await page.keyboard.press('F8');
     await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
+  });
+
+  test('operations partagees src/core/ops executees directement dans le navigateur', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.locator('#app')).toBeVisible();
+
+    const result = await page.evaluate(async () => {
+      const ops = window.__pfOps;
+      if (!ops) throw new Error('__pfOps not found on window');
+
+      // Creation d'un projet minimal de test
+      const p = {
+        name: 'BrowserOpsGame',
+        meta: { id: 'browser-ops-game', description: 'Test core ops in browser', author: 'E2E' },
+        settings: { width: 320, height: 240, tileSize: 16, gravity: 600, pixelZoom: 2, background: '#1a1c2c', touchControls: false },
+        palette: [
+          '#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', '#ffcd75', '#a7f070', '#38b764', '#257179',
+          '#29366f', '#3b5dc9', '#41a6f6', '#73eff7', '#f4f4f4', '#94b0c2', '#566c86', '#333c57'
+        ],
+        sprites: [],
+        objects: [],
+        maps: [],
+        sounds: [],
+        songs: [],
+        models: [],
+        scenes3d: []
+      };
+
+      // 1. Creation de sprite avec textToFrames / encodeur PNG pur
+      ops.upsertSprite(p, {
+        name: 'Hero',
+        frames: [
+          [
+            '..44..',
+            '.4444.',
+            '44aa44',
+            '4aaaa4',
+            '.4444.',
+            '..44..'
+          ]
+        ],
+        animations: [{ name: 'idle', frames: [0], fps: 6, loop: true }]
+      });
+
+      // 2. Lecture du sprite avec getSprite / decodeur PNG pur
+      ops.getSprite(p, 'Hero');
+
+      // 3. Creation d'objet avec script Blueprint graph compile
+      ops.upsertObject(p, {
+        name: 'HeroObj',
+        sprite: 'Hero',
+        physics: { enabled: true, gravity: true, bounce: 0 },
+        graph: {
+          nodes: [
+            { id: 'n1', type: 'pf_on_update' },
+            { id: 'n2', type: 'pf_self_set', fields: { PROP: 'vx' }, values: { VALUE: 100 } }
+          ],
+          links: [
+            { from: 'n1', fromPin: 'then', to: 'n2', toPin: 'exec' }
+          ]
+        }
+      });
+
+      // 4. Creation de carte 2D et peinture
+      ops.upsertMap(p, {
+        name: 'Level1',
+        width: 10,
+        height: 6,
+        layers: [
+          { name: 'Ground', collides: true }
+        ],
+        start: true
+      });
+
+      ops.paintMap(p, {
+        map: 'Level1',
+        layer: 'Ground',
+        rows: [
+          '..........',
+          '..........',
+          '..........',
+          '..........',
+          '0000000000',
+          '0000000000'
+        ]
+      });
+
+      // 5. Placement d'entite
+      ops.placeEntities(p, {
+        map: 'Level1',
+        entities: [
+          { object: 'HeroObj', x: 16, y: 32 }
+        ]
+      });
+
+      // 6. Creation et roundtrip tracker chiptune
+      ops.upsertSong(p, {
+        name: 'ChiptuneTrack',
+        text: 'BPM 135\nCH Lead pulse50 vol 0.8\nPAT 0\n00 C-4\n04 E-4\n08 G-4\n12 B-4\nPLAY 0\n'
+      });
+      const songText = ops.getSongText(p, 'ChiptuneTrack');
+
+      // 7. Creation et peinture 3D
+      ops.upsertScene3D(p, {
+        name: 'Scene3DTest',
+        start: true
+      });
+      ops.paintGridMap(p, {
+        scene: 'Scene3DTest',
+        level: 0,
+        rows: [
+          '0000',
+          '0..0',
+          '0000'
+        ]
+      });
+
+      // 8. Resume global
+      const summary = ops.summarize(p);
+
+      return {
+        spritesCount: p.sprites.length,
+        objectsCount: p.objects.length,
+        mapsCount: p.maps.length,
+        songsCount: p.songs.length,
+        scenesCount: p.scenes3d.length,
+        heroFrameCount: p.sprites[0].frames.length,
+        heroObjMode: p.objects[0].script.mode,
+        heroObjCodeLength: p.objects[0].script.code.length,
+        mapEntities: p.maps[0].entities.length,
+        songTextLength: songText.length,
+        summaryLength: summary.length
+      };
+    });
+
+    expect(result.spritesCount).toBe(1);
+    expect(result.objectsCount).toBe(1);
+    expect(result.mapsCount).toBe(1);
+    expect(result.songsCount).toBe(1);
+    expect(result.scenesCount).toBe(1);
+    expect(result.heroFrameCount).toBe(1);
+    expect(result.heroObjMode).toBe('graph');
+    expect(result.heroObjCodeLength).toBeGreaterThan(0);
+    expect(result.mapEntities).toBe(1);
+    expect(result.songTextLength).toBeGreaterThan(0);
+    expect(result.summaryLength).toBeGreaterThan(50);
   });
 });

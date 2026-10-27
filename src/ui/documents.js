@@ -81,6 +81,9 @@ export class DocumentWorkspace {
           if (savedActive && this.docs.some((d) => d.id === savedActive)) {
             this.activate(savedActive);
             return;
+          } else if (this.docs.length > 0) {
+            this.activate(this.docs[0].id);
+            return;
           }
         }
       }
@@ -95,13 +98,13 @@ export class DocumentWorkspace {
     if (!p) return;
 
     if (p.maps?.length) {
-      this.open({ kind: 'map', refId: p.settings?.startMapId || p.maps[0].id, title: p.maps[0].name });
+      this.open({ kind: 'map', refId: p.settings?.startMapId || p.maps[0].id, title: p.maps[0].name }, true);
     }
     if (p.sprites?.length) {
-      this.open({ kind: 'pixel', refId: p.sprites[0].id, title: p.sprites[0].name });
+      this.open({ kind: 'pixel', refId: p.sprites[0].id, title: p.sprites[0].name }, false);
     }
     if (p.objects?.length) {
-      this.open({ kind: 'objects', refId: p.objects[0].id, title: p.objects[0].name });
+      this.open({ kind: 'objects', refId: p.objects[0].id, title: p.objects[0].name }, false);
     }
     if (!this.docs.length) {
       this.open({ kind: 'library', title: 'Bibliothèque' });
@@ -174,7 +177,7 @@ export class DocumentWorkspace {
     const id = `${kind}:${refId || 'main'}`;
     const existing = this.docs.find((d) => d.id === id);
     if (existing) {
-      if (activateNow) this.activate(id);
+      if (activateNow || !this.activeId) this.activate(id);
       return existing;
     }
 
@@ -202,6 +205,9 @@ export class DocumentWorkspace {
 
     this.docs.push(doc);
     this.renderTabs();
+    if (activateNow || !this.activeId) {
+      this.activate(id);
+    }
 
     // Montage asynchrone du module de l'éditeur
     try {
@@ -228,10 +234,6 @@ export class DocumentWorkspace {
     } catch (err) {
       console.error(`Erreur au chargement de l'éditeur pour ${id}:`, err);
       container.innerHTML = `<div style="padding:20px;color:var(--danger)">Erreur de chargement: ${esc(err.message)}</div>`;
-    }
-
-    if (activateNow) {
-      this.activate(id);
     }
 
     this.saveOpenDocs();
@@ -356,50 +358,54 @@ export class DocumentWorkspace {
   }
 
   renderTabs() {
-    this.tabbar.innerHTML = '';
-    const wrapper = document.createElement('div');
-    wrapper.className = 'pf-doc-tabs';
+    try {
+      this.tabbar.innerHTML = '';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'pf-doc-tabs';
 
-    for (const doc of this.docs) {
-      const tab = document.createElement('div');
-      tab.className = `pf-doc-tab${doc.id === this.activeId ? ' active' : ''}`;
-      tab.dataset.docId = doc.id;
-      tab.title = `${doc.title} (${doc.kind})`;
+      for (const doc of this.docs) {
+        const tab = document.createElement('div');
+        tab.className = `pf-doc-tab${doc.id === this.activeId ? ' active' : ''}`;
+        tab.dataset.docId = doc.id;
+        tab.title = `${doc.title} (${doc.kind})`;
 
-      tab.innerHTML = `
-        <span class="pf-doc-tab-icon">${/^\s*<svg[\s>]/i.test(doc.icon) ? doc.icon : esc(doc.icon)}</span>
-        <span class="pf-doc-tab-title">${esc(doc.title)}</span>
-        <span class="pf-doc-tab-dirty" style="display:${doc.dirty ? 'inline' : 'none'}">●</span>
-        ${doc.kind !== 'library' ? '<button class="pf-doc-tab-close" title="Fermer (Ctrl+W)">×</button>' : ''}
-      `;
+        tab.innerHTML = `
+          <span class="pf-doc-tab-icon">${/^\s*<svg[\s>]/i.test(doc.icon) ? doc.icon : esc(doc.icon)}</span>
+          <span class="pf-doc-tab-title">${esc(doc.title)}</span>
+          <span class="pf-doc-tab-dirty" style="display:${doc.dirty ? 'inline' : 'none'}">●</span>
+          ${doc.kind !== 'library' ? '<button class="pf-doc-tab-close" title="Fermer (Ctrl+W)">×</button>' : ''}
+        `;
 
-      // Clic gauche : active
-      tab.onclick = (e) => {
-        if (!e.target.closest('.pf-doc-tab-close')) {
-          this.activate(doc.id);
-        }
-      };
-
-      // Clic molette : ferme l'onglet
-      tab.onauxclick = (e) => {
-        if (e.button === 1 && doc.kind !== 'library') {
-          e.preventDefault();
-          this.close(doc.id);
-        }
-      };
-
-      // Clic sur la croix de fermeture
-      const closeBtn = tab.querySelector('.pf-doc-tab-close');
-      if (closeBtn) {
-        closeBtn.onclick = (e) => {
-          e.stopPropagation();
-          this.close(doc.id);
+        // Clic gauche : active
+        tab.onclick = (e) => {
+          if (!e.target.closest('.pf-doc-tab-close')) {
+            this.activate(doc.id);
+          }
         };
+
+        // Clic molette : ferme l'onglet
+        tab.onauxclick = (e) => {
+          if (e.button === 1 && doc.kind !== 'library') {
+            e.preventDefault();
+            this.close(doc.id);
+          }
+        };
+
+        // Clic sur la croix de fermeture
+        const closeBtn = tab.querySelector('.pf-doc-tab-close');
+        if (closeBtn) {
+          closeBtn.onclick = (e) => {
+            e.stopPropagation();
+            this.close(doc.id);
+          };
+        }
+
+        wrapper.appendChild(tab);
       }
 
-      wrapper.appendChild(tab);
+      this.tabbar.appendChild(wrapper);
+    } catch (err) {
+      console.error('ERROR IN RENDER TABS:', err);
     }
-
-    this.tabbar.appendChild(wrapper);
   }
 }
