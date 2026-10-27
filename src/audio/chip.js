@@ -1755,24 +1755,31 @@ export function createChipAudio(ctx, destination) {
             return 0;
           }
         },
-        setVolume(v, rampTime = 0) {
+        setVolume(v, rampTime = 0, startTime = ctx.currentTime) {
           this.volume = Math.max(0, Math.min(1, typeof v === 'number' ? v : 1));
           if (!this.mute && (!anySolo || this.solo)) {
+            const t0 = Math.max(ctx.currentTime, typeof startTime === 'number' ? startTime : ctx.currentTime);
             if (rampTime > 0) {
-              fader.gain.cancelScheduledValues(ctx.currentTime);
-              fader.gain.linearRampToValueAtTime(this.volume, ctx.currentTime + rampTime);
+              fader.gain.cancelScheduledValues(t0);
+              try {
+                fader.gain.setValueAtTime(fader.gain.value != null ? fader.gain.value : this.volume, t0);
+              } catch (e) {}
+              fader.gain.linearRampToValueAtTime(this.volume, t0 + rampTime);
             } else {
-              fader.gain.setValueAtTime(this.volume, ctx.currentTime);
+              fader.gain.cancelScheduledValues(t0);
+              fader.gain.setValueAtTime(this.volume, t0);
             }
           }
         },
         setPan(p) {
           if (panner) panner.pan.setValueAtTime(Math.max(-1, Math.min(1, typeof p === 'number' ? p : 0)), ctx.currentTime);
         },
-        setMute(m) {
+        setMute(m, startTime = ctx.currentTime) {
           this.mute = !!m;
           const active = !this.mute && (!anySolo || this.solo);
-          fader.gain.setValueAtTime(active ? this.volume : 0, ctx.currentTime);
+          const t0 = Math.max(ctx.currentTime, typeof startTime === 'number' ? startTime : ctx.currentTime);
+          fader.gain.cancelScheduledValues(t0);
+          fader.gain.setValueAtTime(active ? this.volume : 0, t0);
         },
         disconnect() {
           try { input.disconnect(); } catch (e) {}
@@ -1821,16 +1828,61 @@ export function createChipAudio(ctx, destination) {
       });
     });
 
+    function resolveTrackBus(idOrName) {
+      if (!idOrName) return null;
+      const direct = trackBuses.get(idOrName);
+      if (direct) return direct;
+      if (typeof idOrName === 'number' || (!isNaN(Number(idOrName)) && !trackBuses.has(idOrName))) {
+        const trkList = Array.from(trackBuses.values());
+        const byIdx = trkList[Number(idOrName)];
+        if (byIdx) return byIdx;
+      }
+      const target = String(idOrName).toLowerCase().trim();
+      for (const bus of trackBuses.values()) {
+        if ((bus.id && String(bus.id).toLowerCase().trim() === target) ||
+            (bus.name && String(bus.name).toLowerCase().trim() === target)) {
+          return bus;
+        }
+      }
+      return null;
+    }
+
+    function resolveLayerBuses(layerName) {
+      if (!layerName) return [];
+      const target = String(layerName).toLowerCase().trim();
+      const matched = [];
+      for (const bus of trackBuses.values()) {
+        const tLayer = bus.trackDef && bus.trackDef.layer ? String(bus.trackDef.layer).toLowerCase().trim() : '';
+        const tName = bus.name ? String(bus.name).toLowerCase().trim() : '';
+        const tId = bus.id ? String(bus.id).toLowerCase().trim() : '';
+        if (tLayer === target || tName === target || tId === target) {
+          matched.push(bus);
+        }
+      }
+      return matched;
+    }
+
+    const pendingMeasureActions = [];
+
+    function applyLayer(layerName, active, rampTime = 0.5, startTime = ctx.currentTime) {
+      const buses = resolveLayerBuses(layerName);
+      buses.forEach((b) => {
+        if (active) {
+          b.setMute(false, startTime);
+          const targetVol = b.trackDef && b.trackDef.volume != null ? b.trackDef.volume : (b.volume > 0 ? b.volume : 0.8);
+          b.setVolume(targetVol, rampTime, startTime);
+        } else {
+          b.setVolume(0, rampTime, startTime);
+        }
+      });
+    }
+
     // Automation des parametres (DAW v2)
     function resolveAudioParam(trackId, target) {
       if (trackId === 'master' || trackId === 'masterGain') {
         return songGain.gain;
       }
-      let bus = trackBuses.get(trackId);
-      if (!bus && (typeof trackId === 'number' || !isNaN(Number(trackId)))) {
-        const trkList = Array.from(trackBuses.values());
-        bus = trkList[Number(trackId)];
-      }
+      let bus = resolveTrackBus(trackId);
       if (!bus) return null;
 
       const normTarget = String(target || '').toLowerCase().trim();
@@ -1961,6 +2013,13 @@ export function createChipAudio(ctx, destination) {
       // Hors-ligne (export WAV) : tout le morceau est planifie d'un coup, sans minuterie
       const horizon = options.offline ? Infinity : ctx.currentTime + LOOKAHEAD_SEC;
       while (nextStepTime < horizon) {
+        if (currentStep % (stepsPerBeat * 4) === 0 && pendingMeasureActions.length > 0) {
+          const acts = pendingMeasureActions.splice(0, pendingMeasureActions.length);
+          acts.forEach((act) => {
+            applyLayer(act.layerName, act.active, act.rampTime, nextStepTime);
+          });
+        }
+
         const notesAtStep = eventsByStep[currentStep];
         if (notesAtStep && notesAtStep.length > 0) {
           notesAtStep.forEach((n) => {
@@ -2074,19 +2133,32 @@ export function createChipAudio(ctx, destination) {
         }
       },
       setTrackVolume(trackId, v, rampTime = 0) {
-        const bus = trackBuses.get(trackId);
+        const bus = resolveTrackBus(trackId);
         if (bus) bus.setVolume(v, rampTime);
       },
       setTrackPan(trackId, p) {
-        const bus = trackBuses.get(trackId);
+        const bus = resolveTrackBus(trackId);
         if (bus) bus.setPan(p);
       },
       setTrackMute(trackId, m) {
-        const bus = trackBuses.get(trackId);
+        const bus = resolveTrackBus(trackId);
         if (bus) bus.setMute(m);
       },
+      setLayer(layerName, active, opts = {}) {
+        const isNum = typeof opts === 'number';
+        const rampTime = isNum ? opts : (typeof opts?.rampTime === 'number' ? opts.rampTime : (typeof opts?.fade === 'number' ? opts.fade : 0.5));
+        const onMeasure = !isNum && !!(opts?.onMeasure || opts?.measureSync);
+        if (onMeasure && !stopped && !options.offline) {
+          pendingMeasureActions.push({ layerName, active: !!active, rampTime });
+        } else {
+          applyLayer(layerName, !!active, rampTime, ctx.currentTime);
+        }
+      },
+      setSongLayer(layerName, active, opts = {}) {
+        this.setLayer(layerName, active, opts);
+      },
       getTrack(trackId) {
-        return trackBuses.get(trackId) || null;
+        return resolveTrackBus(trackId);
       },
       get tracks() {
         return Array.from(trackBuses.values());
@@ -2107,7 +2179,7 @@ export function createChipAudio(ctx, destination) {
             return 0;
           }
         }
-        const b = trackBuses.get(trackId);
+        const b = resolveTrackBus(trackId);
         return b ? b.getLevel() : 0;
       },
       stop(stopOpts = {}) {
@@ -2158,6 +2230,37 @@ export function createChipAudio(ctx, destination) {
     if (activeSong && activeSong.controller) {
       activeSong.controller.setVolume(v, rampTime);
     }
+  }
+
+  function setSongLayer(layerName, active, opts) {
+    if (activeSong && activeSong.controller) {
+      activeSong.controller.setLayer(layerName, active, opts);
+    }
+  }
+
+  function setTrackVolume(trackIdOrName, v, rampTime = 0) {
+    if (activeSong && activeSong.controller) {
+      activeSong.controller.setTrackVolume(trackIdOrName, v, rampTime);
+    }
+  }
+
+  function setTrackPan(trackIdOrName, p) {
+    if (activeSong && activeSong.controller) {
+      activeSong.controller.setTrackPan(trackIdOrName, p);
+    }
+  }
+
+  function setTrackMute(trackIdOrName, m) {
+    if (activeSong && activeSong.controller) {
+      activeSong.controller.setTrackMute(trackIdOrName, m);
+    }
+  }
+
+  function getTrack(trackIdOrName) {
+    if (activeSong && activeSong.controller) {
+      return activeSong.controller.getTrack(trackIdOrName);
+    }
+    return null;
   }
 
   function getTrackLevel(trackId) {
@@ -2280,6 +2383,11 @@ export function createChipAudio(ctx, destination) {
     playSong,
     stopSong,
     setSongVolume,
+    setSongLayer,
+    setTrackVolume,
+    setTrackPan,
+    setTrackMute,
+    getTrack,
     playChiptuneTrack,
     renderOffline,
     renderStemOffline,

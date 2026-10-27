@@ -365,6 +365,10 @@ ex('pf_stop_song', 'Arrêter le morceau', 'sound', 'Arrête la lecture du morcea
   { inputs: [num('FADE_OUT', 'fondu sortant (s)', 0)], keywords: 'stop song music' });
 ex('pf_set_song_volume', 'Volume du morceau', 'sound', 'Modifie le volume du morceau en cours de lecture.',
   { inputs: [num('VOL', 'volume', 1)], keywords: 'volume song music' });
+ex('pf_set_song_layer', 'Couche musicale', 'sound', 'Active ou désactive une couche musicale (combat, ambiance...) avec fondu optionnel et synchronisation sur la mesure.',
+  { inputs: [bool('ACTIVE', 'active', true), num('FADE', 'fondu (s)', 0.5), bool('ON_MEASURE', 'sur la mesure', false)], fields: [txt('LAYER', 'couche', 'combat')], keywords: 'musique couche layer combat adaptive fade' });
+ex('pf_set_track_volume', 'Volume de piste', 'sound', 'Modifie le volume d\'une piste ou instrument du morceau avec fondu optionnel.',
+  { inputs: [num('VOL', 'volume', 1), num('FADE', 'fondu (s)', 0)], fields: [txt('TRACK', 'piste', 'Piste 1')], keywords: 'track volume piste mixeur fade fondu' });
 
 // Messages ---------------------------------------------------------------------
 ex('pf_broadcast', 'Diffuser un message', 'msg', 'Envoie un message à tous les objets qui l\'écoutent. Les données sont facultatives.',

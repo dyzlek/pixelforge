@@ -1,7 +1,7 @@
 # Catalogue des nœuds Blueprint de PixelForge
 
 > Ce document est généré automatiquement par `node scripts/gen-nodes-doc.mjs`.
-> Total : **187 nœuds** répartis en **18 catégories**.
+> Total : **189 nœuds** répartis en **18 catégories**.
 
 ## Sommaire des catégories
 
@@ -15,7 +15,7 @@
 - [Entrée (#input)](#input) (2 nœuds)
 - [Souris (#mouse)](#mouse) (5 nœuds)
 - [Tuiles & rayons (#tile)](#tile) (14 nœuds)
-- [Son (#sound)](#sound) (6 nœuds)
+- [Son (#sound)](#sound) (8 nœuds)
 - [Messages (#msg)](#msg) (3 nœuds)
 - [Jeu (#game)](#game) (24 nœuds)
 - [Caméra & texte (#cam)](#cam) (15 nœuds)
@@ -2804,6 +2804,59 @@ on('create', () => {
 | Broche | Type | Description |
 |---|---|---|
 | `then` | `exec` | then |
+
+### `pf_set_song_layer` — Couche musicale
+
+**Type de nœud** : Action  
+**Description** : Active ou désactive une couche musicale (combat, ambiance...) avec fondu optionnel et synchronisation sur la mesure.  
+**Mots-clés de recherche** : `musique couche layer combat adaptive fade`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `ACTIVE` | `boolean` | `true` | active |
+| `FADE` | `number` | `0.5` | fondu (s) |
+| `ON_MEASURE` | `boolean` | `false` | sur la mesure |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `LAYER` | `text` | `"combat"` | — |
+
+### `pf_set_track_volume` — Volume de piste
+
+**Type de nœud** : Action  
+**Description** : Modifie le volume d'une piste ou instrument du morceau avec fondu optionnel.  
+**Mots-clés de recherche** : `track volume piste mixeur fade fondu`  
+
+**Entrées (broches) :**
+
+| Broche | Type | Valeur par défaut | Description |
+|---|---|---|---|
+| `exec` | `exec` | — | exec |
+| `VOL` | `number` | `1` | volume |
+| `FADE` | `number` | `0` | fondu (s) |
+
+**Sorties (broches) :**
+
+| Broche | Type | Description |
+|---|---|---|
+| `then` | `exec` | then |
+
+**Champs configurables :**
+
+| Champ | Type de widget | Valeur par défaut | Options / Détails |
+|---|---|---|---|
+| `TRACK` | `text` | `"Piste 1"` | — |
 
 ---
 

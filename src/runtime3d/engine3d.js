@@ -940,6 +940,34 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     },
     stopMusic() { game.stopSong(); },
     setSongVolume(v) { if (activeSongCtrl && activeSongCtrl.setVolume) activeSongCtrl.setVolume(v); },
+    setSongLayer(layer, active, opts) {
+      if (activeSongCtrl && activeSongCtrl.setLayer) {
+        activeSongCtrl.setLayer(layer, active, opts);
+      } else if (chipAudio && chipAudio.setSongLayer) {
+        chipAudio.setSongLayer(layer, active, opts);
+      }
+    },
+    setTrackVolume(track, vol, rampTime) {
+      if (activeSongCtrl && activeSongCtrl.setTrackVolume) {
+        activeSongCtrl.setTrackVolume(track, vol, rampTime);
+      } else if (chipAudio && chipAudio.setTrackVolume) {
+        chipAudio.setTrackVolume(track, vol, rampTime);
+      }
+    },
+    setTrackMute(track, mute) {
+      if (activeSongCtrl && activeSongCtrl.setTrackMute) {
+        activeSongCtrl.setTrackMute(track, mute);
+      } else if (chipAudio && chipAudio.setTrackMute) {
+        chipAudio.setTrackMute(track, mute);
+      }
+    },
+    setTrackPan(track, pan) {
+      if (activeSongCtrl && activeSongCtrl.setTrackPan) {
+        activeSongCtrl.setTrackPan(track, pan);
+      } else if (chipAudio && chipAudio.setTrackPan) {
+        chipAudio.setTrackPan(track, pan);
+      }
+    },
 
     countOf(objectName) {
       return instances.filter((i) => i.objectName === objectName && !i.destroyed).length;

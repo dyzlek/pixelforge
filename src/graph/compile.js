@@ -408,6 +408,8 @@ GEN.pf_stop_music = () => 'game.stopMusic();\n';
 GEN.pf_play_song = (c) => `game.playSong(${q(c.f('SONG'))}, { loop: ${c.v('LOOP', O.NONE, 'true')}, volume: ${c.v('VOL', O.NONE, '1')}, fadeIn: ${c.v('FADE_IN', O.NONE, '0')} });\n`;
 GEN.pf_stop_song = (c) => `game.stopSong({ fadeOut: ${c.v('FADE_OUT', O.NONE, '0')} });\n`;
 GEN.pf_set_song_volume = (c) => `game.setSongVolume(${c.v('VOL', O.NONE, '1')});\n`;
+GEN.pf_set_song_layer = (c) => `game.setSongLayer(${q(c.f('LAYER'))}, ${c.v('ACTIVE', O.NONE, 'true')}, { rampTime: ${c.v('FADE', O.NONE, '0.5')}, onMeasure: ${c.v('ON_MEASURE', O.NONE, 'false')} });\n`;
+GEN.pf_set_track_volume = (c) => `game.setTrackVolume(${q(c.f('TRACK'))}, ${c.v('VOL', O.NONE, '1')}, ${c.v('FADE', O.NONE, '0')});\n`;
 
 // -- Messages
 GEN.pf_broadcast = (c) => {
