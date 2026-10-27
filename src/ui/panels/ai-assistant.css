@@ -210,3 +210,119 @@
   outline: none;
   border-color: var(--accent);
 }
+
+/* Barre d'historique et actions rapides */
+.pf-ai-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 10px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.pf-ai-history-btns {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Conteneur et cartes d'etapes d'agent */
+.pf-ai-steps-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.pf-ai-step-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 11px;
+}
+
+.pf-ai-step-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--bg-2);
+}
+
+.pf-ai-step-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 700;
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.pf-ai-step-badge.running {
+  background: var(--accent);
+  color: #fff;
+  animation: pf-pulse 1.2s infinite ease-in-out;
+}
+
+.pf-ai-step-badge.success {
+  background: #38b764;
+  color: #1a1c2c;
+}
+
+.pf-ai-step-badge.error {
+  background: #b13e53;
+  color: #fff;
+}
+
+@keyframes pf-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.97); }
+}
+
+.pf-ai-step-title {
+  flex: 1;
+  font-weight: 600;
+  color: var(--fg-0);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pf-ai-step-open-btn {
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  color: var(--fg-1);
+  border-radius: 3px;
+  padding: 2px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pf-ai-step-open-btn:hover {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.pf-ai-step-preview {
+  margin: 0;
+  padding: 6px 8px;
+  background: var(--bg-0);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-1);
+  overflow-x: auto;
+  max-height: 140px;
+  white-space: pre;
+  border-top: 1px solid var(--border);
+}

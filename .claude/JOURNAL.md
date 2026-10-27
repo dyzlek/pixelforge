@@ -1,5 +1,19 @@
 # Journal — PixelForge
 
+## 2026-10-27 (49) — [Phase H] H3 : interface de l'assistant IA (actions en direct, annulation) (Issue #91)
+- **Fait** :
+  - `src/ui/panels/ai-assistant.js` & `src/ui/panels/ai-assistant.css` :
+    - Affichage des etapes d'action en temps reel (`.pf-ai-steps-container`, `.pf-ai-step-card`) avec pastille de statut animee (en cours, succes, erreur), libelle lisible et apercu des resultats preformates (rendu ASCII de carte, validation).
+    - Bouton « Ouvrir [Ressource] » dynamique pour chaque outil reussi permettant d'ouvrir la ressource creee ou modifiee d'un clic dans le document correspondant (`openResource` pour sprites, objets, cartes, musiques, sons, modeles et scenes 3D).
+    - Bouton d'arret immediat (« Arreter ») en cours de generation sans laisser le projet corrompu ni a moitie modifie (les changements etant isoles sur une copie de travail appliquee uniquement en fin de traitement).
+    - Barre d'historique avec boutons « Annuler » (`store.undo()`) et « Refaire » (`store.redo()`) synchronises dynamiquement avec `store.canUndo` / `store.canRedo` (toute action etant atomique, un seul Ctrl+Z annule tout le lot).
+    - Correction des appels d'application manuelle : `compileGraph` appele avec `{ isGlobal: false, dimension }` et passage de toutes les mutations (scripts JS et graphes Blueprints) par `store.update` pour creer une entree d'historique annulable.
+  - Tests unitaires et E2E :
+    - `src/ai/test/ai.test.mjs` : test de l'arret / interruption (`AbortController`) sans impact sur le store.
+    - `e2e/studio.spec.js` : test E2E de l'activation du panneau Assistant IA, presence des boutons d'annulation / refaire et cycle complet d'annulation atomique dans le navigateur.
+- **Verifie** : `npm test` (2563 verifs + test IA + test MCP e2e), `npm run check:doc`, `npm run build`, validation des jeux de demo, et `npm run test:e2e` (7 tests Playwright verts).
+- **Etat** : Branche `feat/ai-assistant-ui`, Closes #91.
+
 ## 2026-10-27 (48) — [Phase H] H2 : agent IA avec outils dans l'editeur (Issue #90)
 - **Fait** :
   - Creation de `src/ai/agent.js` :
