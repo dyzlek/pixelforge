@@ -23,6 +23,8 @@ import {
   playtestGame,
   autoFixGame,
   runPlaytestAndFix,
+  COPILOT_SUGGESTIONS,
+  COPILOT_ALLOWED_TOOLS,
 } from '../agent.js';
 import { parseSongText } from '../../core/ops/song-text.js';
 import { validateProject } from '../../core/ops/validate.js';
@@ -645,5 +647,44 @@ assert.ok(toolPlaytestMsg.includes('corrigees'), 'executeTool doit indiquer que 
 // 12.7 Verification de l absence totale d emojis dans playtester.js
 const playtesterSource = readFileSync(new URL('../playtester.js', import.meta.url), 'utf-8');
 assert.ok(!emojiGenRegex.test(playtesterSource), 'playtester.js ne doit contenir aucun emoji');
+
+// ==========================================
+// 13. Copilote IA integre par editeur (Phase H - H7 - Issue #95)
+// ==========================================
+
+// 13.1 Verification des 5 editeurs supportes (script, sprite, map, song, scene3d)
+const requiredEditors = ['script', 'sprite', 'map', 'song', 'scene3d'];
+for (const ed of requiredEditors) {
+  assert.ok(COPILOT_SUGGESTIONS[ed]?.length >= 3, `L editeur "${ed}" doit avoir au moins 3 suggestions contextuelles`);
+  assert.ok(COPILOT_ALLOWED_TOOLS[ed]?.length >= 2, `L editeur "${ed}" doit avoir des outils autorises cibles`);
+}
+
+// 13.2 buildAgentSystemPrompt avec contexte document
+const dummyProject = createEmptyProject();
+const scriptCtxPrompt = buildAgentSystemPrompt(dummyProject, {
+  docKind: 'script',
+  docName: 'Ennemi',
+  docId: 'obj_ennemi',
+  allowedTools: COPILOT_ALLOWED_TOOLS.script,
+});
+assert.ok(scriptCtxPrompt.includes('CONTEXTE DU DOCUMENT ACTIF'), 'Le prompt systeme doit inclure la section contexte');
+assert.ok(scriptCtxPrompt.includes('Ennemi'), 'Le prompt systeme doit mentionner le nom de l objet actif');
+assert.ok(scriptCtxPrompt.includes('set_script'), 'Le prompt systeme doit mentionner les outils autorises');
+
+// 13.3 executeTool avec resolution automatique du document actif
+const ctxProject = createEmptyProject();
+ctxProject.objects.push({ id: 'obj_slime', name: 'Slime', script: { mode: 'code', code: '' } });
+// set_script sans preciser args.object -> doit deduire context.docName
+await executeTool(ctxProject, 'set_script', { code: 'self.vx = 40;' }, {
+  context: { docKind: 'script', docName: 'Slime' },
+});
+const slimeObj = ctxProject.objects.find((o) => o.name === 'Slime');
+assert.strictEqual(slimeObj.script.code, 'self.vx = 40;', 'executeTool doit appliquer au document actif sans nom explicite');
+
+// 13.4 Absence totale d emojis dans editor-copilot.js et editor-copilot.css
+const copilotJsSource = readFileSync(new URL('../../ui/editor-copilot.js', import.meta.url), 'utf-8');
+assert.ok(!emojiGenRegex.test(copilotJsSource), 'editor-copilot.js ne doit contenir aucun emoji');
+const copilotCssSource = readFileSync(new URL('../../ui/editor-copilot.css', import.meta.url), 'utf-8');
+assert.ok(!emojiGenRegex.test(copilotCssSource), 'editor-copilot.css ne doit contenir aucun emoji');
 
 console.log('Tous les tests Assistant IA & Game Design sont valides !');

@@ -1728,4 +1728,66 @@ test.describe('PixelForge Studio E2E Tests', () => {
     expect(result.finalOk).toBe(true);
     expect(result.finalIssuesCount).toBe(0);
   });
+
+  test('copilote IA integre dans chaque editeur (Phase H - H7) : bouton Demander a l\'IA et modal contextuel dans les 5 editeurs', async ({ page }) => {
+    // 1. Chargement du studio
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true, { timeout: 15000 });
+
+    // 2. Verification de la presence du bouton dans l'editeur de script
+    await page.evaluate(() => {
+      window.__pfWorkspace.open({ kind: 'objects', title: 'Objets & code' });
+    });
+    const scriptBtn = page.locator('.pf-document-view[data-doc-id*="objects"] .pf-copilot-btn, .obj-ed-bar .pf-copilot-btn').first();
+    await expect(scriptBtn).toBeVisible({ timeout: 10000 });
+    await expect(scriptBtn).toContainText(/Demander a l'IA/i);
+
+    // Clic sur le bouton pour ouvrir la modale contextuelle
+    await scriptBtn.click();
+    const modal = page.locator('#pf-copilot-modal-backdrop .pf-copilot-modal');
+    await expect(modal).toBeVisible();
+    await expect(modal.locator('.pf-copilot-badge')).toContainText(/script/i);
+    const chip = modal.locator('.pf-copilot-chip').first();
+    await expect(chip).toBeVisible();
+    await chip.click();
+    const textarea = modal.locator('#pf-copilot-prompt');
+    const textVal = await textarea.inputValue();
+    expect(textVal.length).toBeGreaterThan(0);
+    // Fermer
+    await modal.locator('.pf-copilot-close').click();
+    await expect(page.locator('#pf-copilot-modal-backdrop')).toHaveCount(0);
+
+    // 3. Verification dans l'editeur de sprite (pixel)
+    await page.evaluate(() => {
+      window.__pfWorkspace.open({ kind: 'pixel', title: 'Pixel art' });
+    });
+    const pixelBtn = page.locator('.pf-document-view[data-doc-id*="pixel"] .pf-copilot-btn, .px-toolbar .pf-copilot-btn').first();
+    await expect(pixelBtn).toBeVisible({ timeout: 10000 });
+
+    // 4. Verification dans l'editeur de carte (map)
+    await page.evaluate(() => {
+      window.__pfWorkspace.open({ kind: 'map', title: 'Cartes' });
+    });
+    const mapBtn = page.locator('.pf-document-view[data-doc-id*="map"] .pf-copilot-btn, .map-toolbar .pf-copilot-btn').first();
+    await expect(mapBtn).toBeVisible({ timeout: 10000 });
+
+    // 5. Verification dans l'editeur de musique (song)
+    await page.evaluate(() => {
+      window.__pfWorkspace.open({ kind: 'song', title: 'Musiques' });
+    });
+    const musicBtn = page.locator('.pf-document-view[data-doc-id*="song"] .pf-copilot-btn, .pf-music-transport .pf-copilot-btn').first();
+    await expect(musicBtn).toBeVisible({ timeout: 10000 });
+
+    // 6. Verification dans l'editeur de scene 3D (scene3d)
+    await page.evaluate(() => {
+      const p = window.__pfStore.project;
+      if (!p.scenes3d || p.scenes3d.length === 0) {
+        window.__pfOps.upsertScene3D(p, { name: 'Main 3D' });
+      }
+      const sc = p.scenes3d[0];
+      window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
+    });
+    const s3dBtn = page.locator('.pf-document-view[data-doc-id*="scene3d"] .pf-copilot-btn, #pf-s3d-ai-mount .pf-copilot-btn').first();
+    await expect(s3dBtn).toBeVisible({ timeout: 10000 });
+  });
 });

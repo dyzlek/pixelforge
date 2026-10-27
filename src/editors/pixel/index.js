@@ -1,6 +1,7 @@
 import './style.css';
 import { createSprite, uid, findById } from '../../core/project.js';
 import { line, rect, ellipse, floodFill, hexToRgba, rgbaToHex } from './tools.js';
+import { createEditorCopilotButton } from '../../ui/editor-copilot.js';
 
 const TOOLS = [
   { id: 'pencil', key: 'b', icon: '/', label: 'Crayon' },
@@ -247,6 +248,23 @@ function build(root, store, opts = {}) {
   const zoomLabel = h('span', { class: 'px-label', style: 'min-width:34px;text-align:center' }, '');
   const gridBtn = h('button', { title: 'Grille de pixels', onclick: () => { showGrid = !showGrid; syncToolbar(); drawOverlay(); } }, '▦ Grille');
   const coordsEl = h('span', { class: 'px-coords' }, '');
+  const bAi = createEditorCopilotButton({
+    store,
+    docKind: 'sprite',
+    getContext: () => {
+      const sp = curSprite();
+      return {
+        docKind: 'sprite',
+        docName: sp ? sp.name : 'Sprite',
+        docId: curId,
+        details: sp ? `${sp.width}x${sp.height} px, ${(sp.frames || []).length} frame(s)` : '',
+      };
+    },
+    onApplied: () => {
+      loadSprite(curId);
+      renderList();
+    },
+  });
   toolbar.append(
     h('span', { class: 'px-sep' }), h('span', { class: 'px-label' }, 'Pinceau'), ...brushBtns,
     h('span', { class: 'px-sep' }), mirrorBtn, fillBtn,
@@ -256,6 +274,7 @@ function build(root, store, opts = {}) {
     h('button', { title: 'Zoomer [+]', onclick: () => zoomBy(1) }, '+'),
     h('button', { title: 'Ajuster à la fenêtre', onclick: () => { fitView(); layout(); } }, 'Ajuster'),
     gridBtn, coordsEl,
+    h('span', { class: 'px-sep' }), bAi,
   );
 
   // zone de dessin

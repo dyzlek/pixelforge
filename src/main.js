@@ -25,6 +25,12 @@ import {
   autoFixGame,
   runPlaytestAndFix,
 } from './ai/agent.js';
+import {
+  createEditorCopilotButton,
+  openEditorCopilotModal,
+  COPILOT_SUGGESTIONS,
+  COPILOT_ALLOWED_TOOLS,
+} from './ui/editor-copilot.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -336,6 +342,10 @@ window.addEventListener('keydown', (e) => {
       playtestGame,
       autoFixGame,
       runPlaytestAndFix,
+      createEditorCopilotButton,
+      openEditorCopilotModal,
+      COPILOT_SUGGESTIONS,
+      COPILOT_ALLOWED_TOOLS,
     };
     window.__pfCommandPalette = palette;
     window.__pfReady = true;

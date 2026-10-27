@@ -8,6 +8,7 @@ import { renderPlaylist } from './playlist.js';
 import { renderMixer } from './mixer.js';
 import { getIconSvg } from '../../ui/icons.js';
 import { DRUM_PATTERNS } from '../../audio/presets/drums.js';
+import { createEditorCopilotButton } from '../../ui/editor-copilot.js';
 
 let sharedAudioCtx = null;
 let sharedMasterGain = null;
@@ -308,6 +309,28 @@ export function mount(container, store, { refId = null } = {}) {
   patItem.appendChild(lenSelect);
 
   transport.appendChild(patItem);
+
+  const sepAi = document.createElement('div');
+  sepAi.className = 'pf-transport-sep';
+  transport.appendChild(sepAi);
+
+  const bAi = createEditorCopilotButton({
+    store,
+    docKind: 'song',
+    getContext: () => {
+      const s = resolveSong();
+      return {
+        docKind: 'song',
+        docName: s ? s.name : 'Musique',
+        docId: songId,
+        details: s ? `BPM: ${s.bpm}, canaux: ${(s.channels || []).length}, patterns: ${(s.patterns || []).length}` : '',
+      };
+    },
+    onApplied: () => {
+      render();
+    },
+  });
+  transport.appendChild(bAi);
 
   root.appendChild(transport);
 

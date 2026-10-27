@@ -1,0 +1,209 @@
+/* PixelForge — Styles pour le Copilote IA integre dans chaque editeur (Phase H - H7) */
+
+.pf-copilot-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(65, 166, 246, 0.2), rgba(115, 239, 247, 0.15));
+  border: 1px solid rgba(65, 166, 246, 0.5);
+  color: #73eff7;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius, 4px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.pf-copilot-btn:hover {
+  background: linear-gradient(135deg, rgba(65, 166, 246, 0.35), rgba(115, 239, 247, 0.25));
+  border-color: #73eff7;
+  color: #fff;
+  box-shadow: 0 0 8px rgba(65, 166, 246, 0.3);
+}
+
+.pf-copilot-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 12, 20, 0.7);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.pf-copilot-modal {
+  width: 520px;
+  max-width: 90vw;
+  max-height: 85vh;
+  background: var(--bg-1, #1a1c2c);
+  border: 1px solid var(--border, #333c57);
+  border-radius: 8px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-ui, sans-serif);
+  font-size: 12px;
+  color: var(--fg-0, #f4f4f4);
+}
+
+.pf-copilot-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-0, #13141f);
+  border-bottom: 1px solid var(--border, #333c57);
+}
+
+.pf-copilot-title-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pf-copilot-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(65, 166, 246, 0.2);
+  color: #73eff7;
+  border: 1px solid rgba(65, 166, 246, 0.4);
+}
+
+.pf-copilot-close {
+  background: none;
+  border: none;
+  color: var(--fg-2, #94b0c2);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pf-copilot-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.pf-copilot-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  max-height: 55vh;
+}
+
+.pf-copilot-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pf-copilot-chip {
+  background: var(--bg-2, #29366f);
+  border: 1px solid var(--border, #333c57);
+  color: var(--fg-1, #94b0c2);
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.pf-copilot-chip:hover {
+  background: rgba(65, 166, 246, 0.25);
+  border-color: #41a6f6;
+  color: #fff;
+}
+
+.pf-copilot-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 70px;
+  background: var(--bg-0, #13141f);
+  border: 1px solid var(--border, #333c57);
+  border-radius: 6px;
+  color: var(--fg-0, #f4f4f4);
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  resize: vertical;
+}
+
+.pf-copilot-textarea:focus {
+  outline: none;
+  border-color: #41a6f6;
+  box-shadow: 0 0 6px rgba(65, 166, 246, 0.3);
+}
+
+.pf-copilot-status {
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  display: none;
+}
+
+.pf-copilot-status.running {
+  display: block;
+  background: rgba(65, 166, 246, 0.15);
+  border: 1px solid rgba(65, 166, 246, 0.3);
+  color: #73eff7;
+}
+
+.pf-copilot-status.success {
+  display: block;
+  background: rgba(56, 183, 100, 0.15);
+  border: 1px solid rgba(56, 183, 100, 0.3);
+  color: #a7f070;
+}
+
+.pf-copilot-status.error {
+  display: block;
+  background: rgba(177, 62, 83, 0.15);
+  border: 1px solid rgba(177, 62, 83, 0.3);
+  color: #ef7d57;
+}
+
+.pf-copilot-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.pf-copilot-step-item {
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 3px;
+  background: var(--bg-0, #13141f);
+  color: var(--fg-1, #94b0c2);
+  border-left: 2px solid #41a6f6;
+}
+
+.pf-copilot-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--bg-0, #13141f);
+  border-top: 1px solid var(--border, #333c57);
+}
+
+.pf-copilot-hint {
+  color: var(--fg-2, #566c86);
+  font-size: 10px;
+}
+
+.pf-copilot-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

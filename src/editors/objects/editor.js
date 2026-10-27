@@ -6,6 +6,7 @@ import { autocompletion, snippetCompletion } from '@codemirror/autocomplete';
 import { createGraphEditor } from './graph-editor.js';
 import { compileGraph } from '../../graph/index.js';
 import { emptyGraph } from '../../core/project.js';
+import { createEditorCopilotButton } from '../../ui/editor-copilot.js';
 import apiDoc from '../../../docs/SCRIPT_API.md?raw';
 
 function el(tag, cls, text) {
@@ -107,7 +108,31 @@ export function createScriptEditor(host, store, { isGlobal, objectId }) {
   seg.append(bGraph, bCode);
   const bGen = el('button', null, 'Voir le code');
   const bHelp = el('button', null, 'Aide API');
-  bar.append(seg, el('span', 'obj-spacer'), bGen, bHelp);
+  const bAi = createEditorCopilotButton({
+    store,
+    docKind: 'script',
+    getContext: () => {
+      const obj = isGlobal ? null : store.project.objects?.find((o) => o.id === objectId);
+      const sc = getScript();
+      return {
+        docKind: 'script',
+        docName: isGlobal ? 'global' : (obj ? obj.name : 'Objet'),
+        docId: objectId || 'global',
+        details: `Mode: ${sc?.mode || 'code'}, taille script: ${(sc?.code || '').length} car.`,
+      };
+    },
+    onApplied: () => {
+      const sc = getScript();
+      if (sc?.mode === 'code' && cm) {
+        cm.dispatch({
+          changes: { from: 0, to: cm.state.doc.length, insert: sc.code || '' },
+        });
+      } else if (sc?.mode === 'graph') {
+        toGraph();
+      }
+    },
+  });
+  bar.append(seg, el('span', 'obj-spacer'), bAi, bGen, bHelp);
   const main = el('div', 'obj-ed-main');
   const body = el('div', 'obj-ed-body');
   const gen = el('pre', 'obj-ed-gen');
