@@ -211,6 +211,8 @@ function formatStepLabel(name, args = {}) {
       return `Consultation du catalogue de noeuds`;
     case 'generate_asset':
       return `Generation de ${args.type || 'ressource'} "${args.name || ''}" (${args.description || ''})`;
+    case 'generate_game':
+      return `Generation d un jeu complet 3 niveaux (${args.dimension || '2D'})`;
     default:
       return `${name}`;
   }
@@ -275,6 +277,7 @@ export function createAiAssistantPanel(container, store, workspace) {
     </div>
 
     <div class="pf-ai-chips-bar">
+      <button class="pf-ai-chip" data-prompt="Fais-moi un jeu de plateforme avec 3 niveaux et un boss">Jeu complet 3 niveaux</button>
       <button class="pf-ai-chip" data-prompt="Ajoute une piece qui rapporte 10 points et place-en 5 sur la carte">Piece collectible</button>
       <button class="pf-ai-chip" data-prompt="Cree un script de plateforme complet pour le joueur avec Coyote Time et Jump Buffering">Saut plateforme pro</button>
       <button class="pf-ai-chip" data-prompt="Cree un ennemi patrouilleur qui fait demi-tour aux murs et elimine le joueur s'il est touche de cote">Ennemi patrouilleur</button>

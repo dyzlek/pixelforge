@@ -47,6 +47,10 @@ import {
   generateModelData,
   generateSoundData,
 } from './generators.js';
+import {
+  generateFullGame,
+  generateGameDesignDocument,
+} from './game-generator.js';
 
 export {
   generateAsset,
@@ -54,6 +58,8 @@ export {
   generateSongData,
   generateModelData,
   generateSoundData,
+  generateFullGame,
+  generateGameDesignDocument,
 };
 
 /**
@@ -632,6 +638,32 @@ export const AGENT_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'generate_game',
+      description: 'Genere un jeu complet jouable et terminable de 3 niveaux progressifs avec une arene et un boss (en 2D ou en 3D) a partir d\'une description en langage naturel.',
+      parameters: {
+        type: 'object',
+        properties: {
+          description: {
+            type: 'string',
+            description: 'Description de l\'univers et du gameplay souhaite (ex: fais-moi un jeu de plateforme avec 3 niveaux et un boss)',
+          },
+          dimension: {
+            type: 'string',
+            enum: ['2d', '3d'],
+            description: 'Dimension du jeu (2d ou 3d)',
+          },
+          name: {
+            type: 'string',
+            description: 'Titre ou nom du jeu a creer',
+          },
+        },
+        required: ['description'],
+      },
+    },
+  },
 ];
 
 /**
@@ -809,6 +841,14 @@ export async function executeTool(project, name, rawArgs = {}, options = {}) {
 
   // Execution de l'operation
   switch (name) {
+    case 'generate_game': {
+      const res = generateFullGame(args.description, {
+        dimension: args.dimension,
+        name: args.name,
+        baseProject: project,
+      });
+      return `${res.summary}\n\n${res.gdd.markdown}`;
+    }
     case 'generate_asset': {
       const { type, data } = generateAsset(args.type, args.description, {
         name: args.name,
@@ -969,11 +1009,12 @@ Outils disponibles :
 - render_scene3d : afficher la vue ASCII d'une scene 3D
 - list_nodes : lister les noeuds Blueprint
 - generate_asset : generer une ressource complete pret a l'emploi depuis une simple description (sprite anime, musique tracker chiptune, modele 3D voxel ou CC0, son sfxr)
+- generate_game : generer un jeu complet jouable et terminable de 3 niveaux avec boss (en 2D ou 3D) depuis une simple description
 
 Regles imperatrices :
 1. N'utilise JAMAIS aucun emoji dans tes reponses ou tes outils.
 2. Appelle les outils adaptes pour accomplir la requete de l'utilisateur. Tu peux enchainer plusieurs outils en une seule sequence (ex: creer un sprite, creer l'objet associe avec son script, puis placer plusieurs instances sur la carte).
-3. Tu peux generer n'importe quelle ressource complete en une seule demande avec "generate_asset" ou directement avec "upsert_sprite", "upsert_song", "upsert_model" ou "add_sound" en fournissant une description.
+3. Tu peux generer n'importe quelle ressource complete en une seule demande avec "generate_asset" ou meme un jeu complet avec "generate_game" (ex: "fais-moi un jeu de plateforme avec 3 niveaux et un boss").
 4. Si ton environnement ne prend pas en charge les appels d'outils natifs (function calling), reponds UNIQUEMENT avec un plan JSON valide au format :
 \`\`\`json
 {

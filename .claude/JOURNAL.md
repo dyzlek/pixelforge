@@ -1,5 +1,31 @@
 # Journal — PixelForge
 
+## 2026-10-27 (71) — [Phase H] H5 : l'IA genere un jeu complet a partir d'une description (Issue #93)
+- **Fait** :
+  - Creation de `src/ai/game-generator.js` (module pur, zero dependance DOM ni Node) :
+    - `generateGameDesignDocument(description, options)` : generation d'un document de conception structure (GDD) incluant le titre, le pitch, la dimension (2D/3D), les reglages de Game Feel (Coyote Time 100 ms, Jump Buffering 100 ms, saut variable), la progression narrative et de difficulte sur 3 niveaux selon la structure Kishotenketsu (Ki: decouverte, Sho: developpement/obstacles, Ten & Ketsu: climax et combat de boss), les entites interactives (Joueur, Piece, Ennemi, Boss a 3 PV, Portail), la musique adaptative et le HUD. Formatage markdown pret a etre presente et modifie.
+    - `buildGame2D(project, gdd)` : construction complete ordonnee d'un jeu de plateforme 2D complet (reglages, sprites animes avec Sweetie 16, objets avec scripts riches de Game Feel et collisions precisement ajustees, 3 cartes reliees par des portails avec plateforme de depart et arene de boss, bande originale chiptune multi-canaux et effets sonores sfxr).
+    - `buildGame3D(project, gdd)` : construction complete ordonnee d'un jeu de plateforme 3D retro voxel (camera troisieme personne, commandes relatives, saut avec velocite verticale, 3 scenes reliees avec arene finale de boss, pieces tournantes, musiques et sons).
+    - `generateFullGame(description, options)` : pipeline unifie coordonnant la creation du GDD, la construction du jeu, et la validation sans faute (0 erreur, 0 avertissement bloquant).
+  - `src/ai/agent.js` :
+    - Ajout de l'outil `generate_game` a `AGENT_TOOLS` avec parametres `description`, `dimension` et `name`.
+    - Integration dans `executeTool` avec restitution du resume de generation et du GDD.
+    - Mise a jour du system prompt (`buildAgentSystemPrompt`) avec explicitation de la generation d'un jeu complet d'une seule demande.
+    - Export de `generateFullGame` et `generateGameDesignDocument`.
+  - Interface Studio (`src/ui/panels/ai-assistant.js` & `src/main.js`) :
+    - Prise en charge de `generate_game` dans `formatStepLabel`.
+    - Ajout d'une suggestion d'invite (chip) : « Fais-moi un jeu de plateforme avec 3 niveaux et un boss ».
+    - Exposition sur `window.__pfAi` pour acces programmatique depuis le studio et les tests automatises.
+  - Documentation :
+    - Mise a jour de `docs/AI_GENERATION.md` avec la section 7 consacree au generateur de jeu complet, aux regles de Game Feel et a Kishotenketsu.
+    - Mise a jour de `docs/ARCHITECTURE.md`.
+  - Tests :
+    - Section 11 ajoutee dans `src/ai/test/ai.test.mjs` testant la creation du GDD, la generation 2D avec 3 niveaux, joueur, boss et 0 erreur de validation, la generation 3D avec 3 scenes, boss et 0 erreur de validation, l'outil `executeTool('generate_game')`, et l'absence totale d'emojis dans `game-generator.js`.
+    - Test Playwright 26 ajoute dans `e2e/studio.spec.js` testant la generation 2D complete dans le navigateur, le demarrage en jeu via F5/F8, et la generation 3D sans aucune erreur de validation.
+- **Verifie** : `npm test` (14 suites OK, 0 echec), `npm run check:doc`, `npm run build`, validation des 6 jeux de demo (`npm run pf -- validate <game>`) et 26/26 tests Playwright e2e verts. Strictement zero emoji.
+- **Etat** : Branche `feat/ai-generate-full-game`, Closes #93.
+
+
 ## 2026-10-27 (70) — [Phase H] H4 : l'IA genere sprites, musiques, sons et modeles 3D (Issue #92)
 - **Fait** :
   - `src/ai/generators.js` :
