@@ -629,6 +629,16 @@
   - Budget memoire des echantillons (500 Ko par echantillon, 5 Mo max par projet) et architecture WebAudio autonome sans import dans `src/audio/chip.js`.
 - **Verifie** : `npm test`, `npm run build`, `npm run check:doc`. Zero emoji.
 
+## 2026-10-27 (56) — [Phase G] G1 : Moteur audio v2 (pistes, bus, planificateur commun) (Closes #81)
+- **Fait** :
+  - Creation de la structure de bus audio par piste dans `src/audio/chip.js` (`trackBuses`) reliant `input -> fader -> panner -> songGain/master`.
+  - Routage dynamique des evenements de notes vers le bus de chaque piste tout en maintenant les caracteristiques de timbre et volume existantes.
+  - Pilotage temps reel des parametres de chaque piste via le controleur : `setTrackVolume`, `setTrackPan`, `setTrackMute`, `getTrack` et accesseur `tracks`.
+  - Prise en charge des clips de notes `clips[]` dans le planificateur d'anticipation WebAudio a double horloge.
+  - Normalisation bidirectionnelle automatique sans perte entre `channels[]` et `tracks[]` dans `src/core/project.js`.
+  - Outil de mesure et validation de performance `measureSchedulingPerformance` validant 16 pistes simultanees sans craquement.
+- **Verifie** : `npm test`, `npm run build`, `npm run check:doc`. Zero emoji.
+
 
 
 
