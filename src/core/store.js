@@ -85,6 +85,10 @@ function createStore() {
     update(fn, reason = 'edit') {
       if (reason !== 'history') pushHistory();
       fn(store.project);
+      if (store.project?.meta?.id && store.currentId !== store.project.meta.id) {
+        store.currentId = store.project.meta.id;
+        lsSet(LAST_ID_KEY, store.currentId);
+      }
       store.emit('change', reason);
       scheduleSave();
     },

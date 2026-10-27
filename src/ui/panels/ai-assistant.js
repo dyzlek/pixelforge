@@ -157,6 +157,22 @@ export function openResource(store, workspace, toolName, args = {}) {
       }
       break;
     }
+    case 'generate_game': {
+      if (p.settings?.dimension === '3d' || p.dimension === '3d') {
+        const sc = (p.scenes3d || []).find((s) => s.id === p.settings?.startScene3DId) || p.scenes3d?.[0];
+        if (sc) {
+          workspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name }, true);
+          store.setSelection?.({ type: 'scene3d', id: sc.id });
+        }
+      } else {
+        const startMap = (p.maps || []).find((x) => x.id === p.settings?.startMapId) || p.maps?.[0];
+        if (startMap) {
+          workspace.open({ kind: 'map', refId: startMap.id, title: startMap.name }, true);
+          store.setSelection?.({ type: 'map', id: startMap.id });
+        }
+      }
+      break;
+    }
   }
 }
 
@@ -608,13 +624,18 @@ export function createAiAssistantPanel(container, store, workspace) {
             badgeEl.textContent = 'OK';
 
             // Bouton pour ouvrir la ressource creee ou modifiee d'un clic
-            const targetName = step.args?.name || step.args?.object || step.args?.map || step.args?.scene;
-            if (targetName) {
-              openBtn.textContent = `Ouvrir ${targetName}`;
+            const targetName = step.args?.name || step.args?.object || step.args?.map || step.args?.scene || (step.name === 'generate_game' ? store.project?.name : null);
+            if (targetName || step.name === 'generate_game') {
+              openBtn.textContent = `Ouvrir ${targetName || 'le jeu'}`;
               openBtn.style.display = 'inline-block';
               openBtn.onclick = () => {
                 openResource(store, workspace, step.name, step.args);
               };
+            }
+
+            // Ouverture automatique du jeu des generation reussie
+            if (step.name === 'generate_game') {
+              openResource(store, workspace, step.name, step.args);
             }
 
             // Apercu optionnel si resultat ASCII ou validation

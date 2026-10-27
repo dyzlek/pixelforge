@@ -955,6 +955,12 @@ export async function executeTool(project, name, rawArgs = {}, options = {}) {
         name: args.name,
         baseProject: project,
       });
+      if (res.project && project) {
+        for (const k of Object.keys(project)) {
+          if (!(k in res.project)) delete project[k];
+        }
+        Object.assign(project, res.project);
+      }
       return `${res.summary}\n\n${res.gdd.markdown}`;
     }
     case 'generate_asset': {
@@ -1317,6 +1323,14 @@ export async function runAgent({
       }
       Object.assign(p, JSON.parse(JSON.stringify(workingCopy)));
     }, 'ai-agent');
+
+    // Si un jeu complet a ete genere ou recree, sauvegarder immediatement et notifier l'interface
+    if (steps.some((s) => s.name === 'generate_game')) {
+      if (typeof store.saveNow === 'function') {
+        store.saveNow().catch(() => {});
+      }
+      store.emit('load', store.project);
+    }
   }
 
   return {

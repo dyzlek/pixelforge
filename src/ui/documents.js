@@ -25,6 +25,7 @@ const ICON_NAMES = {
   library: 'project',
   map: 'map',
   scene: 'map',
+  scene3d: 'map',
   pixel: 'palette',
   sprite: 'sprite',
   objects: 'object',
@@ -32,6 +33,7 @@ const ICON_NAMES = {
   sound: 'sound',
   song: 'music',
   model3d: 'object',
+  voxel: 'object',
   play: 'play',
 };
 
@@ -97,8 +99,14 @@ export class DocumentWorkspace {
     const p = this.store.project;
     if (!p) return;
 
-    if (p.maps?.length) {
-      this.open({ kind: 'map', refId: p.settings?.startMapId || p.maps[0].id, title: p.maps[0].name }, true);
+    if (p.settings?.dimension === '3d' || p.dimension === '3d') {
+      if (p.scenes3d?.length) {
+        this.open({ kind: 'scene3d', refId: p.settings?.startScene3DId || p.scenes3d[0].id, title: p.scenes3d[0].name }, true);
+      }
+    } else {
+      if (p.maps?.length) {
+        this.open({ kind: 'map', refId: p.settings?.startMapId || p.maps[0].id, title: p.maps[0].name }, true);
+      }
     }
     if (p.sprites?.length) {
       this.open({ kind: 'pixel', refId: p.sprites[0].id, title: p.sprites[0].name }, false);

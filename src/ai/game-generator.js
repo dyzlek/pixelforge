@@ -44,6 +44,18 @@ function norm(str) {
 }
 
 /**
+ * Convertit un titre en identifiant de jeu valide (lettres minuscules, chiffres et tirets)
+ */
+function slugify(str) {
+  return String(str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'game';
+}
+
+/**
  * 1. Generateur de Document de Conception (GDD - Game Design Document)
  * Produit un document concis, structure, presentable a l'utilisateur et modifiable.
  */
@@ -1045,6 +1057,26 @@ export function generateFullGame(description = '', options = {}) {
     globalScript: { mode: 'code', code: '' },
   };
 
+  // Initialisation et conservation des metadonnees valides
+  if (!targetProject.meta) targetProject.meta = {};
+  if (!targetProject.meta.id) {
+    targetProject.meta.id = slugify(gdd.title) + '-' + Math.random().toString(36).slice(2, 6);
+  }
+  targetProject.name = gdd.title;
+  targetProject.meta.name = gdd.title;
+  targetProject.meta.description = gdd.pitch || '';
+
+  // Reinitialisation des collections pour produire un jeu propre a 3 niveaux
+  targetProject.maps = [];
+  targetProject.scenes3d = [];
+  targetProject.sprites = [];
+  targetProject.objects = [];
+  targetProject.sounds = [];
+  targetProject.songs = [];
+  targetProject.models = [];
+  targetProject.prefabs3d = [];
+  targetProject.materials = [];
+
   if (gdd.dimension === '3d') {
     buildGame3D(targetProject, gdd);
   } else {
@@ -1062,6 +1094,14 @@ export function generateFullGame(description = '', options = {}) {
   const playtestResult = runPlaytestAndFix(targetProject);
   if (playtestResult.project) {
     targetProject = playtestResult.project;
+  }
+
+  // Si un projet de base etait fourni, lui transferer le resultat final
+  if (options.baseProject && targetProject !== options.baseProject) {
+    for (const k of Object.keys(options.baseProject)) {
+      if (!(k in targetProject)) delete options.baseProject[k];
+    }
+    Object.assign(options.baseProject, targetProject);
   }
 
   const levelCount = gdd.dimension === '3d' ? (targetProject.scenes3d || []).length : (targetProject.maps || []).length;

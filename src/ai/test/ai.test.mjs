@@ -849,4 +849,70 @@ assert.ok(!emojiGenRegex.test(copilotCssSource), 'editor-copilot.css ne doit con
   assert.ok(!emojiGenRegex.test(standardsDocSource), 'GAMEPLAY_STANDARDS.md ne doit contenir aucun emoji');
 }
 
+// 16. Synchronisation de la generation de jeu complet avec le store et notification load
+{
+  let loadEmitted = false;
+  let saveNowCalled = false;
+  const mockStore = {
+    project: createEmptyProject(),
+    currentId: 'initial_draft',
+    update(fn, reason) {
+      fn(this.project);
+      if (this.project?.meta?.id && this.currentId !== this.project.meta.id) {
+        this.currentId = this.project.meta.id;
+      }
+    },
+    emit(evt) {
+      if (evt === 'load') loadEmitted = true;
+    },
+    async saveNow() {
+      saveNowCalled = true;
+    },
+  };
+
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    json: async () => ({
+      choices: [{
+        message: {
+          content: 'Voici votre jeu !',
+          tool_calls: [{
+            id: 'call_gen_1',
+            function: {
+              name: 'generate_game',
+              arguments: JSON.stringify({ description: 'jeu de plateforme retro', name: 'Mon Super Jeu', dimension: '2d' }),
+            },
+          }],
+        },
+      }],
+    }),
+  });
+
+  try {
+    const agentRes = await runAgent({
+      project: mockStore.project,
+      prompt: 'genere un jeu',
+      store: mockStore,
+      config: { endpoint: 'http://localhost:1234/v1' },
+      allowedTools: ['generate_game'],
+      maxSteps: 1,
+    });
+
+    assert.strictEqual(agentRes.steps.length, 1, 'une etape tool_call doit etre executee');
+    assert.strictEqual(mockStore.project.maps.length, 3, 'le projet du store doit contenir 3 cartes');
+    assert.ok(mockStore.project.meta?.id, 'le projet doit posseder un id valide');
+    assert.strictEqual(mockStore.currentId, mockStore.project.meta.id, 'currentId doit etre synchronise avec meta.id');
+    assert.strictEqual(loadEmitted, true, 'l evenement load doit avoir ete emis pour actualiser les editeurs et la vue');
+    assert.strictEqual(saveNowCalled, true, 'le jeu doit avoir ete sauvegarde sur le stockage');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+
+  const aiAssistantJsSource = readFileSync(new URL('../../ui/panels/ai-assistant.js', import.meta.url), 'utf-8');
+  assert.ok(!emojiGenRegex.test(aiAssistantJsSource), 'ai-assistant.js ne doit contenir aucun emoji');
+  const storeJsSource = readFileSync(new URL('../../core/store.js', import.meta.url), 'utf-8');
+  assert.ok(!emojiGenRegex.test(storeJsSource), 'store.js ne doit contenir aucun emoji');
+}
+
 console.log('Tous les tests Assistant IA & Game Design sont valides !');
