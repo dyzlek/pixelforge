@@ -242,6 +242,9 @@ export function validateProject(p) {
     'pulse12', 'pulse25', 'pulse50', 'triangle', 'saw', 'noise', 'wave', 'sample',
     'synth_sub', 'synth_fm', 'sampler', 'drum_machine'
   ]);
+  const VALID_EFFECTS = new Set([
+    'reverb', 'delay', 'eq3', 'compressor', 'filter', 'distortion', 'chorus', 'bitcrusher'
+  ]);
   for (const song of p.songs || []) {
     const sw = `song "${song.name}"`;
     if (!song.channels?.length) add('warning', sw, 'no channels');
@@ -251,6 +254,17 @@ export function validateProject(p) {
       if (!VALID_INSTRUMENTS.has(ch.instrument)) add('error', `${sw} channel "${ch.name}"`, `unknown instrument "${ch.instrument}"`);
       if (ch.instrument === 'sample' && ch.sampleSoundId && !(p.sounds || []).some((s) => s.id === ch.sampleSoundId)) {
         add('error', `${sw} channel "${ch.name}"`, `sampleSoundId "${ch.sampleSoundId}" matches no sound`);
+      }
+      for (const eff of ch.effects || []) {
+        if (!VALID_EFFECTS.has(eff.type)) add('error', `${sw} channel "${ch.name}"`, `unknown effect type "${eff.type}"`);
+      }
+      for (const snd of ch.sends || []) {
+        if (!snd.busId && !snd.targetTrackId) add('error', `${sw} channel "${ch.name}"`, 'send missing busId');
+      }
+    }
+    for (const trk of song.tracks || []) {
+      for (const eff of trk.effects || []) {
+        if (!VALID_EFFECTS.has(eff.type)) add('error', `${sw} track "${trk.name}"`, `unknown effect type "${eff.type}"`);
       }
     }
     const patIds = new Set();

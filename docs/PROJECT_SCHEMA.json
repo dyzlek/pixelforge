@@ -312,7 +312,33 @@
           "type": "array",
           "items": { "type": "number" }
         },
-        "sampleSoundId": { "type": ["string", "null"] }
+        "sampleSoundId": { "type": ["string", "null"] },
+        "effects": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["type"],
+            "properties": {
+              "id": { "type": "string" },
+              "type": {
+                "enum": ["reverb", "delay", "eq3", "compressor", "filter", "distortion", "chorus", "bitcrusher"]
+              },
+              "bypass": { "type": "boolean", "default": false },
+              "mix": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        },
+        "sends": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["busId", "amount"],
+            "properties": {
+              "busId": { "type": "string" },
+              "amount": { "type": "number", "minimum": 0, "maximum": 1, "default": 0 }
+            }
+          }
+        }
       }
     },
     "pattern": {
