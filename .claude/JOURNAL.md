@@ -1,5 +1,35 @@
 # Journal — PixelForge
 
+## 2026-10-27 (61) — [Phase F] F6 : physique 3D réelle avec Rapier (Issue #75)
+- **Fait** :
+  - `package.json` & `package-lock.json` :
+    - Ajout de la dependance `@dimforge/rapier3d-compat` (^0.21.0) pour la physique 3D complete basee sur WebAssembly.
+  - `docs/PROJECT_SCHEMA.json` & `src/core/project.js` :
+    - Extension de `settings.physics3d` ('simple' | 'rapier') avec 'simple' par defaut pour une retrocompatibilite totale.
+    - Extension des proprietes physiques d'objet (`object.physics`) : `bodyType` ('dynamic' | 'static' | 'kinematic'), `colliderShape` ('box' | 'sphere' | 'capsule' | 'trimesh'), `mass`, `friction`, `restitution`.
+    - Normalisation sans perte dans `normalizeProject`.
+  - `src/core/ops/validate.js` :
+    - Validation du mode `settings.physics3d`, de `bodyType`, de `colliderShape`, ainsi que des valeurs numeriques de masse, friction et restitution.
+  - `src/ui/inspector-schemas.js` :
+    - Prise en charge du selecteur de moteur physique 3D dans l'inspecteur des parametres globaux et ajout des proprietes physiques avancees dans l'inspecteur d'objet.
+  - `src/runtime3d/engine3d.js` :
+    - Zero import externe strictement preserve : injection via `opts.rapier` ou `globalThis.RAPIER`.
+    - Initialisation du monde physique Rapier (`initPhysicsWorld`) avec vecteur de gravite parametrable.
+    - Creation d'un corps statique compose unique (`groundBody`) regroupant l'ensemble des blocs solides de la GridMap sans interstice ni surcout d'instanciation.
+    - Prise en charge complete des corps rigides dynamiques, fixes et cinematiques avec collisionneurs cuboides, spheriques, capsules et maillages trimesh.
+    - Synchronisation bidirectionnelle fluide : accesseurs reactifs `vx`, `vy`, `vz` (`_velOverridden`), impulsion physique direct `applyImpulse(ix, iy, iz)`, saut `jump()`, deplacement `moveForward()` / `moveRight()`.
+    - Detection robuste du sol par lancer de rayons Rapier vertical descendant (`castRayAndGetNormal`).
+    - Dépilement des evenements de collision (`overlapStart`, `collide`, `overlapEnd`) et evenement continu `overlap`.
+    - Nettoyage et liberation integrale de la memoire WASM Rapier a la destruction (`destroy`).
+    - Repli autonome et sans regression sur la physique retro AABB historique quand `settings.physics3d === 'simple'` ou en absence du module.
+  - `src/runtime/play.js` & `src/runtime3d/export-template-3d.js` :
+    - Importation asynchrone a la demande de `@dimforge/rapier3d-compat` dans le Studio et importmap CDN unpkg dans les exports HTML 3D autonomes.
+  - Tests :
+    - `src/runtime3d/test/sim3d.test.mjs` : tests complets sous Rapier (Cube Runner, Donjon 3D, boites empilees et poussees par un joueur, verification des 4 formes de collisionneurs).
+    - `e2e/studio.spec.js` : test 16 Playwright validant l'activation de Rapier en direct dans le projet, le demarrage F5, la stabilite sur le sol et la conservation des reglages.
+- **Verifie** : `npm test` (2563 verifications, zero echec), `npm run check:doc`, `npm run build`, validation de tous les jeux et `npm run test:e2e` (16/16 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/physics-rapier-3d`, Closes #75.
+
 ## 2026-10-27 (60) — [Phase F] F5 : lumières, ciel et ambiance éditables (Issue #74)
 - **Fait** :
   - `src/core/project.js` & `docs/PROJECT_SCHEMA.json` :

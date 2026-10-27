@@ -67,7 +67,19 @@ export function createSprite(name = 'Sprite', width = 16, height = 16) {
 export function createObject(name = 'Objet', spriteId = null) {
   return {
     id: uid('obj'), name, spriteId, defaultAnim: 'idle', hitbox: null,
-    physics: { enabled: true, gravity: true, immovable: false, bounce: 0, collideMap: true, collideWorld: true },
+    physics: {
+      enabled: true,
+      gravity: true,
+      immovable: false,
+      bounce: 0,
+      collideMap: true,
+      collideWorld: true,
+      bodyType: 'dynamic',
+      colliderShape: 'box',
+      mass: 1,
+      friction: 0.5,
+      restitution: 0
+    },
     script: emptyScript(),
     exportedProps: [],
   };
@@ -241,7 +253,7 @@ export function createEmptyProject(name = 'Mon jeu') {
     version: PROJECT_VERSION,
     name,
     meta: createMeta(name),
-    settings: { width: 320, height: 180, pixelZoom: 3, tileSize: 16, background: '#1a1c2c', startMapId: map.id, gravity: 800, touchControls: true, dimension: '2d' },
+    settings: { width: 320, height: 180, pixelZoom: 3, tileSize: 16, background: '#1a1c2c', startMapId: map.id, gravity: 800, touchControls: true, dimension: '2d', physics3d: 'simple' },
     palette: [...DEFAULT_PALETTE],
     sprites: [],
     sounds: [],
@@ -266,6 +278,7 @@ export function normalizeProject(p) {
   const base = createEmptyProject(p.name || 'Mon jeu');
   p.version = PROJECT_VERSION;
   p.settings = { ...base.settings, ...(p.settings || {}) };
+  p.settings.physics3d = p.settings.physics3d === 'rapier' ? 'rapier' : 'simple';
   p.palette = p.palette?.length ? p.palette : base.palette;
   p.meta = { ...base.meta, ...(p.meta || {}) };
   p.sprites = (p.sprites || []).map((s) => ({ folder: '', ...s }));
@@ -478,7 +491,28 @@ export function normalizeProject(p) {
   unpackProjectVoxels(p);
   p.environment = { ...base.environment, ...(p.environment || {}) };
   p.objects = (p.objects || []).map((o) => {
-    const obj = { folder: '', exportedProps: [], ...createObject(o.name), ...o, physics: { ...createObject().physics, ...(o.physics || {}) } };
+    const baseObj = createObject(o.name);
+    const obj = {
+      folder: '',
+      exportedProps: [],
+      ...baseObj,
+      ...o,
+      physics: {
+        ...baseObj.physics,
+        ...(o.physics || {}),
+        bodyType: ['dynamic', 'static', 'kinematic'].includes(o.physics?.bodyType)
+          ? o.physics.bodyType
+          : (o.physics?.immovable ? 'static' : 'dynamic'),
+        colliderShape: ['box', 'sphere', 'capsule', 'trimesh'].includes(o.physics?.colliderShape)
+          ? o.physics.colliderShape
+          : 'box',
+        mass: typeof o.physics?.mass === 'number' && o.physics.mass >= 0 ? o.physics.mass : 1,
+        friction: typeof o.physics?.friction === 'number' && o.physics.friction >= 0 ? o.physics.friction : 0.5,
+        restitution: typeof o.physics?.restitution === 'number' && o.physics.restitution >= 0
+          ? o.physics.restitution
+          : (o.physics?.bounce || 0)
+      }
+    };
     obj.script = normalizeScript(o.script, false);
     obj.exportedProps = Array.isArray(o.exportedProps) ? o.exportedProps : [];
     return obj;
