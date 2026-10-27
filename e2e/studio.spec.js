@@ -489,4 +489,64 @@ test.describe('PixelForge Studio E2E Tests', () => {
     });
     expect(nodeCountAfterUndo).toBe(nodeCount - 1);
   });
+
+  test("editeur de scene 3D : outils gizmos (W/E/R), aimantation et manipulation", async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Ouvrir la scene 3D
+    await page.evaluate(() => {
+      const p = window.__pfStore.project;
+      const sc = p.scenes3d?.[0];
+      if (sc) {
+        window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
+      }
+    });
+
+    // 3. Verifier la barre d'outils gizmos
+    const gizmoBar = page.locator('#pf-s3d-gizmo-bar');
+    await expect(gizmoBar).toBeVisible();
+
+    const wBtn = page.locator('.pf-s3d-gizmo-btn[data-gizmo="translate"]');
+    const eBtn = page.locator('.pf-s3d-gizmo-btn[data-gizmo="rotate"]');
+    const rBtn = page.locator('.pf-s3d-gizmo-btn[data-gizmo="scale"]');
+    const spaceBtn = page.locator('#pf-s3d-space-btn');
+    const snapChk = page.locator('#pf-s3d-snap-chk');
+
+    await expect(wBtn).toBeVisible();
+    await expect(eBtn).toBeVisible();
+    await expect(rBtn).toBeVisible();
+    await expect(spaceBtn).toBeVisible();
+    await expect(snapChk).toBeVisible();
+
+    // 4. Tester le basculement de mode de gizmo
+    await eBtn.click();
+    await expect(eBtn).toHaveClass(/active/);
+    await expect(wBtn).not.toHaveClass(/active/);
+
+    await rBtn.click();
+    await expect(rBtn).toHaveClass(/active/);
+
+    await wBtn.click();
+    await expect(wBtn).toHaveClass(/active/);
+
+    // 5. Basculer l'espace Monde / Local
+    await expect(spaceBtn).toHaveText(/Monde/);
+    await spaceBtn.click();
+    await expect(spaceBtn).toHaveText(/Local/);
+    await spaceBtn.click();
+    await expect(spaceBtn).toHaveText(/Monde/);
+
+    // 6. Basculer l'aimantation
+    await expect(snapChk).toBeChecked();
+    await snapChk.uncheck();
+    await expect(snapChk).not.toBeChecked();
+    await snapChk.check();
+    await expect(snapChk).toBeChecked();
+  });
 });

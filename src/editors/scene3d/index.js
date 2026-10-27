@@ -1,11 +1,13 @@
 /**
- * PixelForge Studio — Editeur de Scene 3D (GridMap, Entites et Test F6)
- * Permet de construire des niveaux 3D a la souris, de peindre la GridMap par etage
- * et de positionner des entites d'objets.
+ * PixelForge Studio — Editeur de Scene 3D (GridMap, Entites, Gizmos et Test F6)
+ * Permet de construire des niveaux 3D a la souris, de peindre la GridMap par etage,
+ * de positionner des entites d'objets, de selectionner (simple / multiple / rectangle),
+ * et de manipuler les objets via gizmos TransformControls (deplacer W, tourner E, echelle R, aimantation).
  */
 
 import { GridMap3D } from './gridmap.js';
 import { getIconSvg } from '../../ui/icons.js';
+import { uid } from '../../core/project.js';
 import './scene3d.css';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -29,8 +31,18 @@ export function mount(container, store, { refId } = {}) {
   let isActive = true;
   let selectedObjectId = store.project?.objects?.[0]?.id || null;
   let selectedEntityId = null;
+  let selectedNodeIds = new Set();
   let isDisposed = false;
   let animId = null;
+
+  // Gizmo & Aimantation
+  let gizmoMode = 'translate'; // 'translate' | 'rotate' | 'scale'
+  let gizmoSpace = 'world'; // 'world' | 'local'
+  let snapEnabled = true;
+  let snapStep = 1.0;
+  let isTransformDragging = false;
+  let dragInitialTransforms = new Map();
+  let nodeClipboard = [];
 
   const palette = store.project?.palette || [
     '#1a1c2c', '#5d275d', '#b13e53', '#ef7d57', '#ffcd75', '#a7f070', '#38b764', '#257179',
@@ -44,7 +56,23 @@ export function mount(container, store, { refId } = {}) {
         <button class="pf-scene3d-btn active" data-tool="block" title="Placer un bloc (Clic sur la grille ou une face)">Placer bloc</button>
         <button class="pf-scene3d-btn" data-tool="erase" title="Gomme (Supprimer le bloc clique)">Gomme bloc</button>
         <button class="pf-scene3d-btn" data-tool="entity" title="Poser une instance d'objet 3D">Poser entite</button>
-        <button class="pf-scene3d-btn" data-tool="select" title="Selectionner / deplacer une entite">Selectionner</button>
+        <button class="pf-scene3d-btn" data-tool="select" title="Selectionner / manipuler les objets (W/E/R)">Selectionner</button>
+        <span style="width:1px;height:18px;background:var(--border);margin:0 4px;"></span>
+        <div class="pf-s3d-gizmo-tools" id="pf-s3d-gizmo-bar">
+          <button class="pf-s3d-gizmo-btn active" data-gizmo="translate" title="Deplacer (W)">W</button>
+          <button class="pf-s3d-gizmo-btn" data-gizmo="rotate" title="Tourner (E)">E</button>
+          <button class="pf-s3d-gizmo-btn" data-gizmo="scale" title="Echelle (R)">R</button>
+          <button class="pf-s3d-gizmo-btn" id="pf-s3d-space-btn" title="Basculer Espace Monde / Local (Q)">Monde</button>
+        </div>
+        <div class="pf-s3d-snap-box" title="Aimantation a la grille (Maintenir Ctrl pour couper)">
+          <input type="checkbox" id="pf-s3d-snap-chk" checked />
+          <label for="pf-s3d-snap-chk" style="font-size:11px;cursor:pointer;">Aimant</label>
+          <select id="pf-s3d-snap-val" class="pf-insp-input" style="padding:1px 4px;font-size:10px;height:20px;">
+            <option value="1.0" selected>1.0</option>
+            <option value="0.5">0.5</option>
+            <option value="0.25">0.25</option>
+          </select>
+        </div>
         <span style="width:1px;height:18px;background:var(--border);margin:0 4px;"></span>
         <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--fg-1);">
           <span>Etage Y :</span>
@@ -62,7 +90,8 @@ export function mount(container, store, { refId } = {}) {
 
     <div class="pf-scene3d-workspace">
       <div class="pf-scene3d-viewport" id="pf-s3d-viewport">
-        <div class="pf-scene3d-overlay-hint">Clic gauche : Editer | Clic droit / Molette : Orbite et Zoom | PageUp/Down : Changer d'etage</div>
+        <div class="pf-scene3d-overlay-hint">Clic : Selectionner / Placer | Maj+Clic / Rectangle : Multi-selection | W/E/R : Gizmos | Q : Monde/Local | Ctrl : Sans aimant | Ctrl+C/V/D : Copier / Coller / Dupliquer</div>
+        <div class="pf-s3d-marquee" id="pf-s3d-marquee" style="display:none;"></div>
       </div>
 
       <div class="pf-scene3d-sidebar">
@@ -81,9 +110,9 @@ export function mount(container, store, { refId } = {}) {
         </div>
 
         <div class="pf-scene3d-card" id="pf-s3d-selected-card">
-          <div class="pf-scene3d-card-title">Entite selectionnee</div>
-          <div id="pf-s3d-sel-details" style="color:var(--fg-2);">Aucune entite selectionnee</div>
-          <button class="pf-scene3d-btn danger" id="pf-s3d-delete-ent" style="display:none;margin-top:4px;">Supprimer l'entite</button>
+          <div class="pf-scene3d-card-title">Selection</div>
+          <div id="pf-s3d-sel-details" style="color:var(--fg-2);">Aucun objet selectionne</div>
+          <button class="pf-scene3d-btn danger" id="pf-s3d-delete-ent" style="display:none;margin-top:4px;">Supprimer la selection</button>
         </div>
       </div>
     </div>
@@ -96,8 +125,61 @@ export function mount(container, store, { refId } = {}) {
       activeTool = btn.dataset.tool;
       toolBtns.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
+      updateGizmoAttachment();
     };
   });
+
+  // Gestion des boutons de gizmo
+  const gizmoBtns = container.querySelectorAll('.pf-s3d-gizmo-btn[data-gizmo]');
+  gizmoBtns.forEach((btn) => {
+    btn.onclick = () => {
+      setGizmoMode(btn.dataset.gizmo);
+    };
+  });
+
+  function setGizmoMode(mode) {
+    gizmoMode = mode;
+    gizmoBtns.forEach((b) => b.classList.toggle('active', b.dataset.gizmo === mode));
+    if (transformControls) {
+      transformControls.setMode(mode);
+    }
+  }
+
+  const spaceBtn = container.querySelector('#pf-s3d-space-btn');
+  function toggleGizmoSpace() {
+    gizmoSpace = gizmoSpace === 'world' ? 'local' : 'world';
+    spaceBtn.textContent = gizmoSpace === 'world' ? 'Monde' : 'Local';
+    if (transformControls) {
+      transformControls.setSpace(gizmoSpace);
+    }
+  }
+  spaceBtn.onclick = toggleGizmoSpace;
+
+  // Aimantation
+  const snapChk = container.querySelector('#pf-s3d-snap-chk');
+  const snapVal = container.querySelector('#pf-s3d-snap-val');
+
+  snapChk.onchange = () => {
+    snapEnabled = snapChk.checked;
+    applySnapping();
+  };
+  snapVal.onchange = () => {
+    snapStep = parseFloat(snapVal.value) || 1.0;
+    applySnapping();
+  };
+
+  function applySnapping(forceOff = false) {
+    if (!transformControls || !ThreeLib) return;
+    if (!snapEnabled || forceOff) {
+      transformControls.setTranslationSnap(null);
+      transformControls.setRotationSnap(null);
+      transformControls.setScaleSnap(null);
+    } else {
+      transformControls.setTranslationSnap(snapStep);
+      transformControls.setRotationSnap(ThreeLib.MathUtils.degToRad(15));
+      transformControls.setScaleSnap(0.25);
+    }
+  }
 
   // Changement d'etage Y
   const lvlLabel = container.querySelector('#pf-s3d-lvl-label');
@@ -130,15 +212,14 @@ export function mount(container, store, { refId } = {}) {
     selectedObjectId = objSelect.value;
   };
 
-  // Lance le jeu sur cette scene (sans changer la scene de depart du projet)
+  // Lance le jeu sur cette scene
   const playBtn = container.querySelector('#pf-s3d-play-btn');
   playBtn.onclick = () => {
     store.ui.playScene3DId = sceneData.id;
     window.dispatchEvent(new CustomEvent('pixelforge:play'));
   };
 
-  // Toute modification passe par store.update : une entree d'annulation, prise AVANT le changement.
-  // La grille locale est recopiee dans le projet ; mutate(scene) modifie les entites.
+  // Toute modification passe par store.update (Ctrl+Z)
   function commit(mutate) {
     store.update((p) => {
       const sc = (p.scenes3d || []).find((s) => s.id === refId);
@@ -150,16 +231,20 @@ export function mount(container, store, { refId } = {}) {
     container.querySelector('#pf-s3d-stats').textContent = `${grid.blocks.size} blocs`;
   }
 
-  // Annuler / retablir / rechargement : le projet est remplace, on relit la scene
+  // Annuler / retablir / rechargement
   const offLoad = store.on('load', () => {
     const sc = findScene();
     if (!sc) return;
     sceneData = sc;
     grid = new GridMap3D(sc.gridmap);
-    if (selectedEntityId && !(sc.entities || []).some((e) => e.id === selectedEntityId) && !(sc.nodes || []).some((n) => n.id === selectedEntityId)) selectedEntityId = null;
+    if (selectedEntityId && !(sc.entities || []).some((e) => e.id === selectedEntityId) && !(sc.nodes || []).some((n) => n.id === selectedEntityId)) {
+      selectedEntityId = null;
+      selectedNodeIds.clear();
+    }
     if (blockGroup) {
       rebuildBlocks();
       rebuildEntities();
+      updateGizmoAttachment();
     }
     updateSelectionUI();
   });
@@ -172,6 +257,7 @@ export function mount(container, store, { refId } = {}) {
     if (blockGroup) {
       rebuildBlocks();
       rebuildEntities();
+      updateGizmoAttachment();
     }
     updateSelectionUI();
   });
@@ -180,32 +266,146 @@ export function mount(container, store, { refId } = {}) {
     if (sel?.type === 'node3d' && (sel.sceneId === refId || !sel.sceneId)) {
       if (selectedEntityId !== sel.id) {
         selectedEntityId = sel.id;
+        selectedNodeIds = new Set([sel.id]);
         updateSelectionUI();
         rebuildEntities();
+        updateGizmoAttachment();
       }
     } else if (sel?.type === 'entity') {
       if (selectedEntityId !== sel.id) {
         selectedEntityId = sel.id;
+        selectedNodeIds = new Set([sel.id]);
         updateSelectionUI();
         rebuildEntities();
+        updateGizmoAttachment();
       }
     } else if (selectedEntityId && (!sel || (sel.type !== 'node3d' && sel.type !== 'entity'))) {
       selectedEntityId = null;
+      selectedNodeIds.clear();
       updateSelectionUI();
       rebuildEntities();
+      updateGizmoAttachment();
     }
   });
 
+  // Copier / Coller / Dupliquer
+  function copySelectedNodes() {
+    const ids = Array.from(selectedNodeIds);
+    if (!ids.length && selectedEntityId) ids.push(selectedEntityId);
+    if (!ids.length) return;
+    const nodes = (sceneData.nodes || []).filter((n) => ids.includes(n.id));
+    if (nodes.length) {
+      nodeClipboard = structuredClone(nodes);
+    }
+  }
+
+  function pasteNodes() {
+    if (!nodeClipboard.length) return;
+    commit((sc) => {
+      sc.nodes = sc.nodes || [];
+      sc.entities = sc.entities || [];
+      const newSelectedIds = new Set();
+
+      for (const node of nodeClipboard) {
+        const copy = structuredClone(node);
+        copy.id = uid('node3d');
+        copy.name = `${copy.name}_copie`;
+        if (Array.isArray(copy.position)) {
+          copy.position[0] = (copy.position[0] || 0) + 1;
+          copy.position[2] = (copy.position[2] || 0) + 1;
+        }
+        sc.nodes.push(copy);
+        if (copy.kind === 'mesh' && copy.objectId) {
+          sc.entities.push({
+            id: copy.id,
+            objectId: copy.objectId,
+            x: copy.position[0],
+            y: copy.position[1],
+            z: copy.position[2],
+            rotationY: copy.rotation?.[1] || 0,
+            props: structuredClone(copy.props || {}),
+          });
+        }
+        newSelectedIds.add(copy.id);
+      }
+
+      selectedNodeIds = newSelectedIds;
+      selectedEntityId = Array.from(newSelectedIds)[0] || null;
+      if (selectedEntityId) {
+        store.setSelection({ type: 'node3d', sceneId: sceneData.id, id: selectedEntityId });
+      }
+    });
+    updateSelectionUI();
+    rebuildEntities();
+    updateGizmoAttachment();
+  }
+
+  function duplicateSelectedNodes() {
+    copySelectedNodes();
+    pasteNodes();
+  }
+
+  // Raccourcis clavier
+  function onKeyDown(e) {
+    if (isDisposed || !isActive) return;
+    const t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+
+    if (e.key === 'Control') {
+      applySnapping(true);
+    } else if (e.key === 'PageUp') {
+      e.preventDefault();
+      setLevel(activeLevel + 1);
+    } else if (e.key === 'PageDown') {
+      e.preventDefault();
+      setLevel(activeLevel - 1);
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+      e.preventDefault();
+      copySelectedNodes();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+      e.preventDefault();
+      pasteNodes();
+    } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+      e.preventDefault();
+      duplicateSelectedNodes();
+    } else if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (selectedEntityId || selectedNodeIds.size > 0) {
+        e.preventDefault();
+        deleteSelectedEntity();
+      }
+    } else if (e.key.toLowerCase() === 'w') {
+      setGizmoMode('translate');
+    } else if (e.key.toLowerCase() === 'e') {
+      setGizmoMode('rotate');
+    } else if (e.key.toLowerCase() === 'r') {
+      setGizmoMode('scale');
+    } else if (e.key.toLowerCase() === 'q') {
+      toggleGizmoSpace();
+    }
+  }
+
+  function onKeyUp(e) {
+    if (e.key === 'Control') {
+      applySnapping(false);
+    }
+  }
+
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
+
   // --- Initialisation Three.js Viewport ---
   const viewportContainer = container.querySelector('#pf-s3d-viewport');
+  const marqueeEl = container.querySelector('#pf-s3d-marquee');
   let scene, camera, renderer, ThreeLib;
   let gridHelper;
   let blockGroup, entityGroup;
+  let transformControls = null;
+  let transformHelper = null;
   let ro = null;
   let renderLoop = null;
   const cubeGeo = { geo: null };
-  const materialCache = new Map(); // couleur -> materiau (blocs et entites), libere au dispose
-  const disposables = []; // geometries / materiaux crees une fois
+  const materialCache = new Map();
+  const disposables = [];
 
   function getMaterial(color) {
     if (!materialCache.has(color)) {
@@ -214,7 +414,6 @@ export function mount(container, store, { refId } = {}) {
     return materialCache.get(color);
   }
 
-  // Couleur d'un bloc : index de palette ou '#rrggbb'
   function blockColor(v) {
     if (typeof v === 'number' && Number.isFinite(v)) return palette[((v % palette.length) + palette.length) % palette.length];
     if (typeof v === 'string' && v.charAt(0) === '#') return v;
@@ -222,25 +421,9 @@ export function mount(container, store, { refId } = {}) {
     return palette[6];
   }
 
-  // Raccourcis clavier de l'onglet (actifs seulement quand il est visible ; F6 est gere par le dock)
-  function onKeyDown(e) {
-    if (isDisposed || !isActive) return;
-    const t = e.target;
-    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
-    if (e.key === 'PageUp') {
-      e.preventDefault();
-      setLevel(activeLevel + 1);
-    } else if (e.key === 'PageDown') {
-      e.preventDefault();
-      setLevel(activeLevel - 1);
-    } else if (e.key === 'Delete' && selectedEntityId) {
-      deleteSelectedEntity();
-    }
-  }
-  window.addEventListener('keydown', onKeyDown);
-
   async function initThree() {
     ThreeLib = await import('three');
+    const { TransformControls } = await import('three/addons/controls/TransformControls.js');
     if (isDisposed) return;
 
     scene = new ThreeLib.Scene();
@@ -287,9 +470,62 @@ export function mount(container, store, { refId } = {}) {
     cursorBox.visible = false;
     scene.add(cursorBox);
 
+    // TransformControls (Gizmos de translation, rotation, echelle)
+    transformControls = new TransformControls(camera, renderer.domElement);
+    transformHelper = transformControls.getHelper ? transformControls.getHelper() : transformControls;
+    scene.add(transformHelper);
+    transformHelper.visible = false;
+    applySnapping();
+
+    transformControls.addEventListener('dragging-changed', (event) => {
+      isTransformDragging = event.value;
+      if (event.value) {
+        // Debut du deplacement
+        dragInitialTransforms.clear();
+        const ids = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedEntityId ? [selectedEntityId] : []);
+        for (const id of ids) {
+          const node = (sceneData.nodes || []).find((n) => n.id === id);
+          if (node) {
+            dragInitialTransforms.set(id, {
+              position: [...(node.position || [0, 0, 0])],
+              rotation: [...(node.rotation || [0, 0, 0])],
+              scale: [...(node.scale || [1, 1, 1])],
+            });
+          }
+        }
+      } else {
+        // Fin du deplacement : sauvegarde atomique dans store.update
+        commitTransformFromGizmo();
+      }
+    });
+
+    transformControls.addEventListener('change', () => {
+      if (!isTransformDragging) return;
+      const activeMesh = transformControls.object;
+      if (!activeMesh) return;
+      const activeId = activeMesh.userData?.entityId;
+      const initial = dragInitialTransforms.get(activeId);
+      if (!initial) return;
+
+      const dx = activeMesh.position.x - initial.position[0];
+      const dy = activeMesh.position.y - initial.position[1];
+      const dz = activeMesh.position.z - initial.position[2];
+
+      for (const child of entityGroup.children) {
+        const id = child.userData?.entityId;
+        if (id && id !== activeId && selectedNodeIds.has(id)) {
+          const initOther = dragInitialTransforms.get(id);
+          if (initOther && gizmoMode === 'translate') {
+            child.position.set(initOther.position[0] + dx, initOther.position[1] + dy, initOther.position[2] + dz);
+          }
+        }
+      }
+    });
+
     // Rendu des blocs et des entites
     rebuildBlocks();
     rebuildEntities();
+    updateGizmoAttachment();
 
     // Controles orbite / deplacement
     let isOrbiting = false;
@@ -313,14 +549,35 @@ export function mount(container, store, { refId } = {}) {
     const canvas = renderer.domElement;
     canvas.oncontextmenu = (e) => e.preventDefault();
 
+    let isMarquee = false;
+    let marqueeStartX = 0, marqueeStartY = 0;
+
     canvas.onpointerdown = (e) => {
-      if (e.button === 2 || e.button === 1 || e.shiftKey) {
+      if (isTransformDragging) return;
+      // Ne pas intercepter si le pointeur est sur le gizmo
+      if (transformControls && transformControls.axis !== null) return;
+
+      if (e.button === 2 || e.button === 1 || (e.altKey && e.button === 0)) {
         isOrbiting = true;
         prevMouseX = e.clientX;
         prevMouseY = e.clientY;
         canvas.setPointerCapture(e.pointerId);
       } else if (e.button === 0) {
-        handlePointerClick(e);
+        const { hitEntity, hitBlock } = getRaycastHits(e);
+        if (activeTool === 'select' && !hitEntity && !hitBlock) {
+          // Debut de rectangle de selection sur le fond vide
+          isMarquee = true;
+          marqueeStartX = e.clientX;
+          marqueeStartY = e.clientY;
+          marqueeEl.style.left = `${e.clientX}px`;
+          marqueeEl.style.top = `${e.clientY}px`;
+          marqueeEl.style.width = '0px';
+          marqueeEl.style.height = '0px';
+          marqueeEl.style.display = 'block';
+          canvas.setPointerCapture(e.pointerId);
+        } else {
+          handlePointerClick(e);
+        }
       }
     };
 
@@ -334,6 +591,16 @@ export function mount(container, store, { refId } = {}) {
         camTheta -= dx * 0.01;
         camPhi += dy * 0.01;
         updateCamera();
+      } else if (isMarquee) {
+        const minX = Math.min(marqueeStartX, e.clientX);
+        const minY = Math.min(marqueeStartY, e.clientY);
+        const w = Math.abs(e.clientX - marqueeStartX);
+        const h = Math.abs(e.clientY - marqueeStartY);
+        const rect = viewportContainer.getBoundingClientRect();
+        marqueeEl.style.left = `${minX - rect.left}px`;
+        marqueeEl.style.top = `${minY - rect.top}px`;
+        marqueeEl.style.width = `${w}px`;
+        marqueeEl.style.height = `${h}px`;
       } else {
         handlePointerHover(e, cursorBox);
       }
@@ -343,6 +610,51 @@ export function mount(container, store, { refId } = {}) {
       if (isOrbiting) {
         isOrbiting = false;
         try { canvas.releasePointerCapture(e.pointerId); } catch {}
+      } else if (isMarquee) {
+        isMarquee = false;
+        marqueeEl.style.display = 'none';
+        try { canvas.releasePointerCapture(e.pointerId); } catch {}
+
+        const minX = Math.min(marqueeStartX, e.clientX);
+        const maxX = Math.max(marqueeStartX, e.clientX);
+        const minY = Math.min(marqueeStartY, e.clientY);
+        const maxY = Math.max(marqueeStartY, e.clientY);
+
+        if (maxX - minX > 6 && maxY - minY > 6) {
+          const rect = canvas.getBoundingClientRect();
+          const newSel = e.shiftKey ? new Set(selectedNodeIds) : new Set();
+
+          for (const child of entityGroup.children) {
+            const id = child.userData?.entityId;
+            if (!id) continue;
+            const p = child.position.clone();
+            p.project(camera);
+            const sx = ((p.x + 1) * rect.width) / 2 + rect.left;
+            const sy = ((-p.y + 1) * rect.height) / 2 + rect.top;
+
+            if (sx >= minX && sx <= maxX && sy >= minY && sy <= maxY) {
+              newSel.add(id);
+            }
+          }
+
+          selectedNodeIds = newSel;
+          selectedEntityId = Array.from(newSel)[0] || null;
+          if (selectedEntityId) {
+            store.setSelection({ type: 'node3d', sceneId: sceneData.id, id: selectedEntityId });
+          } else {
+            store.setSelection(null);
+          }
+          updateSelectionUI();
+          rebuildEntities();
+          updateGizmoAttachment();
+        } else if (!e.shiftKey) {
+          selectedNodeIds.clear();
+          selectedEntityId = null;
+          store.setSelection(null);
+          updateSelectionUI();
+          rebuildEntities();
+          updateGizmoAttachment();
+        }
       }
     };
 
@@ -362,7 +674,6 @@ export function mount(container, store, { refId } = {}) {
     });
     ro.observe(viewportContainer);
 
-    // Rendu seulement quand l'onglet est visible
     renderLoop = function loop() {
       animId = null;
       if (isDisposed || !isActive) return;
@@ -373,6 +684,70 @@ export function mount(container, store, { refId } = {}) {
   }
 
   let selWireMat = null;
+
+  function updateGizmoAttachment() {
+    if (!transformControls) return;
+    if (activeTool !== 'select' || !selectedEntityId) {
+      transformControls.detach();
+      if (transformHelper) transformHelper.visible = false;
+      return;
+    }
+
+    const mesh = entityGroup.children.find((m) => m.userData?.entityId === selectedEntityId);
+    if (mesh) {
+      transformControls.attach(mesh);
+      transformControls.setMode(gizmoMode);
+      transformControls.setSpace(gizmoSpace);
+      applySnapping();
+      if (transformHelper) transformHelper.visible = true;
+    } else {
+      transformControls.detach();
+      if (transformHelper) transformHelper.visible = false;
+    }
+  }
+
+  function commitTransformFromGizmo() {
+    const ids = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedEntityId ? [selectedEntityId] : []);
+    if (!ids.length) return;
+
+    commit((sc) => {
+      sc.nodes = sc.nodes || [];
+      sc.entities = sc.entities || [];
+
+      for (const id of ids) {
+        const node = sc.nodes.find((n) => n.id === id);
+        const mesh = entityGroup.children.find((m) => m.userData?.entityId === id);
+        if (!node || !mesh) continue;
+
+        node.position = [
+          Math.round(mesh.position.x * 100) / 100,
+          Math.round(mesh.position.y * 100) / 100,
+          Math.round(mesh.position.z * 100) / 100,
+        ];
+        node.rotation = [
+          Math.round(mesh.rotation.x * (180 / Math.PI) * 10) / 10,
+          Math.round(mesh.rotation.y * (180 / Math.PI) * 10) / 10,
+          Math.round(mesh.rotation.z * (180 / Math.PI) * 10) / 10,
+        ];
+        node.scale = [
+          Math.round((mesh.scale.x / 0.9) * 100) / 100,
+          Math.round((mesh.scale.y / 0.9) * 100) / 100,
+          Math.round((mesh.scale.z / 0.9) * 100) / 100,
+        ];
+
+        // Synchronisation de l'entite si c'est un mesh
+        const ent = sc.entities.find((e) => e.id === id);
+        if (ent) {
+          ent.x = node.position[0];
+          ent.y = node.position[1];
+          ent.z = node.position[2];
+          ent.rotationY = node.rotation[1];
+        }
+      }
+    });
+
+    updateSelectionUI();
+  }
 
   function rebuildBlocks() {
     while (blockGroup.children.length > 0) {
@@ -432,8 +807,9 @@ export function mount(container, store, { refId } = {}) {
       mesh.scale.set(scl[0] * 0.9, scl[1] * 0.9, scl[2] * 0.9);
       mesh.userData = { entityId: node.id, node };
 
-      // Marqueur de sélection
-      if (node.id === selectedEntityId) {
+      // Marqueur de selection
+      const isSelected = selectedNodeIds.has(node.id) || node.id === selectedEntityId;
+      if (isSelected) {
         const selWire = new ThreeLib.Mesh(cubeGeo.geo, selWireMat);
         selWire.scale.set(1.05, 1.05, 1.05);
         mesh.add(selWire);
@@ -453,28 +829,32 @@ export function mount(container, store, { refId } = {}) {
     const raycaster = new ThreeLib.Raycaster();
     raycaster.setFromCamera(mouse, camera);
 
-    // Test entites
+    // Entites
     const entHits = raycaster.intersectObjects(entityGroup.children, true);
     let hitEntity = null;
     if (entHits.length > 0) {
-      let topObj = entHits[0].object;
-      while (topObj.parent && topObj.parent !== entityGroup) topObj = topObj.parent;
-      hitEntity = topObj.userData?.ent || null;
+      let cur = entHits[0].object;
+      while (cur && cur.parent && cur.parent !== entityGroup) cur = cur.parent;
+      if (cur?.userData?.entityId) hitEntity = { id: cur.userData.entityId, mesh: cur };
     }
 
-    // Test blocs
+    // Blocs
     const blockHits = raycaster.intersectObjects(blockGroup.children, false);
     const hitBlock = blockHits.length > 0 ? blockHits[0] : null;
 
-    // Test plan de l'etage Y actif
+    // Plan horizontal a Y = activeLevel
     const plane = new ThreeLib.Plane(new ThreeLib.Vector3(0, 1, 0), -activeLevel);
-    const planePoint = new ThreeLib.Vector3();
-    const hitPlane = raycaster.ray.intersectPlane(plane, planePoint);
+    const hitGrid = new ThreeLib.Vector3();
+    const hasGridHit = raycaster.ray.intersectPlane(plane, hitGrid);
 
-    return { hitBlock, hitGrid: hitPlane ? planePoint : null, hitEntity };
+    return { hitBlock, hitGrid: hasGridHit ? hitGrid : null, hitEntity };
   }
 
   function handlePointerHover(e, cursorBox) {
+    if (!cursorBox || activeTool === 'select') {
+      if (cursorBox) cursorBox.visible = false;
+      return;
+    }
     const { hitBlock, hitGrid } = getRaycastHits(e);
     if (hitBlock) {
       const norm = hitBlock.face?.normal || new ThreeLib.Vector3(0, 1, 0);
@@ -497,11 +877,39 @@ export function mount(container, store, { refId } = {}) {
   function handlePointerClick(e) {
     const { hitBlock, hitGrid, hitEntity } = getRaycastHits(e);
 
-    if (activeTool === 'select' && hitEntity) {
-      selectedEntityId = hitEntity.id;
-      store.setSelection({ type: 'node3d', sceneId: sceneData.id, id: hitEntity.id });
-      updateSelectionUI();
-      rebuildEntities();
+    if (activeTool === 'select') {
+      if (hitEntity) {
+        if (e.shiftKey) {
+          if (selectedNodeIds.has(hitEntity.id)) {
+            selectedNodeIds.delete(hitEntity.id);
+            selectedEntityId = Array.from(selectedNodeIds)[0] || null;
+          } else {
+            selectedNodeIds.add(hitEntity.id);
+            selectedEntityId = hitEntity.id;
+          }
+        } else {
+          selectedNodeIds = new Set([hitEntity.id]);
+          selectedEntityId = hitEntity.id;
+        }
+
+        if (selectedEntityId) {
+          store.setSelection({ type: 'node3d', sceneId: sceneData.id, id: selectedEntityId });
+        } else {
+          store.setSelection(null);
+        }
+
+        updateSelectionUI();
+        rebuildEntities();
+        updateGizmoAttachment();
+        return;
+      } else if (!e.shiftKey) {
+        selectedNodeIds.clear();
+        selectedEntityId = null;
+        store.setSelection(null);
+        updateSelectionUI();
+        rebuildEntities();
+        updateGizmoAttachment();
+      }
       return;
     }
 
@@ -531,7 +939,6 @@ export function mount(container, store, { refId } = {}) {
       }
     } else if (activeTool === 'entity') {
       if (!selectedObjectId) return;
-      // Entites centrees dans la case (meme convention que les blocs et le runtime)
       let ex = 0, ey = activeLevel, ez = 0;
       if (hitBlock) {
         const norm = hitBlock.face?.normal || new ThreeLib.Vector3(0, 1, 0);
@@ -576,9 +983,11 @@ export function mount(container, store, { refId } = {}) {
         sc.entities.push(newEnt);
       });
       selectedEntityId = id;
+      selectedNodeIds = new Set([id]);
       store.setSelection({ type: 'node3d', sceneId: sceneData.id, id });
       updateSelectionUI();
       rebuildEntities();
+      updateGizmoAttachment();
     }
   }
 
@@ -586,10 +995,16 @@ export function mount(container, store, { refId } = {}) {
     const details = container.querySelector('#pf-s3d-sel-details');
     const delBtn = container.querySelector('#pf-s3d-delete-ent');
 
+    if (selectedNodeIds.size > 1) {
+      details.innerHTML = `<div><strong>${selectedNodeIds.size} objets selectionnes</strong></div>`;
+      delBtn.style.display = 'block';
+      return;
+    }
+
     const node = (sceneData.nodes || []).find((i) => i.id === selectedEntityId) ||
                  (sceneData.entities || []).find((i) => i.id === selectedEntityId);
     if (!node) {
-      details.textContent = 'Aucune entité sélectionnée';
+      details.textContent = 'Aucun objet selectionne';
       delBtn.style.display = 'none';
       return;
     }
@@ -598,7 +1013,7 @@ export function mount(container, store, { refId } = {}) {
     const num = (v) => (Number.isFinite(v) ? v.toFixed(1) : '?');
     const pos = Array.isArray(node.position) ? node.position : [node.x ?? 0, node.y ?? 0, node.z ?? 0];
     details.innerHTML = `
-      <div><strong>${esc(node.name || obj?.name || 'Entité')}</strong> <small style="color:var(--fg-2);">(${esc(node.kind || 'mesh')})</small></div>
+      <div><strong>${esc(node.name || obj?.name || 'Objet 3D')}</strong> <small style="color:var(--fg-2);">(${esc(node.kind || 'mesh')})</small></div>
       <div>Position : (${num(pos[0])}, ${num(pos[1])}, ${num(pos[2])})</div>
     `;
     delBtn.style.display = 'block';
@@ -606,16 +1021,20 @@ export function mount(container, store, { refId } = {}) {
   container.querySelector('#pf-s3d-delete-ent').onclick = () => deleteSelectedEntity();
 
   function deleteSelectedEntity() {
-    if (!selectedEntityId) return;
-    const id = selectedEntityId;
+    const ids = selectedNodeIds.size > 0 ? Array.from(selectedNodeIds) : (selectedEntityId ? [selectedEntityId] : []);
+    if (!ids.length) return;
+
     commit((sc) => {
-      sc.nodes = (sc.nodes || []).filter((i) => i.id !== id);
-      sc.entities = (sc.entities || []).filter((i) => i.id !== id);
+      sc.nodes = (sc.nodes || []).filter((i) => !ids.includes(i.id));
+      sc.entities = (sc.entities || []).filter((i) => !ids.includes(i.id));
     });
+
+    selectedNodeIds.clear();
     selectedEntityId = null;
     store.setSelection(null);
     updateSelectionUI();
     rebuildEntities();
+    updateGizmoAttachment();
   }
 
   initThree();
@@ -627,10 +1046,14 @@ export function mount(container, store, { refId } = {}) {
       if (animId) cancelAnimationFrame(animId);
       animId = null;
       window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
       offLoad();
       offChange();
       offSel();
       ro?.disconnect();
+      if (transformControls) {
+        transformControls.dispose();
+      }
       materialCache.forEach((m) => m.dispose());
       materialCache.clear();
       disposables.forEach((d) => d?.dispose?.());

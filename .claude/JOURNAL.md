@@ -1,5 +1,20 @@
 # Journal — PixelForge
 
+## 2026-10-27 (52) — [Phase F] F2 : selection, gizmos et aimantation (Issue #71)
+- **Fait** :
+  - `src/editors/scene3d/index.js` & `src/editors/scene3d/scene3d.css` :
+    - Integration de `TransformControls` de Three.js (charge dynamiquement depuis `three/addons/controls/TransformControls.js`).
+    - Modes de gizmo : deplacement (W), rotation (E) et mise a l'echelle (R).
+    - Basculement de l'espace de transformation : Monde ou Local (Q / bouton).
+    - Aimantation a la grille configurable (1.0, 0.5, 0.25, desactivable), coupable temporairement en maintenant la touche Ctrl.
+    - Multi-selection (Maj + clic, rectangle de selection marquee sur le fond vide par projection ecran des coordonnees 3D).
+    - Operations du presse-papiers et manipulations completes : copier (Ctrl+C), coller (Ctrl+V), dupliquer (Ctrl+D) et supprimer (Delete / Backspace).
+    - Enregistrement atomique des transformations a la fin du glissement (`dragging-changed` a `false`) via `commit((sc) => { ... })` : chaque manipulation a la souris produit exactement 1 entree dans l'historique et s'annule integralement avec Ctrl+Z (`store.undo()`).
+  - Tests E2E Playwright :
+    - `e2e/studio.spec.js` : test de la barre de gizmos 3D (modes W/E/R, espace Monde/Local, aimantation a la grille).
+- **Verifie** : `npm test` (tous les tests unitaires et scenegraph3d verts), `npm run check:doc`, `npm run build`, validation `cube-runner` et `exemple-plateforme-qiqv`, et `npm run test:e2e` (9 tests Playwright verts).
+- **Etat** : Branche `feat/3d-gizmos-selection`, Closes #71.
+
 ## 2026-10-27 (51) — [Phase F] F1 : graphe de scene 3D, arbre et inspecteur (Issue #70)
 - **Fait** :
   - `src/core/project.js` & `docs/PROJECT_SCHEMA.json` :
