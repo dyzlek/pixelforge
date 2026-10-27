@@ -115,3 +115,54 @@
   color: var(--fg-2);
   pointer-events: none;
 }
+
+.pf-s3d-gizmo-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-0);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1px;
+}
+
+.pf-s3d-gizmo-btn {
+  padding: 2px 6px;
+  background: transparent;
+  border: none;
+  color: var(--fg-1);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.pf-s3d-gizmo-btn:hover {
+  background: var(--bg-2);
+  color: var(--fg-0);
+}
+
+.pf-s3d-gizmo-btn.active {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.pf-s3d-snap-box {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--fg-1);
+}
+
+.pf-s3d-marquee {
+  position: absolute;
+  border: 1px dashed var(--accent);
+  background: rgba(65, 166, 246, 0.15);
+  pointer-events: none;
+  z-index: 10;
+}
+
