@@ -175,3 +175,21 @@ Pour garantir que les jeux PixelForge restent legers, autonomes et facilement pa
   - Boucle d'anticipation `setInterval` toutes les 25 millisecondes.
   - Programmation des evenements sur le flux audio WebAudio precis (`audioCtx.currentTime`) avec un horizon temporel de 100 ms.
   - Immunite absolue contre les latences de l'onglet et le multitache.
+
+---
+
+## 8. Piano Roll Avance, Clavier MIDI et Enregistrement en Direct
+
+Le Piano Roll (`src/editors/music/pianoroll.js`) permet l'edition melodique et harmonique fine au sein des clips notes :
+
+### A. Edition Melodique et Harmonique
+- **Piste de velocite retractable** : Volet inferieur affichant la velocite de chaque note sous forme de jauges verticales ajustables a la souris (valeur de 0.05 a 1.0, opacite dynamique des notes correspondantes).
+- **Quantification temporelle** : Grille temporelle configurable (1/16, 1/8, 1/4) avec bouton dedie et raccourci clavier `Q` pour recaler les notes selectionnees sur le temps le plus proche.
+- **Selection multiple et manipulation par lot** : Selection multiple par Shift/Ctrl + clic ou rectangle de selection (lasso), deplacement et transposition preservant les intervalles relatifs.
+- **Presse-papiers et raccourcis DAW** : Copier (`Ctrl+C`), Couper (`Ctrl+X`), Coller (`Ctrl+V`), Dupliquer (`Ctrl+D`), et Supprimer (`Delete` / `Backspace`).
+
+### B. Claviers et Entrees Musicales
+- **Clavier d'ordinateur piano** : Deux octaves completes pilotables au clavier AZERTY/QWERTY avec transposition d'octave par touches `[` et `]` ou boutons `-` / `+`.
+- **Clavier maitre Web MIDI** : Detection et connexion automatique a tout peripherique MIDI USB/Bluetooth via `navigator.requestMIDIAccess`, temoin visuel de signal et prise en compte de la velocite d'appui.
+- **Enregistrement en direct** : Bouton d'enregistrement (`REC`) permettant de capturer les notes jouees en direct pendant la lecture du clip, avec option de quantification a la volee.
+

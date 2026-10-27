@@ -568,6 +568,134 @@
   background: #fff;
 }
 
+.pf-pianoroll-note.selected {
+  border: 2px solid #ffcd75;
+  box-shadow: 0 0 8px #ffcd75;
+  z-index: 5;
+}
+
+.pf-pianoroll-marquee {
+  position: absolute;
+  border: 1px dashed #ffcd75;
+  background: rgba(255, 205, 117, 0.15);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.pf-btn-rec {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 4px;
+  border: 1px solid #b13e53;
+  background: #2a151b;
+  color: #ff8080;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pf-btn-rec:hover {
+  background: #3b1b24;
+  color: #fff;
+}
+
+.pf-btn-rec.active {
+  background: #b13e53;
+  color: #fff;
+  animation: pf-rec-pulse 1s infinite alternate;
+}
+
+@keyframes pf-rec-pulse {
+  from { box-shadow: 0 0 4px #b13e53; }
+  to { box-shadow: 0 0 12px #ff4040; }
+}
+
+.pf-midi-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #252839;
+  border: 1px solid #3b3f58;
+  color: #94b0c2;
+  user-select: none;
+}
+
+.pf-midi-indicator.connected {
+  color: #a7f070;
+  border-color: #38b764;
+}
+
+.pf-midi-indicator.active-signal {
+  background: #38b764;
+  color: #000;
+  box-shadow: 0 0 8px #38b764;
+}
+
+.pf-pianoroll-velocity-lane {
+  height: 60px;
+  min-height: 60px;
+  background: #141724;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  user-select: none;
+}
+
+.pf-velocity-grid-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  display: flex;
+  pointer-events: none;
+}
+
+.pf-velocity-col {
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+  box-sizing: border-box;
+}
+
+.pf-velocity-col.beat-head {
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.pf-velocity-stem {
+  position: absolute;
+  bottom: 0;
+  width: 6px;
+  background: #3b5dc9;
+  border-radius: 2px 2px 0 0;
+  cursor: ns-resize;
+  pointer-events: auto;
+  transition: background 0.1s ease;
+}
+
+.pf-velocity-stem:hover,
+.pf-velocity-stem.selected {
+  background: #ffcd75;
+}
+
+.pf-velocity-handle {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #41a6f6;
+  position: absolute;
+  top: -5px;
+  left: -2px;
+}
+
+.pf-velocity-stem.selected .pf-velocity-handle {
+  background: #ffcd75;
+  box-shadow: 0 0 5px #ffcd75;
+}
+
 
 /* ---------------------------------------------------- */
 /* Playlist (Arrangement des patterns) (B4)            */
