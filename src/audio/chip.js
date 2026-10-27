@@ -160,8 +160,19 @@ export function noteFreq(val) {
 // Piece de batterie d'une note de canal « drumKit » : nom explicite, sinon classe de hauteur
 // (convention General MIDI : C = kick, D/D#/E = snare, F#/G# = charleston ferme, A# = ouvert, autres = tom).
 export function drumPiece(pitch) {
+  if (typeof pitch === 'number' || (!isNaN(Number(pitch)) && pitch !== '' && pitch !== null)) {
+    const num = Math.round(Number(pitch));
+    if (num === 35 || num === 36) return 'kick';
+    if (num === 38 || num === 40) return 'snare';
+    if (num === 42 || num === 44) return 'hat_closed';
+    if (num === 46) return 'hat_open';
+    if (num === 39 || num === 54) return 'clap';
+    if (num === 49 || num === 52 || num === 55 || num === 57) return 'crash';
+    if (num === 51 || num === 53 || num === 59) return 'ride';
+    if (num === 41 || num === 43 || num === 45 || num === 47 || num === 48 || num === 50 || num === 56) return 'tom';
+  }
   const name = String(pitch || '').toLowerCase();
-  if (name === 'kick' || name === 'snare' || name === 'hat_closed' || name === 'hat_open' || name === 'tom') return name;
+  if (name === 'kick' || name === 'snare' || name === 'hat_closed' || name === 'hat_open' || name === 'tom' || name === 'crash' || name === 'ride' || name === 'clap') return name;
   if (name === 'hat') return 'hat_closed';
   const f = noteFreq(pitch);
   if (!(f > 0)) return 'kick';
@@ -1601,13 +1612,14 @@ export function createChipAudio(ctx, destination) {
       });
     });
 
-    // Prise en charge des clips de notes (DAW v2)
+    // Prise en charge des clips de notes et clips audio (DAW v2)
     if (Array.isArray(song.clips)) {
       song.clips.forEach((clip) => {
+        const startStep = clip.start || 0;
+        const cLen = clip.length || 16;
+        if (startStep + cLen > maxStep && explicitEnd <= 0) maxStep = startStep + cLen;
+
         if (clip.type === 'notes' && Array.isArray(clip.notes)) {
-          const startStep = clip.start || 0;
-          const cLen = clip.length || 16;
-          if (startStep + cLen > maxStep && explicitEnd <= 0) maxStep = startStep + cLen;
           clip.notes.forEach((note) => {
             const noteStep = Math.round(Number(note.step) || 0);
             if (noteStep < 0 || noteStep >= cLen) return;
@@ -1619,6 +1631,15 @@ export function createChipAudio(ctx, destination) {
               len: note.len || note.length || 1,
               vel: note.vel != null ? note.vel : (note.velocity != null ? note.velocity : 1)
             });
+          });
+        } else if (clip.type === 'audio') {
+          if (!eventsByStep[startStep]) eventsByStep[startStep] = [];
+          eventsByStep[startStep].push({
+            ch: clip.trackId,
+            isAudioClip: true,
+            sampleId: clip.sampleId || clip.id,
+            audioData: clip.audioData || clip.audio,
+            len: cLen
           });
         }
       });
@@ -1653,7 +1674,16 @@ export function createChipAudio(ctx, destination) {
     }
     songGain.connect(dest);
 
-    // Graphe audio par piste (DAW v2) : input -> fader -> panner -> songGain
+    let masterAnalyser = null;
+    if (typeof ctx.createAnalyser === 'function') {
+      try {
+        masterAnalyser = ctx.createAnalyser();
+        masterAnalyser.fftSize = 64;
+        songGain.connect(masterAnalyser);
+      } catch (e) {}
+    }
+
+    // Graphe audio par piste (DAW v2) : input -> fader -> panner -> destination
     const trackBuses = new Map();
     rawTracks.forEach((t) => {
       const input = ctx.createGain();
@@ -1682,11 +1712,17 @@ export function createChipAudio(ctx, destination) {
       });
       lastNode.connect(fader);
 
+      let analyser = null;
+      if (typeof ctx.createAnalyser === 'function') {
+        try {
+          analyser = ctx.createAnalyser();
+          analyser.fftSize = 64;
+          fader.connect(analyser);
+        } catch (e) {}
+      }
+
       if (panner) {
         fader.connect(panner);
-        panner.connect(songGain);
-      } else {
-        fader.connect(songGain);
       }
 
       const trackBus = {
@@ -1696,6 +1732,7 @@ export function createChipAudio(ctx, destination) {
         input,
         fader,
         panner,
+        analyser,
         volumeParam: fader.gain,
         panParam: panner ? panner.pan : null,
         fxNodes,
@@ -1703,6 +1740,21 @@ export function createChipAudio(ctx, destination) {
         volume: trackVol,
         mute: !!t.mute,
         solo: !!t.solo,
+        getLevel() {
+          if (!analyser || typeof analyser.getByteTimeDomainData !== 'function') return 0;
+          try {
+            const data = new Uint8Array(analyser.frequencyBinCount);
+            analyser.getByteTimeDomainData(data);
+            let max = 0;
+            for (let i = 0; i < data.length; i++) {
+              const v = Math.abs((data[i] - 128) / 128);
+              if (v > max) max = v;
+            }
+            return max;
+          } catch (e) {
+            return 0;
+          }
+        },
         setVolume(v, rampTime = 0) {
           this.volume = Math.max(0, Math.min(1, typeof v === 'number' ? v : 1));
           if (!this.mute && (!anySolo || this.solo)) {
@@ -1727,9 +1779,22 @@ export function createChipAudio(ctx, destination) {
           fxNodes.forEach((n) => n.disconnect());
           try { fader.disconnect(); } catch (e) {}
           try { if (panner) panner.disconnect(); } catch (e) {}
+          try { if (analyser) analyser.disconnect(); } catch (e) {}
         }
       };
       trackBuses.set(t.id, trackBus);
+    });
+
+    // Routage de sortie de chaque tranche (vers un bus cible ou le bus master songGain)
+    rawTracks.forEach((t) => {
+      const bus = trackBuses.get(t.id);
+      if (!bus) return;
+      const targetBusId = t.outputBusId || t.bus;
+      const targetBus = (targetBusId && targetBusId !== 'master') ? trackBuses.get(targetBusId) : null;
+      const destNode = (targetBus && targetBus !== bus) ? targetBus.input : songGain;
+
+      const outNode = bus.panner || bus.fader;
+      outNode.connect(destNode);
     });
 
     // Configuration des departs auxiliaires (sends) vers les autres bus de piste
@@ -1865,9 +1930,22 @@ export function createChipAudio(ctx, destination) {
     const SCHEDULE_INTERVAL_MS = 25;
     const LOOKAHEAD_SEC = 0.1;
 
+    function getBpmAtStep(s) {
+      if (!Array.isArray(song.tempoChanges) || song.tempoChanges.length === 0) return bpm;
+      let activeBpm = bpm;
+      for (const tc of song.tempoChanges) {
+        if (typeof tc.step === 'number' && tc.step <= s && typeof tc.bpm === 'number' && tc.bpm > 0) {
+          activeBpm = tc.bpm;
+        }
+      }
+      return activeBpm;
+    }
+
     function stepDuration(s) {
-      if (swing <= 0) return baseStepSec;
-      return (s % 2 === 0) ? baseStepSec * (1 + swing) : baseStepSec * (1 - swing);
+      const curBpm = getBpmAtStep(s);
+      const stepSec = (60 / curBpm) / stepsPerBeat;
+      if (swing <= 0) return stepSec;
+      return (s % 2 === 0) ? stepSec * (1 + swing) : stepSec * (1 - swing);
     }
 
     const loopStartStep = Number.isInteger(loopStartRaw) && loopStartRaw >= 0 && loopStartRaw < maxStep ? loopStartRaw : 0;
@@ -1893,9 +1971,27 @@ export function createChipAudio(ctx, destination) {
             } else if (ch.mute || (anySolo && !ch.solo)) {
               return;
             }
-            const dur = (Number(n.len) || 1) * baseStepSec;
+            const curBpm = getBpmAtStep(currentStep);
+            const curStepSec = (60 / curBpm) / stepsPerBeat;
+            const dur = (Number(n.len) || 1) * curStepSec;
             // Une note invalide ne doit pas bloquer le planificateur : elle est ignoree
             try {
+              if (n.isAudioClip) {
+                const handle = scheduleNote({
+                  time: nextStepTime,
+                  duration: dur,
+                  instrument: 'sampler',
+                  sampleId: n.sampleId,
+                  pitch: 'C4',
+                  rootPitch: 'C4',
+                  vel: 1,
+                  volume: trackBus ? 1.0 : (ch.volume != null ? ch.volume : 0.8),
+                  pan: trackBus ? 0 : (ch.pan || 0),
+                  destination: trackBus ? trackBus.input : songGain
+                });
+                if (handle) activeNotes.push({ stop: handle.stop, end: nextStepTime + dur + 1 });
+                return;
+              }
               const instType = typeof ch.instrument === 'string' ? ch.instrument : (ch.instrument?.type || 'pulse50');
               const presetKey = ch.preset || ch.instrument?.preset;
               const instParams = ch.params || ch.instrument?.params || (presetKey ? INSTRUMENT_PRESETS[presetKey]?.params : null);
@@ -1995,6 +2091,25 @@ export function createChipAudio(ctx, destination) {
       get tracks() {
         return Array.from(trackBuses.values());
       },
+      getTrackLevel(trackId) {
+        if (trackId === 'master') {
+          if (!masterAnalyser || typeof masterAnalyser.getByteTimeDomainData !== 'function') return 0;
+          try {
+            const data = new Uint8Array(masterAnalyser.frequencyBinCount);
+            masterAnalyser.getByteTimeDomainData(data);
+            let max = 0;
+            for (let i = 0; i < data.length; i++) {
+              const v = Math.abs((data[i] - 128) / 128);
+              if (v > max) max = v;
+            }
+            return max;
+          } catch (e) {
+            return 0;
+          }
+        }
+        const b = trackBuses.get(trackId);
+        return b ? b.getLevel() : 0;
+      },
       stop(stopOpts = {}) {
         if (stopped) return;
         const fadeOut = stopOpts && stopOpts.fadeOut > 0 ? stopOpts.fadeOut : 0;
@@ -2016,6 +2131,7 @@ export function createChipAudio(ctx, destination) {
         });
         sendNodes.forEach((s) => s.disconnect());
         trackBuses.forEach((b) => b.disconnect());
+        try { if (masterAnalyser) masterAnalyser.disconnect(); } catch (e) {}
         try { songGain.disconnect(); } catch (e) {}
         if (activeSong && activeSong.controller === controller) activeSong = null;
       },
@@ -2044,43 +2160,71 @@ export function createChipAudio(ctx, destination) {
     }
   }
 
+  function getTrackLevel(trackId) {
+    if (activeSong && activeSong.controller && typeof activeSong.controller.getTrackLevel === 'function') {
+      return activeSong.controller.getTrackLevel(trackId);
+    }
+    return 0;
+  }
+
   // Rendu hors-ligne vers un AudioBuffer (utilise pour export WAV et formes d'ondes)
-  async function renderOffline(song, durationSeconds = null) {
+  async function renderOffline(song, durationSeconds = null, renderOptions = {}) {
     const OfflineCtx = (typeof window !== 'undefined' && (window.OfflineAudioContext || window.webkitOfflineAudioContext)) || null;
     if (!OfflineCtx) throw new Error('OfflineAudioContext non supporte dans cet environnement');
 
-    const bpm = Math.max(20, Math.min(300, (song && song.bpm) || 140));
-    const stepsPerBeat = Math.max(1, (song && song.stepsPerBeat) || 4);
+    let opts = {};
+    let durSec = null;
+    if (typeof durationSeconds === 'object' && durationSeconds !== null) {
+      opts = durationSeconds;
+      durSec = opts.durationSeconds || null;
+    } else {
+      durSec = durationSeconds;
+      opts = renderOptions || {};
+    }
+
+    let songToRender = song;
+    if (opts.trackId) {
+      const rawTracks = (song.tracks && song.tracks.length > 0) ? song.tracks : (song.channels || []);
+      const soloTracks = rawTracks.map((t) => ({
+        ...t,
+        solo: t.id === opts.trackId,
+        mute: t.id !== opts.trackId
+      }));
+      songToRender = { ...song, tracks: soloTracks, channels: soloTracks };
+    }
+
+    const bpm = Math.max(20, Math.min(300, (songToRender && songToRender.bpm) || 140));
+    const stepsPerBeat = Math.max(1, (songToRender && songToRender.stepsPerBeat) || 4);
     const baseStepSec = (60 / bpm) / stepsPerBeat;
 
     let totalSteps = 16;
-    if (song && song.playlist && song.playlist.length > 0) {
+    if (songToRender && songToRender.playlist && songToRender.playlist.length > 0) {
       const pats = {};
-      (song.patterns || []).forEach((p) => { pats[p.id] = p; });
-      song.playlist.forEach((item) => {
+      (songToRender.patterns || []).forEach((p) => { pats[p.id] = p; });
+      songToRender.playlist.forEach((item) => {
         const p = pats[item.pattern];
         const pLen = (p && p.length) || 16;
         if ((item.start || 0) + pLen > totalSteps) totalSteps = (item.start || 0) + pLen;
       });
     }
-    if (song && Array.isArray(song.clips)) {
-      song.clips.forEach((clip) => {
+    if (songToRender && Array.isArray(songToRender.clips)) {
+      songToRender.clips.forEach((clip) => {
         const cLen = clip.length || 16;
         if ((clip.start || 0) + cLen > totalSteps) totalSteps = (clip.start || 0) + cLen;
       });
     }
-    if (song && Array.isArray(song.automation)) {
-      song.automation.forEach((auto) => {
+    if (songToRender && Array.isArray(songToRender.automation)) {
+      songToRender.automation.forEach((auto) => {
         (auto.points || []).forEach((pt) => {
           if (typeof pt.step === 'number' && pt.step > totalSteps) totalSteps = pt.step;
         });
       });
     }
-    if (song && song.loop && typeof song.loop.end === 'number' && song.loop.end > totalSteps) {
-      totalSteps = song.loop.end;
+    if (songToRender && songToRender.loop && typeof songToRender.loop.end === 'number' && songToRender.loop.end > totalSteps) {
+      totalSteps = songToRender.loop.end;
     }
 
-    const calcDur = durationSeconds || (totalSteps * baseStepSec + 1.0);
+    const calcDur = durSec || (totalSteps * baseStepSec + 1.0);
     const sampleRate = 44100;
     const offCtx = new OfflineCtx(2, Math.ceil(sampleRate * calcDur), sampleRate);
     // Meme gain maitre que l'editeur et le jeu : le WAV sonne comme l'apercu
@@ -2088,8 +2232,12 @@ export function createChipAudio(ctx, destination) {
     offMaster.gain.value = MASTER_GAIN;
     offMaster.connect(offCtx.destination);
     const offChip = createChipAudio(offCtx, offMaster);
-    offChip.playSong(song, { loop: false, volume: 1, offline: true });
+    offChip.playSong(songToRender, { loop: false, volume: 1, offline: true });
     return offCtx.startRendering();
+  }
+
+  async function renderStemOffline(song, trackId, durationSeconds = null) {
+    return renderOffline(song, durationSeconds, { trackId });
   }
 
   function measureSchedulingPerformance(trackCount = 16, stepCount = 64) {
@@ -2134,6 +2282,8 @@ export function createChipAudio(ctx, destination) {
     setSongVolume,
     playChiptuneTrack,
     renderOffline,
+    renderStemOffline,
+    getTrackLevel,
     generateSfxr,
     mutateSfxr,
     measureSchedulingPerformance,

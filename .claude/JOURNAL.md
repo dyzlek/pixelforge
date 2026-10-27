@@ -1,5 +1,36 @@
 # Journal — PixelForge
 
+## 2026-10-27 (68) — [Phase G] G7 : mixeur, enregistrement micro, exports et import MIDI (Issue #87)
+- **Fait** :
+  - `src/audio/chip.js` :
+    - Zero import externe strictement preserve.
+    - Ajout de noeuds `AnalyserNode` legers sur chaque tranche de piste (`trackBus`) et sur la sortie generale (`songGain`).
+    - Exposition de la mesure de niveau de crete en direct `getTrackLevel(trackId)` sur le controleur de morceau et l'instance `chipAudio`.
+    - Prise en charge du routage vers sous-bus via `outputBusId` permettant d'orienter le signal d'une piste vers une autre piste ou vers le Master.
+    - Suivi pas a pas des changements dynamiques de tempo (`tempoChanges`) dans `stepDuration` pour la lecture temps reel et le rendu offline.
+    - Prise en charge des clips audio (`clip.type === 'audio'`) dans la planification d'evenements DAW v2 via l'instrument `sampler`.
+    - Extension de `renderOffline` avec filtrage par piste (`trackId`) et methode `renderStemOffline(song, trackId)` pour l'export separe des pistes.
+  - `src/audio/wav-encoder.js` :
+    - Ajout des utilitaires `audioBufferToDataUrl` et `blobToDataUrl` pour convertir directement les tampons et blobs audio en data URLs WAV base64.
+  - `src/audio/midi-parser.js` :
+    - Prise en charge complete du canal 10 General MIDI (canal 9 en index 0) converti automatiquement en instrument `drum_machine` (`drumKit: true`).
+    - Mappage des pieces de percussion General MIDI vers les noms internes PixelForge (`kick`, `snare`, `hat_closed`, `hat_open`, `crash`, `ride`, `clap`, `tom`).
+    - Extraction des meta-evenements Set Tempo (0x51) convertis en `tempoChanges` structures par pas.
+    - Generation simultanee des collections `tracks` et `clips` DAW v2 et des collections legacy pour compatibilite descendante.
+  - `src/editors/music/mixer.js` & `src/editors/music/music.css` :
+    - Vumetres temps reel reactifs avec interpolation fluide sur la tranche Master et toutes les tranches de pistes.
+    - Selecteur de routage de sous-bus (`.pf-strip-bus-select`) sur chaque tranche.
+    - Bouton d'export des stems (`.pf-btn-export-stems`) rendant chaque piste individuellement en WAV 16-bit.
+    - Bouton d'enregistrement micro (`.pf-btn-mic-record`) utilisant `navigator.mediaDevices.getUserMedia` et `MediaRecorder`, avec voyant d'activite et creation automatique de clips audio dans la timeline.
+    - Crochet de test automatise `window.__pfSimulateMicRecord(wavBlobOrBuffer)` pour les suites E2E et unitaires.
+  - `docs/MUSIC.md` :
+    - Ajout de la section 10 documentant la console de mixage v2, le routage de sous-bus, la prise micro et l'import General MIDI.
+  - Tests :
+    - Section 24 dans `src/audio/test/chip.test.mjs` testant l'import d'un flux MIDI GM synthetique (canal 10 batterie, tempoChanges multiples), le routage `outputBusId`, le monitoring de crete `getTrackLevel` et l'export stems via `renderStemOffline`.
+    - Test E2E Playwright 23 dans `e2e/studio.spec.js` testant la console de mixage, les barres d'outils, le routage de bus, l'enregistrement micro simule et la presence des clips audio sur la timeline.
+- **Verifie** : `npm test` (all 14 test suites OK, 0 failures), `npm run check:doc`, `npm run build`, validation de tous les jeux de demo et `npm run test:e2e` (23/23 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/mixer-mic-midi-import`, Closes #87.
+
 ## 2026-10-27 (67) — [Phase G] G6 : automation des paramètres (Issue #86)
 - **Fait** :
   - `src/audio/chip.js` :

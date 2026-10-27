@@ -5,9 +5,9 @@
     "id": "cube-runner",
     "description": "Jeu de plateforme 3D retro voxel sur 3 niveaux avec camera 3e personne et musique chiptune.",
     "author": "PixelForge Team",
-    "thumbnail": null,
+    "thumbnail": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAPAAAACHCAYAAAAoctTrAAAEgElEQVR4AezTYYrbMBgE0LDHKD1C73+9FpI/BpPgWoqk0fcKXYI3tjVvdn5+/f7z138G/gYy/wZ+Hv4RIBArYMCx1Tk4gcfDgP0VEAgWqDzg4NocncBLwIBfDn4SiBQw4MjaHJrAS8CAXw5+EogUMODI2poP7QGbCBjwJkWKUVPAgGv2LvUmAga8SZFi1BQw4Jq9V069VXYD3qpOYaoJGHC1xuXdSsCAt6pTmGoCBlytcXm3EvjPAW+VXRgC8QIGHF+hAJUFDLhy+7LHCxhwfIUCVBYw4Mvt+yKB9QQMeL1OnIjAZQEDvkzliwTWEzDg9TpxIgKXBQz4MlXlL8q+qoABr9qMcxG4IGDAF5B8hcCqAga8ajPOReCCgAFfQPKVygJrZzfgtftxOgIfBQz4I49fElhbwIDX7sfpCHwUMOCPPH5JYG2B7w547exORyBewIDjKxSgsoABV25f9ngBA46vUIDKAgb8rfY9l8AAAQMegOwVBL4lYMDfkvVcAgMEDHgAslcQ+JaAAX9LtvJzZR8mYMDDqL2IQH8BA+5v6okEhgkY8DBqLyLQX8CA+5t6YmWBwdkNeDC41xHoKWDAPTU9i8BgAQMeDO51BHoKGHBPTc8iMFhgqQEPzu51BOIFDDi+QgEqCxhw5fZljxcw4PgKBagsYMCLtO8YBO4IGPAdNfcQWETAgBcpwjEI3BEw4Dtq7iGwiIABL1JE5WPIfl/AgO/buZPAdAEDnl6BAxC4L2DA9+3cSWC6gAFPr8ABKgu0ZjfgVkH3E5goYMAT8b2aQKuAAbcKup/ARAEDnojv1QRaBZIH3Jrd/QTiBQw4vkIBKgsYcOX2ZY8XMOD4CgWoLGDAme07NYGngAE/GfwgkClgwJm9OTWBp4ABPxn8IJApYMCZvVU+tewHAQM+YPhIIE3AgNMac14CBwEDPmD4SCBNwIDTGnPeygKn7AZ8InGBQI6AAed05aQETgIGfCJxgUCOgAHndOWkBE4ChQZ8yu4CgXgBA46vUIDKAgZcuX3Z4wUMOL5CASoLGHCJ9oXcVcCAd21WrhICBlyiZiF3FTDgXZuVq4SAAZeouXLIvbMb8N79Sre5gAFvXrB4ewsY8N79Sre5gAFvXrB4ewt8HvDe2aUjEC9gwPEVClBZwIArty97vIABx1coQGUBA37XvusEAgQMOKAkRyTwTsCA38m4TiBAwIADSnJEAu8EDPidTOXrsscIGHBMVQ5K4CxgwGcTVwjECBhwTFUOSuAsYMBnE1cqC4RlN+CwwhyXwFHAgI8aPhMIEzDgsMIcl8BRwICPGj4TCBPoOuCw7I5LIF7AgOMrFKCygAFXbl/2eAEDjq9QgMoCBtypfY8hMEPAgGeoeyeBTgIG3AnSYwjMEDDgGereSaCTgAF3gqz8GNnnCRjwPHtvJtAsYMDNhB5AYJ6AAc+z92YCzQIG3EzoAZUFZmc34NkNeD+BBgEDbsBzK4HZAgY8uwHvJ9AgYMANeG4lMFtg5oBnZ/d+AvECBhxfoQCVBQy4cvuyxwv8AwAA//+vmV2yAAAABklEQVQDALSJTA5x4r+iAAAAAElFTkSuQmCC",
     "createdAt": "2026-10-26T19:41:38.571Z",
-    "updatedAt": "2026-10-26T19:41:38.587Z"
+    "updatedAt": "2026-10-27T16:45:39.410Z"
   },
   "settings": {
     "width": 320,
@@ -19,6 +19,7 @@
     "gravity": 800,
     "touchControls": true,
     "dimension": "3d",
+    "physics3d": "rapier",
     "startScene3DId": "scene3d_rrwm9by"
   },
   "palette": [
@@ -42,6 +43,7 @@
   "sprites": [],
   "sounds": [
     {
+      "folder": "",
       "id": "snd_89loxnb",
       "name": "coin",
       "kind": "sfx",
@@ -53,6 +55,7 @@
       }
     },
     {
+      "folder": "",
       "id": "snd_8akxbti",
       "name": "hit",
       "kind": "sfx",
@@ -64,6 +67,7 @@
       }
     },
     {
+      "folder": "",
       "id": "snd_dahqi0e",
       "name": "portal",
       "kind": "sfx",
@@ -75,6 +79,7 @@
       }
     },
     {
+      "folder": "",
       "id": "snd_g8qgcbk",
       "name": "powerup",
       "kind": "sfx",
@@ -88,8 +93,7 @@
   ],
   "songs": [
     {
-      "id": "sng_8ou7ta4",
-      "name": "RunnerTheme",
+      "folder": "",
       "bpm": 145,
       "channels": [
         {
@@ -97,14 +101,46 @@
           "name": "Lead",
           "instrument": "pulse50",
           "volume": 0.8,
-          "pan": 0
+          "pan": 0,
+          "mute": false,
+          "solo": false,
+          "drumKit": false,
+          "env": {
+            "a": 0.005,
+            "d": 0.1,
+            "s": 0.6,
+            "r": 0.08
+          },
+          "vibrato": {
+            "depth": 0,
+            "rate": 6
+          },
+          "arp": [],
+          "waveTable": null,
+          "sampleSoundId": null
         },
         {
           "id": "ch_6t7vc29",
           "name": "Bass",
           "instrument": "triangle",
           "volume": 0.9,
-          "pan": 0
+          "pan": 0,
+          "mute": false,
+          "solo": false,
+          "drumKit": false,
+          "env": {
+            "a": 0.005,
+            "d": 0.1,
+            "s": 0.6,
+            "r": 0.08
+          },
+          "vibrato": {
+            "depth": 0,
+            "rate": 6
+          },
+          "arp": [],
+          "waveTable": null,
+          "sampleSoundId": null
         },
         {
           "id": "ch_oo6vkiw",
@@ -112,7 +148,22 @@
           "instrument": "noise",
           "volume": 0.8,
           "pan": 0,
-          "drumKit": true
+          "mute": false,
+          "solo": false,
+          "drumKit": true,
+          "env": {
+            "a": 0.005,
+            "d": 0.1,
+            "s": 0.6,
+            "r": 0.08
+          },
+          "vibrato": {
+            "depth": 0,
+            "rate": 6
+          },
+          "arp": [],
+          "waveTable": null,
+          "sampleSoundId": null
         }
       ],
       "patterns": [
@@ -154,14 +205,104 @@
       "loop": {
         "enabled": true,
         "start": 0
-      }
+      },
+      "id": "sng_8ou7ta4",
+      "name": "RunnerTheme",
+      "tracks": [
+        {
+          "id": "ch_zry7q8l",
+          "name": "Lead",
+          "color": "#41a6f6",
+          "volume": 0.8,
+          "pan": 0,
+          "mute": false,
+          "solo": false,
+          "instrument": "pulse50",
+          "drumKit": false,
+          "env": {
+            "a": 0.005,
+            "d": 0.1,
+            "s": 0.6,
+            "r": 0.08
+          },
+          "vibrato": {
+            "depth": 0,
+            "rate": 6
+          },
+          "arp": [],
+          "waveTable": null,
+          "sampleSoundId": null,
+          "effects": [],
+          "sends": []
+        },
+        {
+          "id": "ch_6t7vc29",
+          "name": "Bass",
+          "color": "#41a6f6",
+          "volume": 0.9,
+          "pan": 0,
+          "mute": false,
+          "solo": false,
+          "instrument": "triangle",
+          "drumKit": false,
+          "env": {
+            "a": 0.005,
+            "d": 0.1,
+            "s": 0.6,
+            "r": 0.08
+          },
+          "vibrato": {
+            "depth": 0,
+            "rate": 6
+          },
+          "arp": [],
+          "waveTable": null,
+          "sampleSoundId": null,
+          "effects": [],
+          "sends": []
+        },
+        {
+          "id": "ch_oo6vkiw",
+          "name": "Drums",
+          "color": "#41a6f6",
+          "volume": 0.8,
+          "pan": 0,
+          "mute": false,
+          "solo": false,
+          "instrument": "noise",
+          "drumKit": true,
+          "env": {
+            "a": 0.005,
+            "d": 0.1,
+            "s": 0.6,
+            "r": 0.08
+          },
+          "vibrato": {
+            "depth": 0,
+            "rate": 6
+          },
+          "arp": [],
+          "waveTable": null,
+          "sampleSoundId": null,
+          "effects": [],
+          "sends": []
+        }
+      ],
+      "clips": [],
+      "markers": [],
+      "automation": [],
+      "timeSignature": [
+        4,
+        4
+      ]
     }
   ],
   "models": [
     {
+      "folder": "",
       "id": "model_jj5cvqj",
       "name": "Hero",
-      "type": "voxel",
+      "type": "gltf",
       "width": 4,
       "height": 6,
       "depth": 4,
@@ -215,9 +356,11 @@
         "1,5,3": 0,
         "2,5,3": 0
       },
-      "animations": []
+      "animations": [],
+      "gltfData": "data:model/gltf+json;base64,eyJhc3NldCI6eyJ2ZXJzaW9uIjoiMi4wIiwiZ2VuZXJhdG9yIjoiUGl4ZWxGb3JnZSBDQzAifSwic2NlbmVzIjpbeyJub2RlcyI6WzBdfV0sIm5vZGVzIjpbeyJuYW1lIjoiQWR2ZW50dXJlciIsIm1lc2giOjB9XSwibWVzaGVzIjpbeyJwcmltaXRpdmVzIjpbeyJhdHRyaWJ1dGVzIjp7IlBPU0lUSU9OIjowLCJOT1JNQUwiOjF9LCJpbmRpY2VzIjoyLCJtYXRlcmlhbCI6MH1dfV0sIm1hdGVyaWFscyI6W3sibmFtZSI6Ik1hdCIsInBick1ldGFsbGljUm91Z2huZXNzIjp7ImJhc2VDb2xvckZhY3RvciI6WzAuMjUsMC43LDAuOTUsMV0sIm1ldGFsbGljRmFjdG9yIjowLjEsInJvdWdobmVzc0ZhY3RvciI6MC44fX1dLCJhY2Nlc3NvcnMiOlt7ImJ1ZmZlclZpZXciOjAsImJ5dGVPZmZzZXQiOjAsImNvbXBvbmVudFR5cGUiOjUxMjYsImNvdW50Ijo4LCJ0eXBlIjoiVkVDMyIsIm1pbiI6Wy0wLjUsMCwtMC41XSwibWF4IjpbMC41LDEsMC41XX0seyJidWZmZXJWaWV3IjoxLCJieXRlT2Zmc2V0IjowLCJjb21wb25lbnRUeXBlIjo1MTI2LCJjb3VudCI6OCwidHlwZSI6IlZFQzMiLCJtaW4iOlstMSwtMSwtMV0sIm1heCI6WzEsMSwxXX0seyJidWZmZXJWaWV3IjoyLCJieXRlT2Zmc2V0IjowLCJjb21wb25lbnRUeXBlIjo1MTIzLCJjb3VudCI6MzYsInR5cGUiOiJTQ0FMQVIiLCJtaW4iOlswXSwibWF4IjpbN119LHsiYnVmZmVyVmlldyI6MywiYnl0ZU9mZnNldCI6MCwiY29tcG9uZW50VHlwZSI6NTEyNiwiY291bnQiOjMsInR5cGUiOiJTQ0FMQVIiLCJtaW4iOlswXSwibWF4IjpbMC44XX0seyJidWZmZXJWaWV3Ijo0LCJieXRlT2Zmc2V0IjowLCJjb21wb25lbnRUeXBlIjo1MTI2LCJjb3VudCI6MywidHlwZSI6IlZFQzMiLCJtaW4iOlswLDAsMF0sIm1heCI6WzAsMC4xMiwwXX0seyJidWZmZXJWaWV3Ijo1LCJieXRlT2Zmc2V0IjowLCJjb21wb25lbnRUeXBlIjo1MTI2LCJjb3VudCI6MywidHlwZSI6IlZFQzMiLCJtaW4iOlswLDAsMF0sIm1heCI6WzAsMC4xMiwwXX1dLCJidWZmZXJWaWV3cyI6W3siYnVmZmVyIjowLCJieXRlT2Zmc2V0IjowLCJieXRlTGVuZ3RoIjo5Nn0seyJidWZmZXIiOjAsImJ5dGVPZmZzZXQiOjk2LCJieXRlTGVuZ3RoIjo5Nn0seyJidWZmZXIiOjAsImJ5dGVPZmZzZXQiOjE5MiwiYnl0ZUxlbmd0aCI6NzJ9LHsiYnVmZmVyIjowLCJieXRlT2Zmc2V0IjoyNjQsImJ5dGVMZW5ndGgiOjEyfSx7ImJ1ZmZlciI6MCwiYnl0ZU9mZnNldCI6Mjc2LCJieXRlTGVuZ3RoIjozNn0seyJidWZmZXIiOjAsImJ5dGVPZmZzZXQiOjMxMiwiYnl0ZUxlbmd0aCI6MzZ9XSwiYnVmZmVycyI6W3siYnl0ZUxlbmd0aCI6MzQ4LCJ1cmkiOiJkYXRhOmFwcGxpY2F0aW9uL29jdGV0LXN0cmVhbTtiYXNlNjQsQUFBQXZ3QUFBQUFBQUFDL0FBQUFQd0FBQUFBQUFBQy9BQUFBUHdBQWdEOEFBQUMvQUFBQXZ3QUFnRDhBQUFDL0FBQUF2d0FBQUFBQUFBQS9BQUFBUHdBQUFBQUFBQUEvQUFBQVB3QUFnRDhBQUFBL0FBQUF2d0FBZ0Q4QUFBQS9BQUFBQUFBQUFBQUFBSUMvQUFBQUFBQUFBQUFBQUlDL0FBQUFBQUFBQUFBQUFJQy9BQUFBQUFBQUFBQUFBSUMvQUFBQUFBQUFBQUFBQUlBL0FBQUFBQUFBQUFBQUFJQS9BQUFBQUFBQUFBQUFBSUEvQUFBQUFBQUFBQUFBQUlBL0FBQUNBQUVBQUFBREFBSUFCQUFGQUFZQUJBQUdBQWNBQUFBQkFBVUFBQUFGQUFRQUFnQURBQWNBQWdBSEFBWUFBUUFDQUFZQUFRQUdBQVVBQUFBRUFBY0FBQUFIQUFNQUFBQUFBTTNNekQ3TnpFdy9BQUFBQUFBQUFBQUFBQUFBQUFBQUFJL0NkVDBBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFJL0M5VDBBQUFBQUFBQUFBQUFBQUFBQUFBQUEifV0sImFuaW1hdGlvbnMiOlt7Im5hbWUiOiJpZGxlIiwiY2hhbm5lbHMiOlt7InNhbXBsZXIiOjAsInRhcmdldCI6eyJub2RlIjowLCJwYXRoIjoidHJhbnNsYXRpb24ifX1dLCJzYW1wbGVycyI6W3siaW5wdXQiOjMsImludGVycG9sYXRpb24iOiJMSU5FQVIiLCJvdXRwdXQiOjR9XX0seyJuYW1lIjoid2FsayIsImNoYW5uZWxzIjpbeyJzYW1wbGVyIjowLCJ0YXJnZXQiOnsibm9kZSI6MCwicGF0aCI6InRyYW5zbGF0aW9uIn19XSwic2FtcGxlcnMiOlt7ImlucHV0IjozLCJpbnRlcnBvbGF0aW9uIjoiTElORUFSIiwib3V0cHV0Ijo1fV19XX0="
     },
     {
+      "folder": "",
       "id": "model_0tesgh0",
       "name": "Coin",
       "type": "voxel",
@@ -237,6 +380,7 @@
       "animations": []
     },
     {
+      "folder": "",
       "id": "model_b0jczcb",
       "name": "Spike",
       "type": "voxel",
@@ -256,6 +400,7 @@
       "animations": []
     },
     {
+      "folder": "",
       "id": "model_ficl6nx",
       "name": "Portal",
       "type": "voxel",
@@ -283,6 +428,7 @@
       "animations": []
     },
     {
+      "folder": "",
       "id": "model_0a5xa8p",
       "name": "Trophy",
       "type": "voxel",
@@ -311,29 +457,7 @@
   "materials": [],
   "scenes3d": [
     {
-      "id": "scene3d_rrwm9by",
-      "name": "Niveau 1",
-      "environment": {
-        "skyColor": "#41a6f6",
-        "fog": {
-          "enabled": true,
-          "color": "#41a6f6",
-          "density": 0.02
-        },
-        "ambientLight": {
-          "color": "#ffffff",
-          "intensity": 0.7
-        },
-        "directionalLight": {
-          "color": "#ffeedd",
-          "intensity": 1,
-          "position": [
-            10,
-            20,
-            15
-          ]
-        }
-      },
+      "folder": "",
       "gridmap": {
         "blockSize": 1,
         "blocks": {
@@ -673,32 +797,365 @@
           "z": 13,
           "props": {}
         }
-      ]
-    },
-    {
-      "id": "scene3d_h4kbsmt",
-      "name": "Niveau 2",
+      ],
+      "nodes": [
+        {
+          "id": "ent_xbhgjcg",
+          "name": "Player",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            2,
+            1,
+            2
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_iweeccd",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_qhour3l",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            4,
+            1,
+            4
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_6yuaqkk",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            7,
+            2,
+            7
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_okmai0t",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            10,
+            3,
+            10
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_wev74xc",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            12,
+            4,
+            12
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_5awdj0w",
+          "name": "Portal1",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            13,
+            4,
+            13
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_55bwn9f",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "node3d_mq67nj2",
+          "name": "Light_7",
+          "kind": "light",
+          "parent": null,
+          "position": [
+            0,
+            3,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": null,
+          "materialId": null,
+          "props": {
+            "lightType": "point",
+            "color": "#ffcd75",
+            "intensity": 1.5,
+            "distance": 12,
+            "decay": 2,
+            "angle": 45,
+            "penumbra": 0.2,
+            "castShadow": false
+          }
+        },
+        {
+          "id": "inst_totem",
+          "name": "MonTotem",
+          "kind": "prefab",
+          "prefabId": "pfb_totem",
+          "position": [
+            4,
+            0,
+            4
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true
+        },
+        {
+          "id": "node3d_5r5qfl1",
+          "name": "Light_9",
+          "kind": "light",
+          "parent": null,
+          "position": [
+            0,
+            3,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": null,
+          "materialId": null,
+          "props": {
+            "lightType": "point",
+            "color": "#ffcd75",
+            "intensity": 1.5,
+            "distance": 12,
+            "decay": 2,
+            "angle": 45,
+            "penumbra": 0.2,
+            "castShadow": false
+          }
+        },
+        {
+          "id": "node3d_3a0t3np",
+          "name": "Light_10",
+          "kind": "light",
+          "parent": null,
+          "position": [
+            0,
+            3,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": null,
+          "materialId": null,
+          "props": {
+            "lightType": "point",
+            "color": "#ffcd75",
+            "intensity": 1.5,
+            "distance": 12,
+            "decay": 2,
+            "angle": 45,
+            "penumbra": 0.2,
+            "castShadow": false
+          }
+        },
+        {
+          "id": "inst_totem",
+          "name": "MonTotem",
+          "kind": "prefab",
+          "prefabId": "pfb_totem",
+          "position": [
+            4,
+            0,
+            4
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true
+        }
+      ],
+      "id": "scene3d_rrwm9by",
+      "name": "Niveau 1",
       "environment": {
-        "skyColor": "#1a1c2c",
+        "skyColor": "#41a6f6",
+        "horizonColor": "#29366f",
+        "skyGradient": {
+          "enabled": false,
+          "topColor": "#0d0f18",
+          "bottomColor": "#29366f"
+        },
         "fog": {
           "enabled": true,
-          "color": "#1a1c2c",
-          "density": 0.035
+          "type": "exp2",
+          "color": "#41a6f6",
+          "density": 0.02,
+          "near": 10,
+          "far": 50
         },
         "ambientLight": {
-          "color": "#8899aa",
-          "intensity": 0.5
+          "color": "#ffffff",
+          "intensity": 0.7
         },
         "directionalLight": {
-          "color": "#ff8844",
-          "intensity": 0.8,
+          "color": "#ffeedd",
+          "intensity": 1,
           "position": [
-            5,
-            15,
-            10
-          ]
+            10,
+            20,
+            15
+          ],
+          "castShadow": false
+        },
+        "shadows": {
+          "enabled": false
         }
       },
+      "terrain": {
+        "enabled": true,
+        "width": 12,
+        "depth": 12,
+        "originX": -6,
+        "originZ": -6,
+        "defaultHeight": 0,
+        "defaultColor": 6,
+        "heights": {
+          "0,0": 1
+        }
+      }
+    },
+    {
+      "folder": "",
       "gridmap": {
         "blockSize": 1,
         "blocks": {
@@ -785,32 +1242,178 @@
           "z": 9,
           "props": {}
         }
-      ]
-    },
-    {
-      "id": "scene3d_3jkjzjq",
-      "name": "Niveau 3",
+      ],
+      "nodes": [
+        {
+          "id": "ent_6lswoxy",
+          "name": "Player",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            1,
+            1,
+            1
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_iweeccd",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_ychr57c",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            6,
+            1,
+            2
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_v2m7pw1",
+          "name": "Spike",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            11,
+            2,
+            4
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_rlg6d9x",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_qard0rv",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            16,
+            3,
+            6
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_77drm2a",
+          "name": "Portal2",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            21,
+            4,
+            9
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_snew2w1",
+          "materialId": null,
+          "props": {}
+        }
+      ],
+      "id": "scene3d_h4kbsmt",
+      "name": "Niveau 2",
       "environment": {
-        "skyColor": "#73eff7",
+        "skyColor": "#1a1c2c",
+        "horizonColor": "#29366f",
+        "skyGradient": {
+          "enabled": false,
+          "topColor": "#0d0f18",
+          "bottomColor": "#29366f"
+        },
         "fog": {
           "enabled": true,
-          "color": "#f4f4f4",
-          "density": 0.02
+          "type": "exp2",
+          "color": "#1a1c2c",
+          "density": 0.035,
+          "near": 10,
+          "far": 50
         },
         "ambientLight": {
-          "color": "#ffffff",
-          "intensity": 0.8
+          "color": "#8899aa",
+          "intensity": 0.5
         },
         "directionalLight": {
-          "color": "#fff0d0",
-          "intensity": 1.2,
+          "color": "#ff8844",
+          "intensity": 0.8,
           "position": [
-            12,
-            25,
+            5,
+            15,
             10
-          ]
+          ],
+          "castShadow": false
+        },
+        "shadows": {
+          "enabled": false
         }
-      },
+      }
+    },
+    {
+      "folder": "",
       "gridmap": {
         "blockSize": 1,
         "blocks": {
@@ -917,7 +1520,201 @@
           "z": 14,
           "props": {}
         }
-      ]
+      ],
+      "nodes": [
+        {
+          "id": "ent_q0tgadw",
+          "name": "Player",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            1,
+            1,
+            1
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_iweeccd",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_b27anf3",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            6,
+            2,
+            2
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_a4i5r81",
+          "name": "Spike",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            10,
+            3,
+            6
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_rlg6d9x",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_8tx15ii",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            14,
+            4,
+            10
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_o12ovjq",
+          "name": "Coin",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            19,
+            5,
+            13
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_c57fn39",
+          "materialId": null,
+          "props": {}
+        },
+        {
+          "id": "ent_wkhxrip",
+          "name": "Goal",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            20,
+            5,
+            14
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_f2pq7d6",
+          "materialId": null,
+          "props": {}
+        }
+      ],
+      "id": "scene3d_3jkjzjq",
+      "name": "Niveau 3",
+      "environment": {
+        "skyColor": "#73eff7",
+        "horizonColor": "#29366f",
+        "skyGradient": {
+          "enabled": false,
+          "topColor": "#0d0f18",
+          "bottomColor": "#29366f"
+        },
+        "fog": {
+          "enabled": true,
+          "type": "exp2",
+          "color": "#f4f4f4",
+          "density": 0.02,
+          "near": 10,
+          "far": 50
+        },
+        "ambientLight": {
+          "color": "#ffffff",
+          "intensity": 0.8
+        },
+        "directionalLight": {
+          "color": "#fff0d0",
+          "intensity": 1.2,
+          "position": [
+            12,
+            25,
+            10
+          ],
+          "castShadow": false
+        },
+        "shadows": {
+          "enabled": false
+        }
+      }
     }
   ],
   "environment": {
@@ -943,6 +1740,8 @@
   },
   "objects": [
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_iweeccd",
       "name": "Player",
       "spriteId": null,
@@ -954,7 +1753,12 @@
         "immovable": false,
         "bounce": 0,
         "collideMap": true,
-        "collideWorld": true
+        "collideWorld": true,
+        "bodyType": "dynamic",
+        "colliderShape": "box",
+        "mass": 1,
+        "friction": 0.5,
+        "restitution": 0
       },
       "script": {
         "mode": "graph",
@@ -1429,10 +2233,11 @@
           "comments": []
         }
       },
-      "exportedProps": [],
       "modelId": "model_jj5cvqj"
     },
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_c57fn39",
       "name": "Coin",
       "spriteId": null,
@@ -1444,7 +2249,12 @@
         "immovable": false,
         "bounce": 0,
         "collideMap": false,
-        "collideWorld": true
+        "collideWorld": true,
+        "bodyType": "dynamic",
+        "colliderShape": "box",
+        "mass": 1,
+        "friction": 0.5,
+        "restitution": 0
       },
       "script": {
         "mode": "graph",
@@ -1603,10 +2413,11 @@
           "comments": []
         }
       },
-      "exportedProps": [],
       "modelId": "model_0tesgh0"
     },
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_rlg6d9x",
       "name": "Spike",
       "spriteId": null,
@@ -1618,7 +2429,12 @@
         "immovable": false,
         "bounce": 0,
         "collideMap": false,
-        "collideWorld": true
+        "collideWorld": true,
+        "bodyType": "dynamic",
+        "colliderShape": "box",
+        "mass": 1,
+        "friction": 0.5,
+        "restitution": 0
       },
       "script": {
         "mode": "graph",
@@ -1678,10 +2494,11 @@
           "comments": []
         }
       },
-      "exportedProps": [],
       "modelId": "model_b0jczcb"
     },
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_55bwn9f",
       "name": "Portal1",
       "spriteId": null,
@@ -1693,7 +2510,12 @@
         "immovable": false,
         "bounce": 0,
         "collideMap": false,
-        "collideWorld": true
+        "collideWorld": true,
+        "bodyType": "dynamic",
+        "colliderShape": "box",
+        "mass": 1,
+        "friction": 0.5,
+        "restitution": 0
       },
       "script": {
         "mode": "graph",
@@ -1755,10 +2577,11 @@
           "comments": []
         }
       },
-      "exportedProps": [],
       "modelId": "model_ficl6nx"
     },
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_snew2w1",
       "name": "Portal2",
       "spriteId": null,
@@ -1770,7 +2593,12 @@
         "immovable": false,
         "bounce": 0,
         "collideMap": false,
-        "collideWorld": true
+        "collideWorld": true,
+        "bodyType": "dynamic",
+        "colliderShape": "box",
+        "mass": 1,
+        "friction": 0.5,
+        "restitution": 0
       },
       "script": {
         "mode": "graph",
@@ -1832,10 +2660,11 @@
           "comments": []
         }
       },
-      "exportedProps": [],
       "modelId": "model_ficl6nx"
     },
     {
+      "folder": "",
+      "exportedProps": [],
       "id": "obj_f2pq7d6",
       "name": "Goal",
       "spriteId": null,
@@ -1847,7 +2676,12 @@
         "immovable": false,
         "bounce": 0,
         "collideMap": false,
-        "collideWorld": true
+        "collideWorld": true,
+        "bodyType": "dynamic",
+        "colliderShape": "box",
+        "mass": 1,
+        "friction": 0.5,
+        "restitution": 0
       },
       "script": {
         "mode": "graph",
@@ -1913,7 +2747,6 @@
           "comments": []
         }
       },
-      "exportedProps": [],
       "modelId": "model_0a5xa8p"
     }
   ],
@@ -2910,7 +3743,8 @@
           "depth": "below"
         }
       ],
-      "entities": []
+      "entities": [],
+      "folder": ""
     }
   ],
   "globalScript": {
@@ -2923,5 +3757,40 @@
       "variables": [],
       "comments": []
     }
-  }
+  },
+  "prefabs3d": [
+    {
+      "id": "pfb_totem",
+      "name": "Totem",
+      "folder": "",
+      "nodes": [
+        {
+          "id": "node_totem_base",
+          "name": "BaseTotem",
+          "kind": "mesh",
+          "parent": null,
+          "position": [
+            0,
+            0,
+            0
+          ],
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "scale": [
+            1,
+            1,
+            1
+          ],
+          "visible": true,
+          "locked": false,
+          "objectId": "obj_iweeccd",
+          "materialId": null,
+          "props": {}
+        }
+      ]
+    }
+  ]
 }

@@ -63,3 +63,26 @@ export function audioBufferToWavBlob(audioBuffer) {
   const bytes = encodeWav(audioBuffer);
   return new Blob([bytes], { type: 'audio/wav' });
 }
+
+export function audioBufferToDataUrl(audioBuffer) {
+  const bytes = encodeWav(audioBuffer);
+  let binary = '';
+  const len = bytes.byteLength;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  const base64 = (typeof btoa !== 'undefined')
+    ? btoa(binary)
+    : (typeof Buffer !== 'undefined' ? Buffer.from(binary, 'binary').toString('base64') : '');
+  return `data:audio/wav;base64,${base64}`;
+}
+
+export function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
+

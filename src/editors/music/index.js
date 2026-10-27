@@ -429,6 +429,8 @@ export function mount(container, store, { refId = null } = {}) {
             const curSong = (p.songs || []).find((s) => s.id === song.id);
             const curCh = (curSong?.channels || []).find((c) => c.id === chId);
             if (curCh) Object.assign(curCh, patch);
+            const curTrk = (curSong?.tracks || []).find((t) => t.id === chId);
+            if (curTrk) Object.assign(curTrk, patch);
           }, 'song:channel_patch');
           render();
         },
@@ -441,6 +443,14 @@ export function mount(container, store, { refId = null } = {}) {
           songId = importedSong.id;
           activePatternId = importedSong.patterns?.[0]?.id || null;
           selectedChannelId = importedSong.channels?.[0]?.id || null;
+          render();
+        },
+        onSongUpdate(patch) {
+          store.update((p) => {
+            const curSong = (p.songs || []).find((s) => s.id === song.id);
+            if (curSong) Object.assign(curSong, patch);
+          }, 'song:update');
+          song = resolveSong() || song;
           render();
         }
       });
