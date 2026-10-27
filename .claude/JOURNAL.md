@@ -1,5 +1,33 @@
 # Journal — PixelForge
 
+## 2026-10-27 (73) — [Phase H] H7 : l'IA copilote dans chaque editeur (Issue #95)
+- **Fait** :
+  - Creation de `src/ui/editor-copilot.js` et `src/ui/editor-copilot.css` :
+    - `createEditorCopilotButton(options)` : composant de bouton d'outils unifie « Demander a l'IA » integre dans les barres de chaque editeur.
+    - `openEditorCopilotModal(options)` : modale contextuelle d'echange avec l'agent IA, badge du document actif, suggestions intelligentes cliquables en un clic (`COPILOT_SUGGESTIONS`), zone de prompt avec validation Ctrl+Entree, affichage des etapes d'action en temps reel et retour d'etat (en cours, succes, erreur).
+    - Outils filtres et limites au document ouvert (`COPILOT_ALLOWED_TOOLS`) :
+      - Editeur de script (`src/editors/objects/editor.js`) : `set_script`, `get_script`, `list_nodes`, `upsert_object`.
+      - Editeur de sprite pixel art (`src/editors/pixel/index.js`) : `upsert_sprite`, `get_sprite`, `generate_asset`.
+      - Editeur de carte (`src/editors/map/index.js`) : `paint_map`, `set_layer`, `place_entities`, `render_map`, `upsert_map`.
+      - Editeur musical DAW v2 (`src/editors/music/index.js`) : `upsert_song`, `get_song`, `generate_asset`.
+      - Editeur de scene 3D (`src/editors/scene3d/index.js`) : `paint_gridmap`, `upsert_node3d`, `set_transform`, `add_light`, `set_material`, `render_scene3d`, `place_entities`, `upsert_scene3d`.
+  - Evolution de `src/ai/agent.js` :
+    - Prise en charge de `context` dans `buildAgentSystemPrompt(project, context)` : injection du contexte du document actif (type, nom, id, details et restriction d'outils).
+    - Prise en charge de `allowedTools` et `context` dans `runAgent` : filtrage strict des outils passes aux modeles (function calling et mode plan JSON).
+    - Resolution automatique des arguments par defaut dans `executeTool` : inference automatique de `args.object`, `args.name`, `args.map` ou `args.scene` depuis le contexte du document actif si omis par le modele.
+    - Export de `COPILOT_SUGGESTIONS` et `COPILOT_ALLOWED_TOOLS`.
+  - Integration Studio (`src/main.js`) :
+    - Exposition globale de `createEditorCopilotButton`, `openEditorCopilotModal`, `COPILOT_SUGGESTIONS` et `COPILOT_ALLOWED_TOOLS` sur `window.__pfAi`.
+  - Documentation :
+    - Mise a jour de `docs/AI_GENERATION.md` avec la section 9 consacree au copilote integre par editeur.
+    - Mise a jour de `docs/ARCHITECTURE.md`.
+  - Tests :
+    - Section 13 ajoutee dans `src/ai/test/ai.test.mjs` validant les suggestions et outils autorises pour les 5 editeurs, l'injection de contexte dans `buildAgentSystemPrompt`, la deduction automatique du document actif dans `executeTool`, et l'absence totale d'emojis dans les modules du copilote.
+    - Test Playwright 28 ajoute dans `e2e/studio.spec.js` testant la presence et l'activation du bouton « Demander a l'IA » dans les 5 editeurs (script, pixel, map, song, scene3d), l'ouverture du modal contextuel et l'utilisation d'une suggestion.
+- **Verifie** : `npm test` (14 suites OK, 0 echec), `npm run check:doc`, `npm run build`, validation des 6 jeux de demo (`node mcp/cli.js validate <game>`) et 28/28 tests Playwright e2e verts. Strictement zero emoji.
+- **Etat** : Branche `feat/ai-copilot-per-editor`, Closes #95.
+
+
 ## 2026-10-27 (72) — [Phase H] H6 : l'IA teste le jeu et corrige seule (Issue #94)
 - **Fait** :
   - Creation de `src/ai/playtester.js` (module pur, zero dependance DOM ni Node) :

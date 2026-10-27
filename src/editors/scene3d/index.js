@@ -12,6 +12,7 @@ import { Terrain3D } from './terrain.js';
 import { InstancedBlockGrid } from './instanced-blocks.js';
 import { getIconSvg } from '../../ui/icons.js';
 import { uid } from '../../core/project.js';
+import { createEditorCopilotButton } from '../../ui/editor-copilot.js';
 import './scene3d.css';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -105,6 +106,7 @@ export function mount(container, store, { refId } = {}) {
       </div>
 
       <div style="display:flex;align-items:center;gap:6px;">
+        <div id="pf-s3d-ai-mount"></div>
         <button class="pf-scene3d-btn" id="pf-s3d-play-cam-btn" title="Jouer depuis la vue de la camera (F6)">Vue (F6)</button>
         <button class="pf-scene3d-btn primary" id="pf-s3d-play-btn" title="Tester cette scene (F6)">${getIconSvg('playScene', 12)} Tester la scene (F6)</button>
         <span id="pf-s3d-stats" style="font-size:11px;color:var(--fg-2);">0 blocs</span>
@@ -140,6 +142,30 @@ export function mount(container, store, { refId } = {}) {
       </div>
     </div>
   `;
+
+  // Copilote IA integre a l'editeur 3D (H7)
+  const aiMount = container.querySelector('#pf-s3d-ai-mount');
+  if (aiMount) {
+    const bAi = createEditorCopilotButton({
+      store,
+      docKind: 'scene3d',
+      getContext: () => {
+        const sc = findScene();
+        return {
+          docKind: 'scene3d',
+          docName: sc ? sc.name : 'Scene 3D',
+          docId: refId,
+          details: sc ? `Etage Y=${activeLevel}, blocs: ${gridmap?.size || 0}, entites: ${(sc.entities || []).length}` : '',
+        };
+      },
+      onApplied: () => {
+        rebuildInstancedMesh();
+        renderHierarchyTree();
+        renderInspector();
+      },
+    });
+    aiMount.appendChild(bAi);
+  }
 
   // Gestion des outils
   const toolBtns = container.querySelectorAll('.pf-scene3d-btn[data-tool]');

@@ -57,6 +57,47 @@ import {
   runPlaytestAndFix,
 } from './playtester.js';
 
+export const COPILOT_SUGGESTIONS = {
+  script: [
+    'Rends cet ennemi plus agressif et rapide',
+    'Ajoute une esquive laterale sur la touche Shift',
+    'Explique la logique de ce script ou graphe',
+    'Optimise les deplacements et adoucis la friction',
+  ],
+  sprite: [
+    'Rends ce sprite plus menaçant avec des yeux brillants',
+    'Ajoute des reflets de lumiere et des ombres',
+    'Genere une animation de marche fluide',
+    'Harmonise les couleurs avec la palette Sweetie 16',
+  ],
+  map: [
+    'Ajoute des plateformes suspendues franchissables',
+    'Place des pieces en cloche au-dessus des gouffres',
+    'Ajoute un ennemi patrouilleur et des piques',
+    'Remplis cette zone avec des tuiles de decoration',
+  ],
+  song: [
+    'Ajoute une basse percutante a ce pattern',
+    'Passe le tempo a 140 BPM et dynamise le rythme',
+    'Ajoute un arpege rapide sur le canal Lead',
+    'Compose un refrain chiptune heroique',
+  ],
+  scene3d: [
+    'Remplis cette salle avec des torches et des piliers',
+    'Ajoute des caisses et des barils de decor',
+    'Construis une arene surelevee avec des marches',
+    'Place une lumiere ponctuelle chaude au centre',
+  ],
+};
+
+export const COPILOT_ALLOWED_TOOLS = {
+  script: ['set_script', 'get_script', 'list_nodes', 'upsert_object'],
+  sprite: ['upsert_sprite', 'get_sprite', 'generate_asset'],
+  map: ['paint_map', 'set_layer', 'place_entities', 'render_map', 'upsert_map'],
+  song: ['upsert_song', 'get_song', 'generate_asset'],
+  scene3d: ['paint_gridmap', 'upsert_node3d', 'set_transform', 'add_light', 'set_material', 'render_scene3d', 'place_entities', 'upsert_scene3d'],
+};
+
 export {
   generateAsset,
   generateSpriteData,
@@ -767,8 +808,23 @@ export function parseJsonPlan(text) {
  * Execute un outil sur le projet avec gestion des confirmations de suppression / ecrasement (Decision V6)
  */
 export async function executeTool(project, name, rawArgs = {}, options = {}) {
-  const { confirm = null } = options;
-  const args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : (rawArgs || {});
+  const { confirm = null, context = null } = options;
+  const args = typeof rawArgs === 'string' ? JSON.parse(rawArgs) : { ...(rawArgs || {}) };
+
+  // Remplissage automatique par defaut selon le contexte du document actif
+  if (context && context.docName) {
+    if (name === 'set_script' && !args.object) args.object = context.docName;
+    if (name === 'get_script' && !args.object) args.object = context.docName;
+    if (name === 'upsert_sprite' && !args.name && context.docKind === 'sprite') args.name = context.docName;
+    if (name === 'get_sprite' && !args.name && context.docKind === 'sprite') args.name = context.docName;
+    if (name === 'paint_map' && !args.map && context.docKind === 'map') args.map = context.docName;
+    if (name === 'set_layer' && !args.map && context.docKind === 'map') args.map = context.docName;
+    if (name === 'render_map' && !args.map && context.docKind === 'map') args.map = context.docName;
+    if (name === 'upsert_song' && !args.name && context.docKind === 'song') args.name = context.docName;
+    if (name === 'get_song' && !args.name && context.docKind === 'song') args.name = context.docName;
+    if (name === 'paint_gridmap' && !args.scene && context.docKind === 'scene3d') args.scene = context.docName;
+    if (name === 'render_scene3d' && !args.scene && context.docKind === 'scene3d') args.scene = context.docName;
+  }
 
   // Verification de confirmation pour ecrasement ou remplacement destructif
   if (typeof confirm === 'function') {
@@ -1028,7 +1084,7 @@ export async function executePlan(project, plan, options = {}) {
 /**
  * Construit le system prompt detaille pour l'agent
  */
-export function buildAgentSystemPrompt(project) {
+export function buildAgentSystemPrompt(project, context = null) {
   let prompt = `Tu es l'agent IA autonome integre a PixelForge Studio, le moteur de jeu 2D et 3D retro en pixel art et Blueprints.
 Ton role est de realiser directement les demandes de creation et de modification du jeu ouvert en appelant les outils mis a ta disposition.
 
@@ -1086,6 +1142,18 @@ Regles imperatrices :
 - Pour jouer un son : game.playSound('coin').
 `;
 
+  if (context) {
+    prompt += `\n# CONTEXTE DU DOCUMENT ACTIF :\n`;
+    prompt += `- Type de document : ${context.docKind || 'inconnu'}\n`;
+    if (context.docName) prompt += `- Nom du document : ${context.docName}\n`;
+    if (context.docId) prompt += `- Identifiant : ${context.docId}\n`;
+    if (context.details) prompt += `- Details : ${context.details}\n`;
+    if (context.allowedTools && context.allowedTools.length > 0) {
+      prompt += `- Outils autorises exclusivement : ${context.allowedTools.join(', ')}\n`;
+    }
+    prompt += `Tu es appele directement depuis l'editeur de ce document. Concentre tes reponses et modifications exclusivement sur ce document.\n`;
+  }
+
   if (project) {
     prompt += '\n# ETAT DU PROJET ACTUEL :\n' + summarize(project) + '\n';
   }
@@ -1111,6 +1179,8 @@ export async function runAgent({
   signal = null,
   confirm = null,
   maxSteps = 10,
+  allowedTools = null,
+  context = null,
 } = {}) {
   const baseProject = project || (store ? store.project : null);
   if (!baseProject) throw new Error('Aucun projet fourni a runAgent');
@@ -1119,11 +1189,15 @@ export async function runAgent({
   const workingCopy = JSON.parse(JSON.stringify(baseProject));
   const steps = [];
 
-  const systemPrompt = buildAgentSystemPrompt(workingCopy);
+  const systemPrompt = buildAgentSystemPrompt(workingCopy, context);
   const messages = [
     { role: 'system', content: systemPrompt },
     { role: 'user', content: prompt },
   ];
+
+  const tools = Array.isArray(allowedTools) && allowedTools.length > 0
+    ? AGENT_TOOLS.filter((t) => allowedTools.includes(t.function.name))
+    : AGENT_TOOLS;
 
   let currentStep = 0;
   let finalContent = '';
@@ -1137,7 +1211,7 @@ export async function runAgent({
     const res = await sendAgentChatRequest({
       ...config,
       messages,
-      tools: AGENT_TOOLS,
+      tools,
       signal,
       onChunk: (chunk, full) => {
         onChunk(chunk, full);
@@ -1176,7 +1250,7 @@ export async function runAgent({
 
         let resultText = '';
         try {
-          resultText = await executeTool(workingCopy, fnName, fnArgs, { confirm });
+          resultText = await executeTool(workingCopy, fnName, fnArgs, { confirm, context });
           stepRecord.result = resultText;
           stepRecord.status = 'success';
           onStep({ ...stepRecord });
@@ -1201,6 +1275,11 @@ export async function runAgent({
     const jsonPlan = parseJsonPlan(res.content);
     if (jsonPlan && jsonPlan.length > 0) {
       for (const planStep of jsonPlan) {
+        // Si des outils specifiques sont imposes (contexte document), filtrer les autres
+        if (Array.isArray(allowedTools) && allowedTools.length > 0 && !allowedTools.includes(planStep.tool)) {
+          continue;
+        }
+
         const stepRecord = {
           type: 'plan_step',
           name: planStep.tool,
@@ -1210,7 +1289,7 @@ export async function runAgent({
         onStep({ ...stepRecord, status: 'running' });
 
         try {
-          const resultText = await executeTool(workingCopy, planStep.tool, planStep.args, { confirm });
+          const resultText = await executeTool(workingCopy, planStep.tool, planStep.args, { confirm, context });
           stepRecord.result = resultText;
           stepRecord.status = 'success';
           onStep({ ...stepRecord });

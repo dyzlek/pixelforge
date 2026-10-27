@@ -233,4 +233,29 @@ L'agent dispose de l'outil `playtest_game` :
 ```
 L'outil retourne un diagnostic détaillé des contrôles effectués et des réparations appliquées automatiquement.
 
+---
+
+## 9. Copilote IA Intégré dans Chaque Éditeur (Phase H - H7)
+
+### 9.1 Vue d'ensemble
+
+Chaque éditeur de PixelForge Studio dispose désormais d'un bouton dédié **« Demander à l'IA »** (`src/ui/editor-copilot.js`), permettant d'interroger ou de piloter l'agent directement depuis le document ouvert (script, sprite, carte, musique, scène 3D).
+
+Le copilote opère avec :
+1. **Contexte document automatique** : l'agent reçoit l'identité, le type et les propriétés du document ouvert (nom, identifiant, dimensions, code, calques, patterns).
+2. **Outils restreints au document ouvert** : pour éviter toute altération involontaire du reste du projet, l'agent ne dispose que des outils autorisés pour cet éditeur :
+   - *Éditeur de script* (`src/editors/objects/`) : `set_script`, `get_script`, `list_nodes`, `upsert_object`.
+   - *Éditeur de sprite* (`src/editors/pixel/`) : `upsert_sprite`, `get_sprite`, `generate_asset`.
+   - *Éditeur de carte* (`src/editors/map/`) : `paint_map`, `set_layer`, `place_entities`, `render_map`, `upsert_map`.
+   - *Éditeur de musique* (`src/editors/music/`) : `upsert_song`, `get_song`, `generate_asset`.
+   - *Éditeur de scène 3D* (`src/editors/scene3d/`) : `paint_gridmap`, `upsert_node3d`, `set_transform`, `add_light`, `set_material`, `render_scene3d`, `place_entities`, `upsert_scene3d`.
+3. **Suggestions rapides en un clic** : des puces adaptées au document permettent de formuler des demandes courantes en un seul clic :
+   - Script : « rends cet ennemi plus agressif », « ajoute une esquive », « explique ce graphe ».
+   - Musique : « ajoute une basse à ce pattern », « change le tempo à 140 BPM », « ajoute un arpège ».
+   - Scène 3D : « remplis cette salle de décor », « ajoute des torches et colonnes », « construis une arène ».
+   - Sprite : « rends ce sprite plus menaçant », « ajoute des ombres et du relief », « animation de marche ».
+   - Carte : « ajoute des plateformes suspendues », « place des pièces en cloche », « ajoute des pièges ».
+4. **Application atomique et réversible** : toute action s'applique via `store.update`, autorisant une annulation immédiate par `Ctrl+Z`.
+
+
 

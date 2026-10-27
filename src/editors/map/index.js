@@ -1,6 +1,7 @@
 // Onglet « Cartes » : éditeur de tuiles, calques et entités (rendu Canvas 2D)
 import './style.css';
 import { createMap, createLayer, uid, findById } from '../../core/project.js';
+import { createEditorCopilotButton } from '../../ui/editor-copilot.js';
 
 const MAX_UNDO = 50;
 const MIN_ZOOM = 0.25;
@@ -1441,9 +1442,29 @@ export function mount(container, st, opts = {}) {
     const undoBtn = h('button', { title: 'Annuler (Ctrl+Z)', onclick: undo }, '↶ Annuler');
     const redoBtn = h('button', { title: 'Rétablir (Ctrl+Y)', onclick: redo }, '↷ Rétablir');
     const gridBtn = h('button', { title: 'Afficher / masquer la grille', onclick: () => { S.grid = !S.grid; renderToolbar(); requestDraw(); } }, 'Grille');
+    const bAi = createEditorCopilotButton({
+      store,
+      docKind: 'map',
+      getContext: () => {
+        const m = curMap();
+        return {
+          docKind: 'map',
+          docName: m ? m.name : 'Carte',
+          docId: S.sel,
+          details: m ? `${m.width}x${m.height} tuiles, calques: ${(m.layers || []).length}, entites: ${(m.entities || []).length}` : '',
+        };
+      },
+      onApplied: () => {
+        renderMaps();
+        renderLayers();
+        renderEntities();
+        requestDraw();
+      },
+    });
     bar.append(h('span', { class: 'map-sep' }), undoBtn, redoBtn, h('span', { class: 'map-sep' }), gridBtn,
       h('button', { title: 'Ajuster la vue à la carte', onclick: fitView }, 'Ajuster'),
-      h('button', { title: 'Zoom 100 %', onclick: () => { const { w, h: hh } = S.size; const m = curMap(); S.view = { zoom: 1, ox: (w - m.width * m.tileSize) / 2, oy: (hh - m.height * m.tileSize) / 2 }; updateStatus(); requestDraw(); } }, '1:1'));
+      h('button', { title: 'Zoom 100 %', onclick: () => { const { w, h: hh } = S.size; const m = curMap(); S.view = { zoom: 1, ox: (w - m.width * m.tileSize) / 2, oy: (hh - m.height * m.tileSize) / 2 }; updateStatus(); requestDraw(); } }, '1:1'),
+      h('span', { class: 'map-sep' }), bAi);
 
     const canvas = h('canvas', { tabindex: 0 });
     const wrap = h('div', { class: 'map-canvas-wrap' }, canvas);
