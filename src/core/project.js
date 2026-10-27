@@ -300,6 +300,42 @@ export function normalizeProject(p) {
       song.loop = { ...song.loop, start: song.loopStart };
       delete song.loopStart;
     }
+    song.tracks = Array.isArray(song.tracks) ? song.tracks : [];
+    song.clips = Array.isArray(song.clips) ? song.clips : [];
+    if (song.channels.length > 0 && song.tracks.length === 0) {
+      song.tracks = song.channels.map((ch) => ({
+        id: ch.id,
+        name: ch.name,
+        color: '#41a6f6',
+        volume: ch.volume,
+        pan: ch.pan,
+        mute: ch.mute,
+        solo: ch.solo,
+        instrument: ch.instrument,
+        drumKit: ch.drumKit,
+        env: ch.env,
+        vibrato: ch.vibrato,
+        arp: ch.arp,
+        waveTable: ch.waveTable,
+        sampleSoundId: ch.sampleSoundId,
+      }));
+    } else if (song.tracks.length > 0 && song.channels.length === 0) {
+      song.channels = song.tracks.map((tr) => ({
+        id: tr.id,
+        name: tr.name,
+        instrument: typeof tr.instrument === 'string' ? tr.instrument : (tr.instrument?.type || 'pulse50'),
+        volume: tr.volume,
+        pan: tr.pan,
+        mute: tr.mute,
+        solo: tr.solo,
+        drumKit: tr.drumKit,
+        env: tr.env,
+        vibrato: tr.vibrato,
+        arp: tr.arp,
+        waveTable: tr.waveTable,
+        sampleSoundId: tr.sampleSoundId,
+      }));
+    }
     return song;
   });
   p.models = Array.isArray(p.models) ? p.models.map((m) => ({ folder: '', ...m })) : [];

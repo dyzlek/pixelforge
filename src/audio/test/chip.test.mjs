@@ -30,6 +30,11 @@ function createMockAudioContext() {
       nodes.push(g);
       return g;
     },
+    createStereoPanner() {
+      const p = { pan: createParam(0), connect() {}, disconnect() {} };
+      nodes.push(p);
+      return p;
+    },
     createOscillator() {
       const o = {
         type: 'sine',
@@ -600,6 +605,85 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
   assert.equal(parsedLegacy.playlist.length, 2);
   assert.equal(parsedLegacy.playlist[0].start, 0);
   assert.equal(parsedLegacy.playlist[1].start, 16);
+}
+
+// 18. Moteur audio v2 : pistes, bus et planificateur DAW (Issue #81, G1)
+{
+  const { mockCtx } = createMockAudioContext();
+  const audio = createChipAudio(mockCtx);
+
+  // (a) Test de mesure de performance et latence sur 16 pistes
+  const perf = audio.measureSchedulingPerformance(16, 64);
+  assert.equal(perf.trackCount, 16, 'Doit tester 16 pistes');
+  assert.equal(perf.stepCount, 64, 'Doit tester 64 pas');
+  assert.ok(perf.ok, `Performance de planification 16 pistes acceptable (${perf.elapsedMs}ms)`);
+
+  // (b) Test de routage de bus de pistes avec controle dynamique du volume/pan/mute
+  const multiTrackSong = {
+    bpm: 120,
+    tracks: [
+      { id: 't1', name: 'Lead', volume: 0.8, pan: -0.5, instrument: 'pulse50' },
+      { id: 't2', name: 'Bass', volume: 0.7, pan: 0.5, instrument: 'triangle' },
+    ],
+    clips: [
+      {
+        trackId: 't1',
+        type: 'notes',
+        start: 0,
+        length: 16,
+        notes: [
+          { step: 0, pitch: 'C4', length: 4, velocity: 0.9 },
+          { step: 4, pitch: 'E4', length: 4, velocity: 0.9 }
+        ]
+      },
+      {
+        trackId: 't2',
+        type: 'notes',
+        start: 0,
+        length: 16,
+        notes: [
+          { step: 0, pitch: 'C2', length: 8, velocity: 0.8 }
+        ]
+      }
+    ]
+  };
+
+  const ctrl = audio.playSong(multiTrackSong, { loop: false, volume: 1 });
+  assert.ok(ctrl, 'playSong doit renvoyer un controleur actif');
+  assert.equal(ctrl.tracks.length, 2, 'Doit instancier 2 bus de pistes');
+
+  const t1 = ctrl.getTrack('t1');
+  assert.ok(t1, 'Piste t1 accessible par id');
+  assert.equal(t1.volume, 0.8);
+
+  ctrl.setTrackVolume('t1', 0.5);
+  assert.equal(t1.volume, 0.5);
+
+  ctrl.setTrackMute('t1', true);
+  assert.equal(t1.mute, true);
+
+  ctrl.setTrackMute('t1', false);
+  assert.equal(t1.mute, false);
+
+  ctrl.setTrackPan('t1', 0.2);
+  ctrl.stop(0);
+
+  // (c) Test de normalisation bidirectionnelle dans normalizeProject
+  const { normalizeProject } = await import('../../core/project.js');
+  const projLegacy = {
+    name: 'Legacy Project',
+    songs: [{
+      id: 's1',
+      name: 'Song 1',
+      channels: [{ id: 'ch1', name: 'Lead', instrument: 'pulse50', volume: 0.8, pan: 0 }],
+      patterns: [{ id: 'p1', name: 'P1', length: 16, notes: [] }]
+    }]
+  };
+  normalizeProject(projLegacy);
+  assert.ok(Array.isArray(projLegacy.songs[0].tracks), 'tracks[] doit etre cree a partir de channels[]');
+  assert.equal(projLegacy.songs[0].tracks.length, 1);
+  assert.equal(projLegacy.songs[0].tracks[0].id, 'ch1');
+  assert.equal(projLegacy.songs[0].tracks[0].name, 'Lead');
 }
 
 console.log('Tests chip.js reussis avec succes.');

@@ -257,6 +257,12 @@
           "type": "array",
           "items": { "$ref": "#/$defs/playlistItem" }
         },
+        "tracks": {
+          "type": "array"
+        },
+        "clips": {
+          "type": "array"
+        },
         "loop": {
           "type": "object",
           "description": "Boucle de lecture : repart de start (en pas) a la fin de l'arrangement. end est conserve mais n'est pas utilise par le moteur.",

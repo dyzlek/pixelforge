@@ -655,10 +655,11 @@ export function createChipAudio(ctx, destination) {
     const secondsPerBeat = 60 / bpm;
     const baseStepSec = secondsPerBeat / stepsPerBeat;
 
+    const rawTracks = (song.tracks && song.tracks.length > 0) ? song.tracks : (song.channels || []);
     const channelsById = {};
-    (song.channels || []).forEach((c) => { channelsById[c.id] = c; });
+    rawTracks.forEach((c) => { channelsById[c.id] = c; });
     // Solo : si au moins un canal est en solo, seuls les canaux en solo jouent
-    const anySolo = (song.channels || []).some((c) => c.solo);
+    const anySolo = rawTracks.some((c) => c.solo);
 
     const patternsById = {};
     (song.patterns || []).forEach((p) => { patternsById[p.id] = p; });
@@ -666,7 +667,7 @@ export function createChipAudio(ctx, destination) {
     // Construction de la grille d'evenements
     // Si playlist est vide mais qu'un pattern existe, on joue le premier pattern
     let playlist = song.playlist || [];
-    if (playlist.length === 0 && (song.patterns || []).length > 0) {
+    if (playlist.length === 0 && (song.patterns || []).length > 0 && (!song.clips || song.clips.length === 0)) {
       playlist = [{ pattern: song.patterns[0].id, start: 0, track: 0 }];
     }
 
@@ -694,6 +695,29 @@ export function createChipAudio(ctx, destination) {
       });
     });
 
+    // Prise en charge des clips de notes (DAW v2)
+    if (Array.isArray(song.clips)) {
+      song.clips.forEach((clip) => {
+        if (clip.type === 'notes' && Array.isArray(clip.notes)) {
+          const startStep = clip.start || 0;
+          const cLen = clip.length || 16;
+          if (startStep + cLen > maxStep && (!song.loopEnd || song.loopEnd <= 0)) maxStep = startStep + cLen;
+          clip.notes.forEach((note) => {
+            const noteStep = Math.round(Number(note.step) || 0);
+            if (noteStep < 0 || noteStep >= cLen) return;
+            const step = startStep + noteStep;
+            if (!eventsByStep[step]) eventsByStep[step] = [];
+            eventsByStep[step].push({
+              ch: clip.trackId,
+              pitch: note.pitch,
+              len: note.len || note.length || 1,
+              vel: note.vel != null ? note.vel : (note.velocity != null ? note.velocity : 1)
+            });
+          });
+        }
+      });
+    }
+
     if (maxStep <= 0) maxStep = 16;
 
     let currentStep = typeof options.startStep === 'number' ? Math.max(0, options.startStep) : 0;
@@ -712,6 +736,68 @@ export function createChipAudio(ctx, destination) {
     }
     songGain.connect(dest);
 
+    // Graphe audio par piste (DAW v2) : input -> fader -> panner -> songGain
+    const trackBuses = new Map();
+    rawTracks.forEach((t) => {
+      const input = ctx.createGain();
+      input.gain.setValueAtTime(1, ctx.currentTime);
+
+      const fader = ctx.createGain();
+      const trackVol = t.volume != null ? t.volume : 0.8;
+      const isMuted = t.mute || (anySolo && !t.solo);
+      fader.gain.setValueAtTime(isMuted ? 0 : trackVol, ctx.currentTime);
+
+      let panner = null;
+      if (typeof ctx.createStereoPanner === 'function') {
+        panner = ctx.createStereoPanner();
+        panner.pan.setValueAtTime(Math.max(-1, Math.min(1, t.pan || 0)), ctx.currentTime);
+      }
+
+      input.connect(fader);
+      if (panner) {
+        fader.connect(panner);
+        panner.connect(songGain);
+      } else {
+        fader.connect(songGain);
+      }
+
+      trackBuses.set(t.id, {
+        id: t.id,
+        name: t.name || t.id,
+        trackDef: t,
+        input,
+        fader,
+        panner,
+        volume: trackVol,
+        mute: !!t.mute,
+        solo: !!t.solo,
+        setVolume(v, rampTime = 0) {
+          this.volume = Math.max(0, Math.min(1, typeof v === 'number' ? v : 1));
+          if (!this.mute && (!anySolo || this.solo)) {
+            if (rampTime > 0) {
+              fader.gain.cancelScheduledValues(ctx.currentTime);
+              fader.gain.linearRampToValueAtTime(this.volume, ctx.currentTime + rampTime);
+            } else {
+              fader.gain.setValueAtTime(this.volume, ctx.currentTime);
+            }
+          }
+        },
+        setPan(p) {
+          if (panner) panner.pan.setValueAtTime(Math.max(-1, Math.min(1, typeof p === 'number' ? p : 0)), ctx.currentTime);
+        },
+        setMute(m) {
+          this.mute = !!m;
+          const active = !this.mute && (!anySolo || this.solo);
+          fader.gain.setValueAtTime(active ? this.volume : 0, ctx.currentTime);
+        },
+        disconnect() {
+          try { input.disconnect(); } catch (e) {}
+          try { fader.disconnect(); } catch (e) {}
+          try { if (panner) panner.disconnect(); } catch (e) {}
+        }
+      });
+    });
+
     const SCHEDULE_INTERVAL_MS = 25;
     const LOOKAHEAD_SEC = 0.1;
 
@@ -724,7 +810,7 @@ export function createChipAudio(ctx, destination) {
 
     function scheduleAhead() {
       if (stopped) return;
-      // Retour d'un onglet en arriere-plan (timers bridés) : on reprend maintenant au lieu de rejouer les pas manques d'un coup
+      // Retour d'un onglet en arriere-plan (timers brides) : on reprend maintenant au lieu de rejouer les pas manques d'un coup
       if (!options.offline && nextStepTime < ctx.currentTime - 0.05) nextStepTime = ctx.currentTime + 0.02;
       // Les notes terminees ne sont plus gardees (sinon la liste grandit sans fin en boucle)
       for (let k = activeNotes.length - 1; k >= 0; k--) {
@@ -736,25 +822,30 @@ export function createChipAudio(ctx, destination) {
         const notesAtStep = eventsByStep[currentStep];
         if (notesAtStep && notesAtStep.length > 0) {
           notesAtStep.forEach((n) => {
-            const ch = channelsById[n.ch] || { instrument: 'pulse50', volume: 0.8 };
-            if (ch.mute || (anySolo && !ch.solo)) return;
+            const trackBus = trackBuses.get(n.ch);
+            const ch = channelsById[n.ch] || (trackBus ? trackBus.trackDef : { instrument: 'pulse50', volume: 0.8 });
+            if (trackBus) {
+              if (trackBus.mute || (anySolo && !trackBus.solo)) return;
+            } else if (ch.mute || (anySolo && !ch.solo)) {
+              return;
+            }
             const dur = (Number(n.len) || 1) * baseStepSec;
             // Une note invalide ne doit pas bloquer le planificateur : elle est ignoree
             try {
               const handle = scheduleNote({
                 time: nextStepTime,
                 duration: dur,
-                instrument: ch.instrument,
+                instrument: typeof ch.instrument === 'string' ? ch.instrument : (ch.instrument?.type || 'pulse50'),
                 pitch: n.pitch,
                 vel: n.vel,
-                volume: ch.volume != null ? ch.volume : 0.8,
-                pan: ch.pan || 0,
+                volume: trackBus ? 1.0 : (ch.volume != null ? ch.volume : 0.8),
+                pan: trackBus ? 0 : (ch.pan || 0),
                 env: ch.env,
                 vibrato: ch.vibrato,
                 arp: ch.arp,
                 drumKit: ch.drumKit,
                 waveTable: ch.waveTable,
-                destination: songGain
+                destination: trackBus ? trackBus.input : songGain
               });
               if (handle) activeNotes.push({ stop: handle.stop, end: nextStepTime + dur + 1 });
             } catch (e) { /* note ignoree */ }
@@ -780,7 +871,10 @@ export function createChipAudio(ctx, destination) {
             const delayToEnd = Math.max(0, (nextStepTime - ctx.currentTime) * 1000);
             setTimeout(() => {
               const current = activeSong && activeSong.controller === controller;
-              setTimeout(() => { try { songGain.disconnect(); } catch (e) {} }, 1500);
+              setTimeout(() => {
+                trackBuses.forEach((b) => b.disconnect());
+                try { songGain.disconnect(); } catch (e) {}
+              }, 1500);
               if (current) activeSong = null;
               if (current && options.onEnd) options.onEnd();
             }, delayToEnd);
@@ -803,6 +897,24 @@ export function createChipAudio(ctx, destination) {
           songGain.gain.setValueAtTime(val, ctx.currentTime);
         }
       },
+      setTrackVolume(trackId, v, rampTime = 0) {
+        const bus = trackBuses.get(trackId);
+        if (bus) bus.setVolume(v, rampTime);
+      },
+      setTrackPan(trackId, p) {
+        const bus = trackBuses.get(trackId);
+        if (bus) bus.setPan(p);
+      },
+      setTrackMute(trackId, m) {
+        const bus = trackBuses.get(trackId);
+        if (bus) bus.setMute(m);
+      },
+      getTrack(trackId) {
+        return trackBuses.get(trackId) || null;
+      },
+      get tracks() {
+        return Array.from(trackBuses.values());
+      },
       stop(stopOpts = {}) {
         if (stopped) return;
         const fadeOut = stopOpts && stopOpts.fadeOut > 0 ? stopOpts.fadeOut : 0;
@@ -815,6 +927,7 @@ export function createChipAudio(ctx, destination) {
         if (timerId) { clearInterval(timerId); timerId = null; }
         for (const n of activeNotes) n.stop();
         activeNotes.length = 0;
+        trackBuses.forEach((b) => b.disconnect());
         try { songGain.disconnect(); } catch (e) {}
         if (activeSong && activeSong.controller === controller) activeSong = null;
       },
@@ -875,6 +988,40 @@ export function createChipAudio(ctx, destination) {
     return offCtx.startRendering();
   }
 
+  function measureSchedulingPerformance(trackCount = 16, stepCount = 64) {
+    const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now());
+    const dummySong = {
+      bpm: 140,
+      tracks: Array.from({ length: trackCount }, (_, i) => ({
+        id: `trk_${i}`,
+        name: `Track ${i}`,
+        volume: 0.8,
+        instrument: 'pulse50'
+      })),
+      clips: Array.from({ length: trackCount }, (_, i) => ({
+        trackId: `trk_${i}`,
+        type: 'notes',
+        start: 0,
+        length: stepCount,
+        notes: Array.from({ length: Math.floor(stepCount / 2) }, (__, s) => ({
+          step: s * 2,
+          pitch: 60 + (i % 12),
+          length: 1,
+          velocity: 0.8
+        }))
+      }))
+    };
+    const ctrl = playSong(dummySong, { loop: false, volume: 0 });
+    if (ctrl) ctrl.stop(0);
+    const elapsedMs = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - t0;
+    return {
+      trackCount,
+      stepCount,
+      elapsedMs,
+      ok: elapsedMs < 100
+    };
+  }
+
   return {
     playSfx,
     scheduleNote,
@@ -884,7 +1031,8 @@ export function createChipAudio(ctx, destination) {
     playChiptuneTrack,
     renderOffline,
     generateSfxr,
-    mutateSfxr
+    mutateSfxr,
+    measureSchedulingPerformance
   };
 }
 
