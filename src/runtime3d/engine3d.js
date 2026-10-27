@@ -110,18 +110,120 @@ export function createGame3D(project, parent, THREE, opts = {}) {
   const dirLight = new ThreeLib.DirectionalLight(0xffeedd, 0.9);
   scene.add(dirLight);
 
+  const dynamicLightGroup = new ThreeLib.Group();
+  scene.add(dynamicLightGroup);
+
   // Ambiance : celle de la scene 3D, sinon celle du projet (anciens fichiers)
   function applyEnvironment(sc) {
     const env = (sc && sc.environment) || project.environment || {};
     const bgColor = env.skyColor || settings.background || '#1a1c2c';
-    scene.background = new ThreeLib.Color(bgColor);
-    scene.fog = env.fog?.enabled ? new ThreeLib.FogExp2(env.fog.color || bgColor, env.fog.density || 0.04) : null;
+
+    // Ciel degrade (skyGradient) ou couleur unie
+    if (env.skyGradient?.enabled && typeof document !== 'undefined' && typeof ThreeLib.CanvasTexture === 'function') {
+      try {
+        const skyCanvas = document.createElement('canvas');
+        skyCanvas.width = 2;
+        skyCanvas.height = 256;
+        const ctx2d = skyCanvas.getContext('2d');
+        if (ctx2d) {
+          const grad = ctx2d.createLinearGradient(0, 0, 0, 256);
+          grad.addColorStop(0, env.skyGradient.topColor || '#0d0f18');
+          grad.addColorStop(1, env.skyGradient.bottomColor || env.horizonColor || '#29366f');
+          ctx2d.fillStyle = grad;
+          ctx2d.fillRect(0, 0, 2, 256);
+          const skyTex = new ThreeLib.CanvasTexture(skyCanvas);
+          scene.background = skyTex;
+        } else {
+          scene.background = new ThreeLib.Color(bgColor);
+        }
+      } catch (e) {
+        scene.background = new ThreeLib.Color(bgColor);
+      }
+    } else {
+      scene.background = new ThreeLib.Color(bgColor);
+    }
+
+    // Brouillard (lineaire ou exponentiel)
+    if (env.fog?.enabled) {
+      const fogColor = env.fog.color || bgColor;
+      if (env.fog.type === 'linear' && typeof ThreeLib.Fog === 'function') {
+        scene.fog = new ThreeLib.Fog(fogColor, env.fog.near || 10, env.fog.far || 50);
+      } else if (typeof ThreeLib.FogExp2 === 'function') {
+        scene.fog = new ThreeLib.FogExp2(fogColor, env.fog.density || 0.04);
+      }
+    } else {
+      scene.fog = null;
+    }
+
     ambientLight.color.set(env.ambientLight?.color || '#ffffff');
     ambientLight.intensity = env.ambientLight?.intensity ?? 0.7;
     dirLight.color.set(env.directionalLight?.color || '#ffeedd');
     dirLight.intensity = env.directionalLight?.intensity ?? 0.9;
     const dirPos = env.directionalLight?.position || [10, 20, 15];
     dirLight.position.set(dirPos[0], dirPos[1], dirPos[2]);
+
+    // Ombres portees directionnelles
+    const shadowsEnabled = !!(env.directionalLight?.castShadow || env.shadows?.enabled);
+    if (renderer.shadowMap) {
+      renderer.shadowMap.enabled = shadowsEnabled;
+      if (shadowsEnabled && ThreeLib.PCFSoftShadowMap) {
+        renderer.shadowMap.type = ThreeLib.PCFSoftShadowMap;
+      }
+    }
+    if (dirLight.shadow) {
+      dirLight.castShadow = shadowsEnabled;
+      if (shadowsEnabled) {
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.near = 0.5;
+        dirLight.shadow.camera.far = 100;
+        const d = 30;
+        dirLight.shadow.camera.left = -d;
+        dirLight.shadow.camera.right = d;
+        dirLight.shadow.camera.top = d;
+        dirLight.shadow.camera.bottom = -d;
+        dirLight.shadow.bias = -0.0005;
+      }
+    }
+
+    // Lumieres ponctuelles et projecteurs (4 max en mode retro)
+    while (dynamicLightGroup.children.length > 0) {
+      dynamicLightGroup.remove(dynamicLightGroup.children[0]);
+    }
+
+    const lightNodes = (sc?.nodes || []).filter((n) => n.kind === 'light' && n.visible !== false).slice(0, 4);
+    lightNodes.forEach((ln) => {
+      const lp = ln.props || {};
+      const pos = Array.isArray(ln.position) ? ln.position : [0, 2, 0];
+      const lColor = lp.color || '#ffcd75';
+      const lIntensity = typeof lp.intensity === 'number' ? lp.intensity : 1.5;
+      const lDist = typeof lp.distance === 'number' ? lp.distance : 12;
+      const lDecay = typeof lp.decay === 'number' ? lp.decay : 2;
+
+      let lObj = null;
+      if (lp.lightType === 'spot' && typeof ThreeLib.SpotLight === 'function') {
+        const angleRad = ((lp.angle || 45) * Math.PI) / 180;
+        const penumbra = lp.penumbra != null ? lp.penumbra : 0.2;
+        lObj = new ThreeLib.SpotLight(lColor, lIntensity, lDist, angleRad, penumbra, lDecay);
+        lObj.position.set(pos[0], pos[1], pos[2]);
+        if (lp.castShadow && lObj.shadow) {
+          lObj.castShadow = true;
+          lObj.shadow.mapSize.width = 512;
+          lObj.shadow.mapSize.height = 512;
+        }
+        dynamicLightGroup.add(lObj);
+        if (lObj.target) dynamicLightGroup.add(lObj.target);
+      } else if (typeof ThreeLib.PointLight === 'function') {
+        lObj = new ThreeLib.PointLight(lColor, lIntensity, lDist, lDecay);
+        lObj.position.set(pos[0], pos[1], pos[2]);
+        if (lp.castShadow && lObj.shadow) {
+          lObj.castShadow = true;
+          lObj.shadow.mapSize.width = 512;
+          lObj.shadow.mapSize.height = 512;
+        }
+        dynamicLightGroup.add(lObj);
+      }
+    });
   }
 
   // Donnees du projet
@@ -348,6 +450,8 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         for (let z = -10; z <= 10; z++) {
           const colorHex = (Math.abs(x) + Math.abs(z)) % 2 === 0 ? palette[8] : palette[14];
           const mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(colorHex));
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
           mesh.position.set(x, -1, z);
           gridGroup.add(mesh);
           solidBlocks.set(`${x},-1,${z}`, { x, y: -1, z });
@@ -362,6 +466,8 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       if (blockInfo == null || blockInfo === '.') return;
       const [bx, by, bz] = parts;
       const mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(resolveColor(blockInfo)));
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
       mesh.position.set(bx, by, bz);
       gridGroup.add(mesh);
       solidBlocks.set(`${bx},${by},${bz}`, { x: bx, y: by, z: bz });
@@ -863,6 +969,13 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         cloned.position.z = -center.z;
         cloned.position.y = -scaledBox.min.y;
 
+        cloned.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+        });
+
         mesh.add(cloned);
 
         if (gltf.animations && gltf.animations.length > 0) {
@@ -888,10 +1001,14 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       }
     } else if (voxelGeo) {
       mesh = new ThreeLib.Mesh(voxelGeo, customMat || voxelMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
     } else {
       // Cube par defaut avec couleur de l'objet
       const colorHex = objDef.color || palette[nextInstanceId % palette.length];
       mesh = new ThreeLib.Mesh(cubeGeo, customMat || getMaterial(colorHex));
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
     }
 
     mesh.position.set(x, y, z);

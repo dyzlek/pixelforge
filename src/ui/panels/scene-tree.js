@@ -525,6 +525,8 @@ export function createSceneTree(container, store) {
           rotationY: node.rotation[1],
           props: {},
         });
+      } else if (kind === 'light') {
+        node.position = [0, 3, 0];
       }
       sc.nodes.push(node);
       selectedNodeId = node.id;

@@ -183,4 +183,77 @@ assert.ok(!emojiRegex.test(html), 'HTML export must not contain any emoji');
   );
 }
 
+// 7. Lumieres, ciel et ambiance editables (Issue #74, F5)
+{
+  const lightProj = {
+    settings: { dimension: '3d', startScene3DId: 'sc1' },
+    objects: [{ id: 'p', name: 'Player', physics: { enabled: true } }],
+    scenes3d: [{
+      id: 'sc1',
+      name: 'Main',
+      environment: {
+        skyColor: '#090a10',
+        skyGradient: { enabled: true, topColor: '#05060a', bottomColor: '#1a1c2c' },
+        fog: { enabled: true, type: 'linear', color: '#090a10', near: 15, far: 60 },
+        ambientLight: { color: '#ffffff', intensity: 0.5 },
+        directionalLight: { color: '#ffe4b5', intensity: 1.2, position: [12, 24, 18], castShadow: true },
+        shadows: { enabled: true }
+      },
+      gridmap: { blocks: { '0,0,0': 1 } },
+      nodes: [
+        {
+          id: 'n_player',
+          name: 'PlayerNode',
+          kind: 'mesh',
+          objectId: 'p',
+          position: [0, 1, 0]
+        },
+        {
+          id: 'n_torch',
+          name: 'Torche PointLight',
+          kind: 'light',
+          position: [0, 3, 0],
+          props: {
+            lightType: 'point',
+            color: '#ffcd75',
+            intensity: 2.0,
+            distance: 15,
+            decay: 2,
+            castShadow: true
+          }
+        },
+        {
+          id: 'n_spot',
+          name: 'Projecteur Spot',
+          kind: 'light',
+          position: [5, 10, 5],
+          props: {
+            lightType: 'spot',
+            color: '#41a6f6',
+            intensity: 3.0,
+            distance: 25,
+            angle: 40,
+            penumbra: 0.3,
+            castShadow: true
+          }
+        }
+      ],
+      entities: [{ objectId: 'p', x: 0, y: 1, z: 0 }]
+    }],
+    maps: [], sprites: [], sounds: [], songs: []
+  };
+
+  const validIssues = validateProject(lightProj);
+  assert.strictEqual(validIssues.filter((i) => i.level === 'error').length, 0, 'La configuration d ambiance et lumieres doit etre valide');
+
+  // Test de rejet pour type de lumiere inconnu
+  const badLightProj = structuredClone(lightProj);
+  badLightProj.scenes3d[0].nodes[1].props.lightType = 'laser_beam';
+  const badIssues = validateProject(badLightProj);
+  assert.ok(
+    badIssues.some((i) => i.level === 'error' && i.message.includes('unknown lightType')),
+    'Un lightType non supporte doit declencher une erreur'
+  );
+}
+
 console.log('Tous les tests Runtime 3D Retro sont valides !');
