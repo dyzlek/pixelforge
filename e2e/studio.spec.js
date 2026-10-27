@@ -72,6 +72,7 @@ test.describe('PixelForge Studio E2E Tests', () => {
 
   test('lancement reel du jeu 3D Cube Runner, verification du sol et deplacement', async ({ page }) => {
     await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
     await expect(page.locator('#app')).toBeVisible();
 
     // Ouvrir le jeu 3D Cube Runner
@@ -596,5 +597,53 @@ test.describe('PixelForge Studio E2E Tests', () => {
     expect(hasFocusCmd).toBe(true);
     expect(hasFrontCmd).toBe(true);
     expect(hasOrthoCmd).toBe(true);
+  });
+
+  test("modeles glTF animes et CC0 : selection d'un preset CC0 dans l'editeur voxel", async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Ouvrir le modele 3D
+    await page.evaluate(() => {
+      const p = window.__pfStore.project;
+      const m = p.models?.[0];
+      if (m) {
+        window.__pfWorkspace.open({ kind: 'voxel', refId: m.id, title: m.name });
+      }
+    });
+
+    // 3. Verifier la presence du selecteur CC0
+    const cc0Select = page.locator('#pf-voxel-cc0-select');
+    await expect(cc0Select).toBeVisible();
+
+    // 4. Selectionner le preset Aventurier (Quaternius - CC0)
+    await cc0Select.selectOption('cc0_adventurer');
+
+    // 5. Verifier que le modele passe en glTF et que l'info est affichee
+    const gltfInfo = page.locator('#pf-voxel-gltf-info');
+    await expect(gltfInfo).toBeVisible();
+    await expect(gltfInfo).toContainText(/Modele 3D glTF embarque/i);
+
+    const modelType = await page.evaluate(() => {
+      const m = window.__pfStore.project.models?.[0];
+      return m?.type;
+    });
+    expect(modelType).toBe('gltf');
+
+    // 6. Basculer de nouveau en mode Voxel
+    const switchBtn = page.locator('#pf-voxel-switch-mode');
+    await expect(switchBtn).toBeVisible();
+    await switchBtn.click();
+
+    const modelTypeAfterSwitch = await page.evaluate(() => {
+      const m = window.__pfStore.project.models?.[0];
+      return m?.type;
+    });
+    expect(modelTypeAfterSwitch).toBe('voxel');
   });
 });

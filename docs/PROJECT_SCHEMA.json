@@ -156,6 +156,8 @@
         "name": { "type": "string", "description": "Unique, case-sensitive; used in scripts (game.spawn('Coin'), on('collide','Coin'))." },
         "folder": { "type": "string", "description": "Optional virtual folder for organization." },
         "spriteId": { "type": ["string", "null"] },
+        "modelId": { "type": ["string", "null"] },
+        "materialId": { "type": ["string", "null"] },
         "defaultAnim": { "type": ["string", "null"] },
         "hitbox": {
           "oneOf": [
@@ -349,7 +351,8 @@
         "type": { "enum": ["voxel", "gltf"] },
         "slices": { "type": "array" },
         "frames": { "type": "array" },
-        "dataUrl": { "type": "string" }
+        "dataUrl": { "type": "string" },
+        "gltfData": { "type": "string" }
       }
     },
     "material": {
@@ -358,10 +361,15 @@
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["standard", "unlit", "toon"], "default": "standard" },
         "color": { "$ref": "#/$defs/color" },
         "textureSpriteId": { "type": ["string", "null"] },
         "roughness": { "type": "number", "default": 0.8 },
-        "metalness": { "type": "number", "default": 0.1 }
+        "metalness": { "type": "number", "default": 0.1 },
+        "emissive": { "$ref": "#/$defs/color" },
+        "transparent": { "type": "boolean", "default": false },
+        "opacity": { "type": "number", "default": 1.0 },
+        "doubleSided": { "type": "boolean", "default": false }
       }
     },
     "scene3d": {

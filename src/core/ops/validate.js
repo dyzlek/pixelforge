@@ -50,6 +50,7 @@ export function validateProject(p) {
 
   const spriteById = new Map((p.sprites || []).map((s) => [s.id, s]));
   const modelById = new Map((p.models || []).map((m) => [m.id, m]));
+  const materialById = new Map((p.materials || []).map((m) => [m.id, m]));
   const objectNames = (p.objects || []).map((o) => o.name);
   const mapNames = (p.maps || []).map((m) => m.name);
 
@@ -62,7 +63,7 @@ export function validateProject(p) {
   };
   dup(p.sprites || [], 'sprite'); dup(p.objects || [], 'object'); dup(p.maps || [], 'map');
   dup(p.sounds || [], 'sound'); dup(p.songs || [], 'song');
-  dup(p.models || [], 'model'); dup(p.scenes3d || [], 'scene3d');
+  dup(p.models || [], 'model'); dup(p.materials || [], 'material'); dup(p.scenes3d || [], 'scene3d');
 
   if (p.settings?.dimension === '3d') {
     const startSceneId = p.settings.startScene3DId || p.settings.startMapId;
@@ -112,6 +113,7 @@ export function validateProject(p) {
     if (o.spriteId && !spr) add('error', w, `spriteId "${o.spriteId}" matches no sprite`);
     if (o.modelId && !mod) add('error', w, `modelId "${o.modelId}" matches no 3D model`);
     else if (!o.spriteId && !o.modelId) add('warning', w, 'no sprite or 3D model (invisible object)');
+    if (o.materialId && !materialById.has(o.materialId)) add('error', w, `materialId "${o.materialId}" matches no material`);
     if (spr && o.defaultAnim && !(spr.animations || []).some((a) => a.name === o.defaultAnim)) {
       add('warning', w, `defaultAnim "${o.defaultAnim}" is not an animation of sprite "${spr.name}"`);
     }
@@ -266,7 +268,16 @@ export function validateProject(p) {
     if (m.type === 'voxel') {
       if (!(m.width > 0) || !(m.height > 0) || !(m.depth > 0)) add('error', w, `dimensions must be > 0 (got ${m.width}x${m.height}x${m.depth})`);
     } else if (m.type === 'gltf') {
-      if (!m.gltfData) add('error', w, 'type is "gltf" but gltfData is missing');
+      if (!m.gltfData && !m.dataUrl) add('error', w, 'type is "gltf" but gltfData is missing');
+    }
+  }
+
+  // ----- materiaux 3D -----
+  for (const mat of p.materials || []) {
+    const w = `material "${mat.name || mat.id}"`;
+    if (!mat.id) add('error', w, 'material must have an id');
+    if (mat.textureSpriteId && !spriteById.has(mat.textureSpriteId)) {
+      add('error', w, `textureSpriteId "${mat.textureSpriteId}" matches no sprite`);
     }
   }
 
@@ -330,6 +341,9 @@ export function validateProject(p) {
       if (n.kind === 'mesh' && n.objectId) {
         const obj = (p.objects || []).find((o) => o.id === n.objectId);
         if (!obj) add('error', nw, `objectId "${n.objectId}" matches no object`);
+      }
+      if (n.materialId && !materialById.has(n.materialId)) {
+        add('error', nw, `materialId "${n.materialId}" matches no material`);
       }
     });
 

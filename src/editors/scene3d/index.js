@@ -1025,7 +1025,8 @@ export function mount(container, store, { refId } = {}) {
     nodes.forEach((node) => {
       if (node.visible === false) return;
       const objDef = (store.project?.objects || []).find((o) => o.id === node.objectId);
-      const color = objDef?.color || '#ffcd75';
+      const matDef = (store.project?.materials || []).find((m) => m.id === (node.materialId || objDef?.materialId));
+      const color = matDef?.color || objDef?.color || '#ffcd75';
       const pos = Array.isArray(node.position) ? node.position : [0, 0, 0];
       const scl = Array.isArray(node.scale) ? node.scale : [1, 1, 1];
       const rot = Array.isArray(node.rotation) ? node.rotation : [0, 0, 0];

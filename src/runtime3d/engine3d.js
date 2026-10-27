@@ -168,6 +168,148 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     return materialCache.get(colorHex);
   }
 
+  const GLTFLoaderClass = opts.GLTFLoader || ThreeLib.GLTFLoader || (typeof globalThis !== 'undefined' ? globalThis.GLTFLoader : null);
+
+  // Cache des textures creees a partir des sprites du projet (filtre nearest pour le pixel art)
+  const textureCache = new Map();
+  function getSpriteTexture(spriteId) {
+    if (!spriteId) return null;
+    if (textureCache.has(spriteId)) return textureCache.get(spriteId);
+    const spr = (project.sprites || []).find((s) => s.id === spriteId);
+    if (!spr || !spr.frames?.[0]) {
+      textureCache.set(spriteId, null);
+      return null;
+    }
+    const dataUrl = spr.frames[0];
+    let tex = null;
+    try {
+      if (typeof Image !== 'undefined') {
+        const img = new Image();
+        img.src = dataUrl;
+        tex = new ThreeLib.Texture(img);
+        img.onload = () => { tex.needsUpdate = true; };
+      } else {
+        tex = new ThreeLib.Texture();
+      }
+      tex.magFilter = ThreeLib.NearestFilter;
+      tex.minFilter = ThreeLib.NearestFilter;
+      if (ThreeLib.SRGBColorSpace) tex.colorSpace = ThreeLib.SRGBColorSpace;
+    } catch {
+      tex = null;
+    }
+    textureCache.set(spriteId, tex);
+    return tex;
+  }
+
+  // Materiaux personnalises (project.materials[])
+  const projectMaterialsById = new Map();
+  function buildProjectMaterial(matDef) {
+    if (!matDef) return null;
+    if (projectMaterialsById.has(matDef.id)) return projectMaterialsById.get(matDef.id);
+
+    const tex = matDef.textureSpriteId ? getSpriteTexture(matDef.textureSpriteId) : null;
+    const type = matDef.type || 'standard';
+    const color = matDef.color || '#ffffff';
+    const transparent = !!matDef.transparent || (typeof matDef.opacity === 'number' && matDef.opacity < 1);
+    const opacity = typeof matDef.opacity === 'number' ? matDef.opacity : 1.0;
+    const side = matDef.doubleSided ? ThreeLib.DoubleSide : ThreeLib.FrontSide;
+
+    let mat;
+    if (type === 'unlit') {
+      mat = new ThreeLib.MeshBasicMaterial({
+        color,
+        map: tex,
+        transparent,
+        opacity,
+        side,
+      });
+    } else if (type === 'toon') {
+      mat = new ThreeLib.MeshToonMaterial({
+        color,
+        map: tex,
+        transparent,
+        opacity,
+        side,
+      });
+    } else {
+      mat = new ThreeLib.MeshStandardMaterial({
+        color,
+        map: tex,
+        roughness: typeof matDef.roughness === 'number' ? matDef.roughness : 0.8,
+        metalness: typeof matDef.metalness === 'number' ? matDef.metalness : 0.1,
+        emissive: matDef.emissive || '#000000',
+        transparent,
+        opacity,
+        side,
+      });
+    }
+
+    projectMaterialsById.set(matDef.id, mat);
+    return mat;
+  }
+
+  (project.materials || []).forEach((m) => {
+    buildProjectMaterial(m);
+  });
+
+  // Cache et parseur glTF
+  const gltfCache = new Map();
+  const activeMixers = new Set();
+
+  function parseGltfData(modelDef, onLoaded) {
+    if (!modelDef) return;
+    const id = modelDef.id;
+    if (gltfCache.has(id)) {
+      if (onLoaded) onLoaded(gltfCache.get(id));
+      return;
+    }
+    if (!GLTFLoaderClass) {
+      log('Chargeur GLTFLoader non disponible.', 'warn');
+      return;
+    }
+    const dataUrl = modelDef.gltfData || modelDef.dataUrl;
+    if (!dataUrl) return;
+
+    try {
+      const loader = new GLTFLoaderClass();
+      const commaIdx = dataUrl.indexOf(',');
+      let bufferOrString;
+      if (commaIdx !== -1) {
+        const header = dataUrl.slice(0, commaIdx);
+        const raw = dataUrl.slice(commaIdx + 1);
+        if (header.includes(';base64')) {
+          if (typeof Buffer !== 'undefined') {
+            const b = Buffer.from(raw, 'base64');
+            bufferOrString = b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength);
+          } else {
+            const bin = atob(raw);
+            const len = bin.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+            bufferOrString = bytes.buffer;
+          }
+        } else {
+          bufferOrString = decodeURIComponent(raw);
+        }
+      } else {
+        bufferOrString = dataUrl;
+      }
+
+      loader.parse(bufferOrString, '', (gltf) => {
+        gltfCache.set(id, gltf);
+        if (onLoaded) onLoaded(gltf);
+      }, (err) => {
+        log(`Erreur de chargement du modele glTF « ${modelDef.name} » : ${errMsg(err)}`, 'error');
+      });
+    } catch (err) {
+      log(`Erreur de preparation du modele glTF « ${modelDef.name} » : ${errMsg(err)}`, 'error');
+    }
+  }
+
+  (project.models || []).forEach((m) => {
+    if (m.type === 'gltf') parseGltfData(m);
+  });
+
   // Couleur d'un bloc ou d'un voxel : index de palette (nombre ou chiffre hexa), '#rrggbb' ou {colorIndex}
   function resolveColor(v) {
     if (typeof v === 'number' && Number.isFinite(v)) return palette[((v % palette.length) + palette.length) % palette.length];
@@ -626,7 +768,7 @@ export function createGame3D(project, parent, THREE, opts = {}) {
   }
 
   // Creation d'une instance 3D
-  function createInstance(objDef, x, y, z, initialProps = {}) {
+  function createInstance(objDef, x, y, z, initialProps = {}, extraOpts = {}) {
     const id = `inst_${nextInstanceId++}`;
     const handlers = {
       create: [],
@@ -683,15 +825,73 @@ export function createGame3D(project, parent, THREE, opts = {}) {
 
     // Mesh visuel 3D
     let mesh;
-    const modelDef = objDef.modelId ? modelsById[objDef.modelId] : null;
+    let mixer = null;
+    const actions = new Map();
+    let currentAction = null;
 
+    const modelDef = objDef.modelId ? modelsById[objDef.modelId] : null;
+    const customMatId = extraOpts.materialId || objDef.materialId || null;
+    const customMat = customMatId ? (projectMaterialsById.get(customMatId) || buildProjectMaterial((project.materials || []).find((m) => m.id === customMatId))) : null;
+
+    const isGltf = modelDef && modelDef.type === 'gltf';
     const voxelGeo = modelDef && (modelDef.type || 'voxel') === 'voxel' ? getVoxelGeometry(modelDef) : null;
-    if (voxelGeo) {
-      mesh = new ThreeLib.Mesh(voxelGeo, voxelMaterial);
+
+    if (isGltf) {
+      mesh = new ThreeLib.Group();
+
+      function setupGltfHierarchy(gltf) {
+        if (!gltf?.scene) return;
+        const cloned = gltf.scene.clone(true);
+
+        if (customMat) {
+          cloned.traverse((child) => {
+            if (child.isMesh) child.material = customMat;
+          });
+        }
+
+        const box = new ThreeLib.Box3().setFromObject(cloned);
+        const size = new ThreeLib.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+        const scaleFactor = 1.0 / maxDim;
+        cloned.scale.setScalar(scaleFactor);
+
+        const scaledBox = new ThreeLib.Box3().setFromObject(cloned);
+        const center = new ThreeLib.Vector3();
+        scaledBox.getCenter(center);
+        cloned.position.x = -center.x;
+        cloned.position.z = -center.z;
+        cloned.position.y = -scaledBox.min.y;
+
+        mesh.add(cloned);
+
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer = new ThreeLib.AnimationMixer(cloned);
+          gltf.animations.forEach((clip) => {
+            const action = mixer.clipAction(clip);
+            actions.set(clip.name, action);
+            actions.set(clip.name.toLowerCase(), action);
+          });
+          activeMixers.add(mixer);
+
+          const defaultAnim = objDef.defaultAnim || extraOpts.anim || 'idle';
+          instance.play(defaultAnim);
+        }
+      }
+
+      if (gltfCache.has(modelDef.id)) {
+        setupGltfHierarchy(gltfCache.get(modelDef.id));
+      } else {
+        parseGltfData(modelDef, (gltf) => {
+          setupGltfHierarchy(gltf);
+        });
+      }
+    } else if (voxelGeo) {
+      mesh = new ThreeLib.Mesh(voxelGeo, customMat || voxelMaterial);
     } else {
-      // Cube par défaut avec couleur de l'objet
+      // Cube par defaut avec couleur de l'objet
       const colorHex = objDef.color || palette[nextInstanceId % palette.length];
-      mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(colorHex));
+      mesh = new ThreeLib.Mesh(cubeGeo, customMat || getMaterial(colorHex));
     }
 
     mesh.position.set(x, y, z);
@@ -784,12 +984,40 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       set visible(v) { mesh.visible = !!v; },
 
       play(animName) {
-        // Animation voxel
+        if (!animName) return;
+        const name = String(animName).trim();
+        const lower = name.toLowerCase();
+        let action = actions.get(name) || actions.get(lower);
+        if (!action) {
+          if (lower === 'marche' || lower === 'marcher') action = actions.get('walk') || actions.get('Walk');
+          else if (lower === 'course' || lower === 'courir') action = actions.get('run') || actions.get('Run');
+          else if (lower === 'attente' || lower === 'repos') action = actions.get('idle') || actions.get('Idle');
+          else if (lower === 'saut' || lower === 'sauter') action = actions.get('jump') || actions.get('Jump');
+          else if (lower === 'walk') action = actions.get('marche') || actions.get('Marche');
+          else if (lower === 'idle') action = actions.get('attente') || actions.get('repos');
+        }
+        if (!action) {
+          if (!currentAction && actions.size > 0) {
+            action = actions.values().next().value;
+          }
+        }
+        if (!action) return;
+        if (currentAction === action) return;
+        if (currentAction) {
+          currentAction.fadeOut(0.15);
+        }
+        action.reset().fadeIn(0.15).play();
+        currentAction = action;
       },
 
       destroy() {
         if (this.destroyed) return;
         this.destroyed = true;
+        if (mixer) {
+          activeMixers.delete(mixer);
+          mixer.stopAllAction();
+          mixer = null;
+        }
         callHandlers(this, handlers.destroy, [], 'destroy');
         // Geometries et materiaux partages (cache) : liberes dans destroy() du jeu
         scene.remove(mesh);
@@ -852,7 +1080,10 @@ export function createGame3D(project, parent, THREE, opts = {}) {
             const px = Array.isArray(node.position) ? node.position[0] : (node.position?.x || 0);
             const py = Array.isArray(node.position) ? node.position[1] : (node.position?.y || 0);
             const pz = Array.isArray(node.position) ? node.position[2] : (node.position?.z || 0);
-            const inst = createInstance(objDef, px, py, pz, node.props || {});
+            const inst = createInstance(objDef, px, py, pz, node.props || {}, {
+              materialId: node.materialId,
+              anim: node.props?.anim,
+            });
             const ry = Array.isArray(node.rotation) ? node.rotation[1] : (node.rotation?.y || 0);
             if (typeof ry === 'number') inst.rotationY = ry;
           }
@@ -862,7 +1093,10 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       (currentScene3D.entities || []).forEach((ent) => {
         const objDef = objectsById[ent.objectId] || objectsByName[ent.objectId];
         if (objDef) {
-          const inst = createInstance(objDef, ent.x || 0, ent.y || 0, ent.z || 0, ent.props || {});
+          const inst = createInstance(objDef, ent.x || 0, ent.y || 0, ent.z || 0, ent.props || {}, {
+            materialId: ent.materialId,
+            anim: ent.props?.anim,
+          });
           if (typeof ent.rotationY === 'number') inst.rotationY = ent.rotationY;
         }
       });
@@ -1142,6 +1376,12 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     lastTime = now;
 
     updatePhysics(dt);
+    if (activeMixers.size > 0) {
+      const dtSec = dt / 1000;
+      for (const m of activeMixers) {
+        m.update(dtSec);
+      }
+    }
     if (pendingScene) {
       const next = pendingScene;
       pendingScene = null;
@@ -1172,6 +1412,14 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       canvas.removeEventListener('click', onCanvasClick);
       if (document.pointerLockElement === canvas) document.exitPointerLock?.();
       destroyAllInstances();
+      for (const m of activeMixers) {
+        m.stopAllAction();
+      }
+      activeMixers.clear();
+      projectMaterialsById.forEach((m) => m && m.dispose?.());
+      projectMaterialsById.clear();
+      textureCache.forEach((t) => t && t.dispose?.());
+      textureCache.clear();
       if (chipAudio && chipAudio.stopSong) { try { chipAudio.stopSong(); } catch (e) { /* ignore */ } }
       if (audioCtx) { try { audioCtx.close(); } catch (e) { /* ignore */ } audioCtx = null; }
       cubeGeo.dispose();

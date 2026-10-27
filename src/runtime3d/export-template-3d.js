@@ -27,7 +27,8 @@ export function buildStandaloneHTML3D(project, engine3dSource, chipSource = '') 
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.min.js"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.min.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
   }
 }
 <\/script>
@@ -37,6 +38,7 @@ export function buildStandaloneHTML3D(project, engine3dSource, chipSource = '') 
 <div id="errors"></div>
 <script type="module">
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 ${chip ? chip + '\n' : ''}
 ${engine3d}
@@ -47,6 +49,7 @@ const lines = [];
 
 try {
   createGame3D(PROJECT, document.getElementById('game'), THREE, {
+    GLTFLoader,
     createChipAudio: typeof createChipAudio !== 'undefined' ? createChipAudio : null,
     onLog(msg, level) {
       if (level !== 'error') { console.log(msg); return; }
