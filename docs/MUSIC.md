@@ -255,5 +255,33 @@ La console de mixage (`src/editors/music/mixer.js`) complete la chaine de produc
 - **Changements de tempo dynamiques** : Extraction des meta-evenements Set Tempo (0x51) pour populer `tempoChanges` et ajuster le tempo pas par pas lors de la lecture et du rendu hors-ligne.
 - **Structure DAW v2** : Generation simultanee des collections `tracks` et `clips` (arrangement multipiste) et des canaux/patterns legacy pour une compatibilite totale.
 
+---
+
+## 11. Musique Adaptative, Couches Musicales Dynamiques et Format Texte v2
+
+La phase G8 integre un systeme complet de musique adaptative permettant a la bande-son de reagir en temps reel aux situations de jeu :
+
+### A. Couches Musicales Dynamiques (`game.setSongLayer`)
+- **Activation / desactivation fluide** : La methode `game.setSongLayer(layerName, active, opts)` permet d'activer ou d'attenuer une couche musicale (ex. `'combat'`, `'ambiance'`, `'danger'`) avec un temps de fondu personnalise (`rampTime`).
+- **Synchronisation sur la mesure (`onMeasure`)** : Lorsque l'option `{ onMeasure: true }` est specifiee, la transition est differee jusqu'au premier temps fort de la mesure suivante (`currentStep % (stepsPerBeat * 4) === 0`), garantissant des entrees et sorties rythmiques parfaitement calees sur le tempo.
+- **Resolution flexible des pistes** : Les pistes cibles sont resolues par leur propriete `track.layer`, ou a defaut par correspondance insensible a la casse avec leur nom ou leur identifiant.
+
+### B. Controle des Tranches de Mixage dans le Script de Jeu
+- **Volume de piste** : `game.setTrackVolume(trackNameOrId, volume, rampTime)` ajuste directement le fader de gain WebAudio de la piste.
+- **Mute et Panoramique** : `game.setTrackMute(trackNameOrId, mute)` et `game.setTrackPan(trackNameOrId, pan)` offrent un controle total de la spatialisation et de l'attenuation en cours de partie.
+- **Evenement `on('beat')` precis** : Le gestionnaire `on('beat', (beatNumber) => { ... })` se declenche exactement a chaque temps musical, permettant aux elements visuels (particules, rebonds, pulsations de camera) d'evoluer en parfaite harmonie avec la musique.
+
+### C. Nœuds Blueprints Dedies
+- **`pf_set_song_layer`** : Noeud evenementiel permettant de piloter une couche musicale avec booleen d'activation, champ texte de couche, duree de fondu et case a cocher de synchronisation sur la mesure.
+- **`pf_set_track_volume`** : Noeud de reglage du volume d'une piste donnee avec fondu parametrable.
+- **`pf_on_beat`** : Noeud d'ecoute recevant le numero du battement musical en cours pour synchroniser les animations et la logique de jeu.
+
+### D. Format Texte v2 et Aller-Retour sans Perte
+- **Directives v2** : Prise en charge des sections `TRACKS`, `CLIPS`, `AUTOMATION` et `TEMPO` dans `parseSongText` et `songToText`.
+- **Richesse des parametres de tranche** : Export et parsing complets des instruments DAW v2 (`synth_sub`, `synth_fm`, `drum_machine`, `sampler`), presets, kits, couches (`layer`), effets (`FX`) et departs auxiliaires (`SEND`).
+- **Clips de notes et audio** : Representation textuelle des clips avec placement temporel (`@Piste start length`), notes chiffrees (`pitch:len:vel`) et echantillons audio.
+- **Garantie d'aller-retour sans perte** : Les suites de tests automatisent la verification que `songToText(parseSongText(v2Text)) === v2Text`.
+
+
 
 

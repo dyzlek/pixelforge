@@ -592,6 +592,19 @@ stmt('pf_set_song_volume', HUE.sound, 'Modifie le volume du morceau.', (b) => {
   num(b, 'VOL', 'volume');
   b.setInputsInline(true);
 });
+stmt('pf_set_song_layer', HUE.sound, 'Couche musicale.', (b) => {
+  b.appendDummyInput().appendField('couche musicale').appendField(new Blockly.FieldTextInput('combat'), 'LAYER');
+  num(b, 'ACTIVE', 'active', 'Boolean');
+  num(b, 'FADE', 'fondu (s)');
+  num(b, 'ON_MEASURE', 'sur la mesure', 'Boolean');
+  b.setInputsInline(true);
+});
+stmt('pf_set_track_volume', HUE.sound, 'Volume de piste.', (b) => {
+  b.appendDummyInput().appendField('volume de piste').appendField(new Blockly.FieldTextInput('Piste 1'), 'TRACK');
+  num(b, 'VOL', 'volume');
+  num(b, 'FADE', 'fondu (s)');
+  b.setInputsInline(true);
+});
 stmt('pf_stop_music', HUE.sound, 'Arrête la musique.', (b) => b.appendDummyInput().appendField('arrêter la musique'));
 
 // ---- v1.1 : divers --------------------------------------------------------------
@@ -896,6 +909,8 @@ G.forBlock.pf_stop_music = () => 'game.stopMusic();\n';
 G.forBlock.pf_play_song = (b) => `game.playSong(${q(b.getFieldValue('SONG'))}, { loop: ${val(b, 'LOOP', Order.NONE, 'true')}, volume: ${val(b, 'VOL', Order.NONE, '1')}, fadeIn: ${val(b, 'FADE_IN', Order.NONE, '0')} });\n`;
 G.forBlock.pf_stop_song = (b) => `game.stopSong({ fadeOut: ${val(b, 'FADE_OUT', Order.NONE, '0')} });\n`;
 G.forBlock.pf_set_song_volume = (b) => `game.setSongVolume(${val(b, 'VOL', Order.NONE, '1')});\n`;
+G.forBlock.pf_set_song_layer = (b) => `game.setSongLayer(${q(b.getFieldValue('LAYER'))}, ${val(b, 'ACTIVE', Order.NONE, 'true')}, { rampTime: ${val(b, 'FADE', Order.NONE, '0.5')}, onMeasure: ${val(b, 'ON_MEASURE', Order.NONE, 'false')} });\n`;
+G.forBlock.pf_set_track_volume = (b) => `game.setTrackVolume(${q(b.getFieldValue('TRACK'))}, ${val(b, 'VOL', Order.NONE, '1')}, ${val(b, 'FADE', Order.NONE, '0')});\n`;
 
 const spawnCall = (b) => {
   const p = G.valueToCode(b, 'PROPS', Order.NONE);

@@ -1262,4 +1262,196 @@ assert.equal(drumPiece(38), 'snare', 'numero MIDI General MIDI 38 = caisse clair
   }
 }
 
+// 25. Phase G8 : Musique adaptative (setSongLayer, onMeasure, setTrackVolume) et format texte v2
+{
+  const { mockCtx } = createMockAudioContext();
+  const audio = createChipAudio(mockCtx);
+
+  // (a) Test de setSongLayer, getTrack, setTrackVolume, setTrackPan, setTrackMute
+  const adaptiveSong = {
+    name: 'Adaptive Battle',
+    bpm: 120,
+    tracks: [
+      { id: 'trk_lead', name: 'Lead Melodique', instrument: 'synth_fm', preset: 'piano_vintage', volume: 0.8, pan: -0.1, layer: 'ambient' },
+      { id: 'trk_bass', name: 'Basse Ronde', instrument: 'synth_sub', preset: 'bass_synth', volume: 0.75, pan: 0, layer: 'ambient' },
+      { id: 'trk_drums', name: 'Batterie Epique', instrument: 'drum_machine', kit: '808', volume: 0.9, pan: 0.1, layer: 'combat' }
+    ],
+    clips: [
+      {
+        trackId: 'trk_lead',
+        type: 'notes',
+        start: 0,
+        length: 32,
+        notes: [{ step: 0, pitch: 'C4', len: 4 }, { step: 16, pitch: 'G4', len: 4 }]
+      },
+      {
+        trackId: 'trk_drums',
+        type: 'notes',
+        start: 0,
+        length: 32,
+        notes: [{ step: 0, pitch: 'kick', len: 1 }, { step: 16, pitch: 'snare', len: 1 }]
+      }
+    ]
+  };
+
+  const ctrl = audio.playSong(adaptiveSong, { loop: true });
+  assert.ok(ctrl, 'playSong doit retourner le controleur actif');
+
+  // getTrack par id ou par nom
+  const drumTrack = ctrl.getTrack('trk_drums');
+  assert.ok(drumTrack, 'getTrack par id doit fonctionner');
+  const leadTrack = ctrl.getTrack('Lead Melodique');
+  assert.ok(leadTrack, 'getTrack par nom doit fonctionner');
+
+  // setTrackVolume, setTrackPan, setTrackMute
+  ctrl.setTrackVolume('Lead Melodique', 0.5, 0.2);
+  assert.equal(leadTrack.volume, 0.5, 'Volume mis a jour via setTrackVolume');
+
+  ctrl.setTrackPan('trk_drums', -0.5);
+  ctrl.setTrackMute('trk_drums', true);
+  assert.equal(drumTrack.mute, true, 'Piste muette via setTrackMute');
+
+  ctrl.setTrackMute('trk_drums', false);
+  assert.equal(drumTrack.mute, false, 'Piste demasquee via setTrackMute');
+
+  // setSongLayer / setLayer immediat
+  ctrl.setSongLayer('combat', false, 0);
+  assert.equal(drumTrack.volume, 0, 'Couche combat desactivee volume 0');
+
+  ctrl.setSongLayer('combat', true, 0.3);
+  assert.equal(drumTrack.volume, 0.9, 'Couche combat reactivee au volume de la piste (0.9)');
+
+  // setSongLayer avec onMeasure: true
+  ctrl.setSongLayer('combat', false, { rampTime: 0.2, onMeasure: true });
+  // La transition est en attente de la mesure suivante
+  ctrl.setSongLayer('combat', true, { rampTime: 0.2, onMeasure: true });
+
+  ctrl.stop(0);
+
+  // (b) Test aller-retour (roundtrip) sans perte sur format texte v2
+  const v2Song = {
+    name: 'Chiptune V2 Anthem',
+    bpm: 140,
+    swing: 0.15,
+    loop: { enabled: true, start: 0, end: 32 },
+    tempoChanges: [{ step: 16, bpm: 150 }],
+    tracks: [
+      {
+        id: 'trk_sub',
+        name: 'Basse Sub',
+        instrument: 'synth_sub',
+        preset: 'bass_synth',
+        volume: 0.85,
+        pan: 0,
+        layer: 'bass',
+        effects: [{ type: 'filter', cutoff: 1200, resonance: 2 }]
+      },
+      {
+        id: 'trk_keys',
+        name: 'Claviers FM',
+        instrument: 'synth_fm',
+        preset: 'piano_vintage',
+        volume: 0.7,
+        pan: -0.3,
+        layer: 'lead',
+        sends: [{ busId: 'reverb_bus', amount: 0.4 }]
+      },
+      {
+        id: 'trk_beats',
+        name: 'Rythmiques',
+        instrument: 'drum_machine',
+        kit: '808',
+        volume: 0.95,
+        pan: 0.2,
+        layer: 'combat'
+      },
+      {
+        id: 'trk_vox',
+        name: 'Sampleur Vox',
+        instrument: 'sampler',
+        sampleId: 'vox_cheer',
+        volume: 0.8,
+        pan: 0,
+        layer: 'fx'
+      }
+    ],
+    clips: [
+      {
+        id: 'clp_bass',
+        name: 'Ligne de Basse',
+        trackId: 'trk_sub',
+        start: 0,
+        length: 16,
+        type: 'notes',
+        notes: [
+          { step: 0, pitch: 'A2', len: 4, vel: 1 },
+          { step: 8, pitch: 'E2', len: 4, vel: 0.8 }
+        ]
+      },
+      {
+        id: 'clp_beat',
+        name: 'Rythme Principal',
+        trackId: 'trk_beats',
+        start: 0,
+        length: 16,
+        type: 'notes',
+        notes: [
+          { step: 0, pitch: 'kick', len: 1, vel: 1 },
+          { step: 4, pitch: 'snare', len: 1, vel: 0.9 },
+          { step: 8, pitch: 'kick', len: 1, vel: 1 },
+          { step: 12, pitch: 'snare', len: 1, vel: 0.9 }
+        ]
+      },
+      {
+        id: 'clp_cheer',
+        name: 'Applaudissements',
+        trackId: 'trk_vox',
+        start: 16,
+        length: 8,
+        type: 'audio',
+        sampleId: 'vox_cheer',
+        notes: []
+      }
+    ],
+    automation: [
+      {
+        id: 'aut_sub_vol',
+        trackId: 'trk_sub',
+        target: 'volume',
+        points: [
+          { step: 0, value: 0.85 },
+          { step: 16, value: 0.4 }
+        ]
+      }
+    ]
+  };
+
+  const v2Text = songToText(v2Song);
+  assert.ok(v2Text.includes('TRACKS'), 'songToText doit utiliser la section TRACKS pour le format v2');
+  assert.ok(v2Text.includes('CLIPS'), 'songToText doit exporter la section CLIPS');
+  assert.ok(v2Text.includes('AUTOMATION'), 'songToText doit exporter la section AUTOMATION');
+  assert.ok(v2Text.includes('TEMPO 16 150'), 'songToText doit exporter les tempoChanges');
+  assert.ok(v2Text.includes('layer combat'), 'songToText doit exporter les layers');
+
+  const parsedV2 = parseSongText(v2Text, v2Song.name);
+  assert.equal(parsedV2.name, v2Song.name, 'Nom conserve');
+  assert.equal(parsedV2.bpm, 140, 'BPM conserve');
+  assert.equal(parsedV2.swing, 0.15, 'Swing conserve');
+  assert.deepStrictEqual(parsedV2.tempoChanges, [{ step: 16, bpm: 150 }], 'tempoChanges conserves');
+  assert.equal(parsedV2.tracks.length, 4, '4 pistes restaurees');
+  assert.equal(parsedV2.tracks[2].layer, 'combat', 'Couche combat conservee');
+  assert.equal(parsedV2.tracks[2].kit, '808', 'Kit 808 conserve');
+  assert.equal(parsedV2.tracks[0].effects[0].type, 'filter', 'Effet filter conserve');
+  assert.equal(parsedV2.tracks[1].sends[0].busId, 'reverb_bus', 'Send conserve');
+  assert.equal(parsedV2.clips.length, 3, '3 clips restaures');
+  assert.equal(parsedV2.clips[2].type, 'audio', 'Clip audio conserve');
+  assert.equal(parsedV2.clips[2].sampleId, 'vox_cheer', 'SampleId du clip audio conserve');
+  assert.equal(parsedV2.automation.length, 1, 'Automation restauree');
+  assert.equal(parsedV2.automation[0].points.length, 2, 'Points automation restaures');
+
+  // Aller-retour texte sans perte
+  const v2TextRoundtrip = songToText(parsedV2);
+  assert.equal(v2TextRoundtrip, v2Text, 'Aller-retour sans perte du texte v2');
+}
+
 console.log('Tests chip.js reussis avec succes.');

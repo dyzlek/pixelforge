@@ -1,5 +1,39 @@
 # Journal — PixelForge
 
+## 2026-10-27 (69) — [Phase G] G8 : musique adaptative dans le jeu, Blueprints et MCP (Issue #88)
+- **Fait** :
+  - `src/audio/chip.js` :
+    - Zero import externe strictement preserve.
+    - Ajout de `controller.setLayer(layerName, active, opts)` et `controller.setSongLayer` permettant d'activer / desactiver dynamiquement des couches musicales avec temps de fondu configurable (`rampTime`).
+    - Synchronisation a la mesure (`onMeasure: true` / `measureSync: true`) : les transitions sont differees et declenchees sur la frontiere de mesure suivante (`currentStep % (stepsPerBeat * 4) === 0`).
+    - Helpers de resolution souple de tranches (`resolveTrackBus`) et de couches (`resolveLayerBuses`) par nom, identifiant ou attribut `layer`.
+    - Ajout de `controller.setTrackVolume(trackIdOrName, v, rampTime)`, `controller.setTrackPan`, `controller.setTrackMute`, et `controller.getTrack`.
+    - Exposition de ces methodes sur l'instance audio globale `chipAudio`.
+  - Moteurs de jeu 2D et 3D (`src/runtime/engine.js` et `src/runtime3d/engine3d.js`) :
+    - Exposition sur l'objet script `game` de `game.setSongLayer(layer, active, opts)`, `game.setTrackVolume(track, vol, rampTime)`, `game.setTrackMute(track, mute)` et `game.setTrackPan(track, pan)`.
+    - Precision de l'evenement musical `on('beat', (beatNumber) => { ... })` synchronise sur chaque temps.
+    - Exposition de `game.getGameApi()` et `globalThis.__pfGameApi` dans `src/runtime/play.js`.
+  - Blueprints (`src/graph/nodes.js`, `src/graph/compile.js`, `src/graph/test/legacy-blocks.js`) :
+    - Ajout du noeud `pf_set_song_layer` (Couche musicale : active/inactive, fondu, synchronisation sur la mesure).
+    - Ajout du noeud `pf_set_track_volume` (Volume de piste : reglage du niveau fader avec fondu).
+    - Mise a jour de `docs/NODES.md` via `scripts/gen-nodes-doc.mjs`.
+  - Format texte v2 de la musique (`src/core/ops/song-text.js` et `mcp/lib/song-text.js`) :
+    - Prise en charge complete des sections `TRACKS`, `CLIPS`, `AUTOMATION` et directives `TEMPO`.
+    - Export et parsing fideles des instruments DAW v2 (`synth_sub`, `synth_fm`, `drum_machine`, `sampler`), presets, kits, couches (`layer`), effets (`FX`), departs auxiliaires (`SEND`), clips de notes et audio.
+    - Maintien transparent de la retrocompatibilite v1 (tracker avec `CHANNELS`, `PATTERN`, `PLAYLIST`).
+    - Test unitaire d'aller-retour sans perte validant l'egalite exacte `songToText(parseSongText(v2Text)) === v2Text`.
+  - Jeu de demonstration (`games/exemple-plateforme-qiqv.pixelforge.json`) :
+    - Ajout du morceau chiptune `ThemePlateforme` structure en couches (`Lead`, `Bass`, et `Drums` avec `layer: 'combat'`).
+    - Mise a jour du script du joueur pour detecter la proximite d'un ennemi (`Enemy`) et activer dynamiquement la couche de batterie sur la mesure (`game.setSongLayer('combat', nearEnemy, { rampTime: 0.3, onMeasure: true })`).
+  - Documentation :
+    - `docs/SCRIPT_API.md` : mise a jour des fonctions audio et gestionnaires d'evenements musicaux.
+    - `docs/MUSIC.md` : ajout de la section 11 documentant la musique adaptative, les couches dynamiques et le format texte v2.
+  - Tests :
+    - Section 25 dans `src/audio/test/chip.test.mjs` testant `setSongLayer`, `getTrack`, `setTrackVolume`, `setTrackPan`, `setTrackMute`, la mise en attente sur la mesure `onMeasure: true`, et l'aller-retour texte sans perte.
+    - Test E2E Playwright 24 dans `e2e/studio.spec.js` validant les methodes de musique adaptative en jeu reel sous Phaser 4.
+- **Verifie** : `npm test` (14 suites OK, 0 echec), `npm run check:doc`, `npm run build`, validation sans erreur des 6 jeux de demo (`npm run pf -- validate <game>`) et 24/24 tests Playwright e2e verts. Strictement zero emoji.
+- **Etat** : Branche `feat/adaptive-music-blueprints`, Closes #88.
+
 ## 2026-10-27 (68) — [Phase G] G7 : mixeur, enregistrement micro, exports et import MIDI (Issue #87)
 - **Fait** :
   - `src/audio/chip.js` :

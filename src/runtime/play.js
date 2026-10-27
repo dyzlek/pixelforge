@@ -250,4 +250,5 @@ if (typeof globalThis !== 'undefined') {
   globalThis.__pfPlayResume = () => ctx?.game?.resume?.();
   globalThis.__pfPlayStep = () => ctx?.game?.stepFrame?.();
   globalThis.__pfPlayToggleColliders = (val) => ctx?.game?.setDebugColliders?.(val);
+  globalThis.__pfGameApi = () => (ctx?.game?.getGameApi ? ctx.game.getGameApi() : ctx?.game) || null;
 }

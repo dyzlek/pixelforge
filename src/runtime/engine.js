@@ -284,6 +284,38 @@ export function createGame(project, parent, Phaser, opts = {}) {
       }
     }
 
+    function setSongLayer(layer, active, opts) {
+      if (music && music.ctrl && music.ctrl.setLayer) {
+        music.ctrl.setLayer(layer, active, opts);
+      } else if (chip && chip.setSongLayer) {
+        chip.setSongLayer(layer, active, opts);
+      }
+    }
+
+    function setTrackVolume(track, vol, rampTime) {
+      if (music && music.ctrl && music.ctrl.setTrackVolume) {
+        music.ctrl.setTrackVolume(track, vol, rampTime);
+      } else if (chip && chip.setTrackVolume) {
+        chip.setTrackVolume(track, vol, rampTime);
+      }
+    }
+
+    function setTrackMute(track, mute) {
+      if (music && music.ctrl && music.ctrl.setTrackMute) {
+        music.ctrl.setTrackMute(track, mute);
+      } else if (chip && chip.setTrackMute) {
+        chip.setTrackMute(track, mute);
+      }
+    }
+
+    function setTrackPan(track, pan) {
+      if (music && music.ctrl && music.ctrl.setTrackPan) {
+        music.ctrl.setTrackPan(track, pan);
+      } else if (chip && chip.setTrackPan) {
+        chip.setTrackPan(track, pan);
+      }
+    }
+
     function playTune(notesInput, bpm = 140, loop = true, volume = 0.5) {
       stopMusic();
       const c = getCtx();
@@ -328,7 +360,7 @@ export function createGame(project, parent, Phaser, opts = {}) {
       stopMusic();
       if (ctx) { try { ctx.close(); } catch (e) { /* ignore */ } ctx = null; }
     };
-    return { unlock, playSound, playMusic, stopMusic, playSong, stopSong, setSongVolume, playTune, setMasterVolume, dispose };
+    return { unlock, playSound, playMusic, stopMusic, playSong, stopSong, setSongVolume, setSongLayer, setTrackVolume, setTrackMute, setTrackPan, playTune, setMasterVolume, dispose };
   })();
 
   // Débloque l'audio au premier geste
@@ -1366,6 +1398,10 @@ export function createGame(project, parent, Phaser, opts = {}) {
         playSong(name, opts) { return audio.playSong(name, opts); },
         stopSong(opts) { audio.stopSong(opts); },
         setSongVolume(v) { audio.setSongVolume(v); },
+        setSongLayer(layer, active, opts) { audio.setSongLayer(layer, active, opts); },
+        setTrackVolume(track, vol, rampTime) { audio.setTrackVolume(track, vol, rampTime); },
+        setTrackMute(track, mute) { audio.setTrackMute(track, mute); },
+        setTrackPan(track, pan) { audio.setTrackPan(track, pan); },
         playTune(notes, bpm, loop, volume) { audio.playTune(notes, bpm, loop, volume); },
         stopTune() { audio.stopMusic(); },
         setVolume(v) { audio.setMasterVolume(v); },
@@ -1531,6 +1567,7 @@ export function createGame(project, parent, Phaser, opts = {}) {
     if (touchEl && touchEl.parentNode) touchEl.parentNode.removeChild(touchEl);
     audio.dispose();
   });
+  game.getGameApi = () => activeScene?.gameApi || null;
   game.__debugSnapshot = () => {
     if (!activeScene || !activeScene.insts) return { instances: [], fps: 0, mapName: '' };
     return {

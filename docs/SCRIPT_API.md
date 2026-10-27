@@ -206,6 +206,10 @@ on('update', () => {
 | `game.playSong('nom', { loop?, volume?, fadeIn? })` | joue un morceau chiptune du projet avec options |
 | `game.stopSong({ fadeOut? })` | arrête le morceau chiptune en cours |
 | `game.setSongVolume(v)` | règle le volume du morceau en cours (0 à 1) |
+| `game.setSongLayer('couche', active, opts?)` | active ou désactive une couche musicale (ex. `'combat'`). `opts` : durée de fondu (nombre en s) ou `{ rampTime: 0.5, onMeasure: true }` pour synchronisation sur la mesure |
+| `game.setTrackVolume('piste', v, rampTime?)` | règle le volume d'une tranche/piste du mixeur avec fondu linéaire optionnel |
+| `game.setTrackMute('piste', mute)` | active ou coupe le mute d'une piste ou canal |
+| `game.setTrackPan('piste', pan)` | règle le panoramique d'une piste (-1 à 1) |
 
 Sons `kind: 'sfx'` : synthétisés par WebAudio, sans fichier. Presets : `jump coin hit powerup explosion laser blip portal`
 (`sfx.seed` varie légèrement le son, `sfx.pitch` et `sfx.volume` sont les réglages de base). Sons `kind: 'file'` : `dataUrl` audio.

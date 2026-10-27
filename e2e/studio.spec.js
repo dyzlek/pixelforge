@@ -1418,4 +1418,53 @@ test.describe('PixelForge Studio E2E Tests', () => {
     const clips = page.locator('.pf-playlist-block');
     await expect(clips.first()).toBeVisible();
   });
+
+  test("musique adaptative : couches musicales dynamiques (setSongLayer) et trigger on('beat') dans le jeu 2D", async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 2D plateforme
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('exemple-plateforme-qiqv');
+    });
+    await expect(page.locator('#project-name')).toHaveValue(/plateforme/i);
+
+    // 2. Lancer le jeu (F5)
+    await page.keyboard.press('F5');
+    await expect(page.locator('#tabs')).toContainText(/Jouer/i);
+
+    const canvas = page.locator('.play-stage canvas, canvas:visible').first();
+    await expect(canvas).toBeVisible({ timeout: 10000 });
+
+    // 3. Attendre que le joueur soit instancie
+    await page.waitForFunction(() => {
+      const snap = window.__pfDebugSnapshot?.();
+      return snap?.instances?.some((i) => i.name === 'Player');
+    }, { timeout: 15000 });
+
+    // 4. Verifier que le moteur audio expose les fonctions de musique adaptative
+    const audioOk = await page.evaluate(() => {
+      const g = window.__pfGameApi?.();
+      return typeof g?.setSongLayer === 'function' &&
+             typeof g?.setTrackVolume === 'function' &&
+             typeof g?.setTrackMute === 'function' &&
+             typeof g?.setTrackPan === 'function';
+    });
+    expect(audioOk).toBe(true);
+
+    // 5. Test d'appel direct des methodes de musique adaptative
+    await page.evaluate(() => {
+      const g = window.__pfGameApi?.();
+      // Activer / desactiver couche avec fondu et synchro mesure
+      g.setSongLayer('combat', true, { rampTime: 0.2, onMeasure: false });
+      g.setTrackVolume('Drums', 0.8, 0.1);
+      g.setTrackPan('Drums', 0.2);
+      g.setTrackMute('Drums', false);
+      g.setSongLayer('combat', false, { rampTime: 0.2, onMeasure: true });
+    });
+
+    // 6. Arreter le jeu
+    await page.keyboard.press('F8');
+    await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
+  });
 });
