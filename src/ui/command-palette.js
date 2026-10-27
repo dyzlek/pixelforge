@@ -12,6 +12,7 @@ export class CommandPalette {
     this.workspace = workspace;
     this.dock = dock;
     this.onOpenPrefs = onOpenPrefs;
+    this.shortcuts = shortcuts;
     this.activeModal = null;
 
     this.registerGlobalCommands();
@@ -100,6 +101,51 @@ export class CommandPalette {
         this.dock.activatePanel('ai-assistant');
       },
     });
+
+    shortcuts.register({
+      id: 'view-3d-focus',
+      label: 'Vue 3D : Centrer sur la sélection (Focus)',
+      category: 'Vue 3D',
+      key: 'f',
+      shortcutText: 'F',
+      action: () => window.dispatchEvent(new CustomEvent('pixelforge:view3d:focus')),
+    });
+
+    shortcuts.register({
+      id: 'view-3d-front',
+      label: 'Vue 3D : Vue de Face',
+      category: 'Vue 3D',
+      key: '1',
+      shortcutText: '1 / Pavé 1',
+      action: () => window.dispatchEvent(new CustomEvent('pixelforge:view3d:view', { detail: 'front' })),
+    });
+
+    shortcuts.register({
+      id: 'view-3d-side',
+      label: 'Vue 3D : Vue de Côté (Profil)',
+      category: 'Vue 3D',
+      key: '3',
+      shortcutText: '3 / Pavé 3',
+      action: () => window.dispatchEvent(new CustomEvent('pixelforge:view3d:view', { detail: 'side' })),
+    });
+
+    shortcuts.register({
+      id: 'view-3d-top',
+      label: 'Vue 3D : Vue de Dessus',
+      category: 'Vue 3D',
+      key: '7',
+      shortcutText: '7 / Pavé 7',
+      action: () => window.dispatchEvent(new CustomEvent('pixelforge:view3d:view', { detail: 'top' })),
+    });
+
+    shortcuts.register({
+      id: 'view-3d-persp-ortho',
+      label: 'Vue 3D : Basculer Perspective / Orthographique',
+      category: 'Vue 3D',
+      key: '5',
+      shortcutText: '5 / Pavé 5',
+      action: () => window.dispatchEvent(new CustomEvent('pixelforge:view3d:view', { detail: 'toggle-ortho' })),
+    });
   }
 
   openCommands() {
@@ -125,9 +171,25 @@ export class CommandPalette {
     for (const m of p.maps || []) {
       items.push({
         icon: getIconSvg('map', 13),
-        category: 'Scène',
+        category: 'Scène 2D',
         label: m.name,
         action: () => this.workspace.open({ kind: 'map', refId: m.id, title: m.name }),
+      });
+    }
+    for (const sc of p.scenes3d || []) {
+      items.push({
+        icon: getIconSvg('map', 13),
+        category: 'Scène 3D',
+        label: sc.name,
+        action: () => this.workspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name }),
+      });
+    }
+    for (const mod of p.models || []) {
+      items.push({
+        icon: getIconSvg('cube', 13),
+        category: 'Modèle 3D',
+        label: mod.name,
+        action: () => this.workspace.open({ kind: 'model3d', refId: mod.id, title: mod.name }),
       });
     }
     for (const s of p.sprites || []) {

@@ -1,5 +1,22 @@
 # Journal — PixelForge
 
+## 2026-10-27 (53) — [Phase F] F3 : navigation de la vue 3D façon Godot (Issue #72)
+- **Fait** :
+  - `src/editors/scene3d/index.js` :
+    - Mode vol libre / flycam facon Godot 4 : maintenu du clic droit + deplacement fluide aux touches ZQSD / WASD / Espace / C / E / Maj (boost de vitesse x2.5).
+    - Mode orbite camera autour de `camTarget` (clic milieu ou Alt + clic gauche).
+    - Centrage et focus sur la selection (touche F et bouton `Focus (F)`) avec calcul du barycentre des noeuds selectionnes.
+    - Vues predefinies alignees : Face (1 / Pave 1), Cote/Profil (3 / Pave 3), Dessus (7 / Pave 7).
+    - Camera orthographique en option (Pave 5 et bouton `Persp` / `Ortho` dans la barre d'outils) avec recalcul dynamique du frustum au zoom molette.
+    - Grille de travail etendue (64x64) et repere d'axes XYZ (`AxesHelper`).
+  - `src/ui/command-palette.js` & `src/main.js` :
+    - Enregistrement des commandes 3D dans la palette de commandes (`view-3d-focus`, `view-3d-front`, `view-3d-side`, `view-3d-top`, `view-3d-persp-ortho`).
+    - Inclusion des scenes 3D et modeles 3D dans l'acces rapide Quick Open (Ctrl+P).
+  - Tests E2E Playwright :
+    - `e2e/studio.spec.js` : test de la navigation vue 3D (bouton Focus, bascule Perspective / Orthographique, presence des commandes dans la palette).
+- **Verifie** : `npm test` (tous les tests unitaires et scenegraph3d verts), `npm run check:doc`, `npm run build`, validation `cube-runner` et `exemple-plateforme-qiqv`, et `npm run test:e2e` (10 tests Playwright verts).
+- **Etat** : Branche `feat/3d-viewport-navigation`, Closes #72.
+
 ## 2026-10-27 (52) — [Phase F] F2 : selection, gizmos et aimantation (Issue #71)
 - **Fait** :
   - `src/editors/scene3d/index.js` & `src/editors/scene3d/scene3d.css` :

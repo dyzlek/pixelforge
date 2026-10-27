@@ -299,6 +299,7 @@ window.addEventListener('keydown', (e) => {
     window.__pfWorkspace = workspace;
     window.__pfDock = dock;
     window.__pfOps = ops;
+    window.__pfCommandPalette = palette;
     window.__pfReady = true;
   }
 
