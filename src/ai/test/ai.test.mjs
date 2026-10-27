@@ -687,4 +687,166 @@ assert.ok(!emojiGenRegex.test(copilotJsSource), 'editor-copilot.js ne doit conte
 const copilotCssSource = readFileSync(new URL('../../ui/editor-copilot.css', import.meta.url), 'utf-8');
 assert.ok(!emojiGenRegex.test(copilotCssSource), 'editor-copilot.css ne doit contenir aucun emoji');
 
+// 14. Streaming : accumulation des fragments de tool_call sans duplication du nom
+{
+  const { sendAgentChatRequest } = await import('../client.js');
+  const sseEvents = [
+    { choices: [{ delta: { tool_calls: [{ index: 0, id: 'call_abc', function: { name: 'generate_', arguments: '' } }] } }] },
+    { choices: [{ delta: { tool_calls: [{ index: 0, function: { name: 'game', arguments: '{"prompt":' } }] } }] },
+    { choices: [{ delta: { tool_calls: [{ index: 0, function: { arguments: '"un jeu"}' } }] } }] },
+    // Nom complet en un seul chunk, sur un second appel
+    { choices: [{ delta: { tool_calls: [{ index: 1, id: 'call_def', function: { name: 'validate_game', arguments: '{}' } }] } }] },
+  ];
+  const sseText = sseEvents.map((e) => `data: ${JSON.stringify(e)}\n\n`).join('') + 'data: [DONE]\n\n';
+  const encoded = new TextEncoder().encode(sseText);
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => ({
+    ok: true,
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoded);
+        controller.close();
+      },
+    }),
+  });
+  try {
+    const res = await sendAgentChatRequest({
+      endpoint: 'http://localhost:1234/v1',
+      messages: [{ role: 'user', content: 'test' }],
+      stream: true,
+    });
+    assert.strictEqual(res.tool_calls.length, 2, 'deux tool_calls doivent etre reconstitues');
+    assert.strictEqual(res.tool_calls[0].function.name, 'generate_game', 'le nom fragmente ne doit pas etre duplique');
+    assert.strictEqual(res.tool_calls[0].function.arguments, '{"prompt":"un jeu"}', 'les arguments doivent etre concatenes');
+    assert.strictEqual(res.tool_calls[0].id, 'call_abc');
+    assert.strictEqual(res.tool_calls[1].function.name, 'validate_game', 'un nom en un seul chunk ne doit pas etre duplique');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+}
+
+// 15. Standards de Gameplay et Audit des Controles Joueur
+{
+  const {
+    auditPlayerScript,
+    STANDARD_PLAYER_2D_SCRIPT,
+    STANDARD_PLAYER_3D_SCRIPT,
+    GAMEPLAY_STANDARDS_DOC,
+  } = await import('../gameplay-standards.js');
+  const { playtestGame, autoFixGame, runPlaytestAndFix } = await import('../playtester.js');
+  const { buildAgentSystemPrompt } = await import('../agent.js');
+
+  // a. auditPlayerScript detecte les oublis
+  const emptyAudit = auditPlayerScript('', '2d');
+  assert.strictEqual(emptyAudit.valid, false, 'un script vide est invalide');
+  assert.ok(emptyAudit.missing.includes('empty_script'));
+
+  const noCameraAudit = auditPlayerScript(`
+    on('update', () => {
+      if (input.isDown('LEFT')) self.vx = -100;
+      if (input.isDown('RIGHT')) self.vx = 100;
+      if (input.justPressed('SPACE')) self.jump(300);
+      if (self.y > game.mapHeight) game.restart();
+    });
+  `, '2d');
+  assert.strictEqual(noCameraAudit.valid, false, 'un script sans camera est invalide');
+  assert.ok(noCameraAudit.missing.includes('camera_follow'));
+
+  const noJumpAudit = auditPlayerScript(`
+    on('create', () => game.camera.follow(self));
+    on('update', () => {
+      if (input.isDown('LEFT') || input.isDown('Q')) self.vx = -100;
+      if (input.isDown('RIGHT') || input.isDown('D')) self.vx = 100;
+      if (self.y > game.mapHeight) game.restart();
+    });
+  `, '2d');
+  assert.strictEqual(noJumpAudit.valid, false, 'un script sans saut est invalide');
+  assert.ok(noJumpAudit.missing.includes('jump_control'));
+
+  const noMoveAudit = auditPlayerScript(`
+    on('create', () => game.camera.follow(self));
+    on('update', () => {
+      if (input.justPressed('SPACE')) self.jump(300);
+      if (self.y > game.mapHeight) game.restart();
+    });
+  `, '2d');
+  assert.strictEqual(noMoveAudit.valid, false, 'un script sans deplacement horizontal est invalide');
+  assert.ok(noMoveAudit.missing.includes('horizontal_movement'));
+
+  // b. Les scripts standards passent l'audit avec succes
+  const standard2DAudit = auditPlayerScript(STANDARD_PLAYER_2D_SCRIPT, '2d');
+  assert.strictEqual(standard2DAudit.valid, true, 'STANDARD_PLAYER_2D_SCRIPT doit etre 100% valide');
+  assert.strictEqual(standard2DAudit.missing.length, 0);
+
+  const standard3DAudit = auditPlayerScript(STANDARD_PLAYER_3D_SCRIPT, '3d');
+  assert.strictEqual(standard3DAudit.valid, true, 'STANDARD_PLAYER_3D_SCRIPT doit etre 100% valide');
+  assert.strictEqual(standard3DAudit.missing.length, 0);
+
+  // c. playtestGame signale un objet joueur sans touches de controle
+  const testProject = createEmptyProject();
+  testProject.meta.id = 'test_game';
+  testProject.name = 'Test';
+  testProject.settings.dimension = '2d';
+  testProject.settings.startMapId = 'map1';
+  testProject.sprites = [
+    { id: 'spr_tiles', name: 'Tiles', width: 1, height: 1, frames: ['data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='] },
+  ];
+  testProject.objects = [
+    { id: 'obj_p', name: 'Player', physics: { gravity: true, collideMap: true }, script: { mode: 'code', code: 'on("create", () => {});' } },
+    { id: 'obj_exit', name: 'Portal', physics: { gravity: false, immovable: true }, script: { mode: 'code', code: 'on("overlap", "Player", () => game.restart());' } },
+  ];
+  testProject.maps = [
+    {
+      id: 'map1',
+      name: 'Niveau 1',
+      tilesetSpriteId: 'spr_tiles',
+      width: 10,
+      height: 10,
+      layers: [{ name: 'Ground', collides: true, data: [
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+         0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+         0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
+      ]}],
+      entities: [
+        { id: 'e1', objectId: 'obj_p', x: 32, y: 112 },
+        { id: 'e2', objectId: 'obj_exit', x: 120, y: 112 },
+      ],
+    },
+  ];
+
+  const report = playtestGame(testProject);
+  const controlIssue = report.issues.find((i) => i.type === 'missing_player_controls');
+  assert.ok(controlIssue, 'playtestGame doit detecter les controles manquants du joueur');
+  assert.strictEqual(controlIssue.objectName, 'Player');
+
+  // d. autoFixGame restaure les controles du joueur
+  const fixRes = autoFixGame(testProject, report.issues);
+  const fixedPlayer = fixRes.project.objects.find((o) => o.name === 'Player');
+  assert.strictEqual(fixedPlayer.script.code, STANDARD_PLAYER_2D_SCRIPT, 'le script du joueur doit etre remplace par le standard');
+  assert.ok(fixRes.repairsApplied.some((r) => r.type === 'repaired_player_controls'));
+
+  // e. runPlaytestAndFix resout tout en autonomie
+  const fixLoopRes = runPlaytestAndFix(testProject);
+  assert.strictEqual(fixLoopRes.ok, true, 'le jeu doit etre 100% repare et jouable');
+  assert.strictEqual(fixLoopRes.fixed, true);
+
+  // f. Verification de l injection dans le system prompt
+  const sysPrompt = buildAgentSystemPrompt(testProject);
+  assert.ok(sysPrompt.includes('STANDARDS FONDAMENTAUX DU GAMEPLAY'), 'le prompt de l agent doit integrer les standards de gameplay');
+  assert.ok(sysPrompt.includes('CONTROLES UNIVERSELS DU JOUEUR (AZERTY & QWERTY)'));
+
+  // g. Verification zero emoji
+  const standardsSource = readFileSync(new URL('../gameplay-standards.js', import.meta.url), 'utf-8');
+  assert.ok(!emojiGenRegex.test(standardsSource), 'gameplay-standards.js ne doit contenir aucun emoji');
+  const standardsDocSource = readFileSync(new URL('../../../docs/GAMEPLAY_STANDARDS.md', import.meta.url), 'utf-8');
+  assert.ok(!emojiGenRegex.test(standardsDocSource), 'GAMEPLAY_STANDARDS.md ne doit contenir aucun emoji');
+}
+
 console.log('Tous les tests Assistant IA & Game Design sont valides !');

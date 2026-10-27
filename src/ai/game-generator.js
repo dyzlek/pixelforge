@@ -28,6 +28,10 @@ import {
   generateSoundData,
 } from './generators.js';
 import { runPlaytestAndFix } from './playtester.js';
+import {
+  STANDARD_PLAYER_2D_SCRIPT,
+  STANDARD_PLAYER_3D_SCRIPT,
+} from './gameplay-standards.js';
 
 /**
  * Normalise un texte pour recherche de mots-cles
@@ -68,8 +72,8 @@ export function generateGameDesignDocument(description = '', options = {}) {
     genre: is3D ? 'Plateforme 3D retro voxel' : 'Plateforme 2D pixel art',
     pitch: `Un jeu de plateforme dynamique et complet en 3 niveaux progressifs ou le joueur traverse des epreuves equilibrees avant d affronter un boss redoutable dans son arene.`,
     controls: is3D
-      ? { move: 'Z/Q/S/D ou Fleches (deplacement et rotation)', jump: 'ESPACE (saut vertical)', camera: 'Camera troisieme personne avec suivi dynamique' }
-      : { move: 'Fleches GAUCHE / DROITE', jump: 'ESPACE ou Fleche HAUT', restart: 'R ou ENTREE' },
+      ? { move: 'Z/Q/S/D ou W/A/S/D ou Fleches (deplacement et rotation)', jump: 'ESPACE ou Fleche HAUT', camera: 'Camera troisieme personne avec suivi dynamique' }
+      : { move: 'Fleches GAUCHE / DROITE ou Q / D ou A / D', jump: 'ESPACE ou Fleche HAUT ou Z ou W', restart: 'R ou ENTREE' },
     gameFeel: {
       coyoteTime: 100, // ms
       jumpBuffering: 100, // ms
@@ -155,73 +159,7 @@ export function generateGameDesignDocument(description = '', options = {}) {
 // 2. SCRIPTS DES OBJETS DE JEU (2D & 3D)
 // ============================================================================
 
-const SCRIPT_PLAYER_2D = `
-// Joueur plateforme 2D avec Coyote Time, Jump Buffering et saut variable
-let coyoteTimer = 0;
-let jumpBuffer = 0;
-const SPEED = 110;
-const JUMP_FORCE = 300;
-
-on('create', () => {
-  game.camera.follow(self);
-  game.score = game.score || 0;
-  game.setText('hud', 'Score : ' + game.score + ' | ' + (game.currentMapName || 'Niveau 1'), 8, 8);
-});
-
-on('update', (dt) => {
-  // Gestion Coyote Time
-  if (self.onGround) {
-    coyoteTimer = 100;
-  } else {
-    coyoteTimer = Math.max(0, coyoteTimer - dt);
-  }
-
-  // Gestion Jump Buffer
-  if (input.justPressed('SPACE') || input.justPressed('UP')) {
-    jumpBuffer = 100;
-  } else {
-    jumpBuffer = Math.max(0, jumpBuffer - dt);
-  }
-
-  // Mouvement horizontal
-  self.vx = 0;
-  if (input.isDown('LEFT')) {
-    self.vx = -SPEED;
-    self.flipX = true;
-  }
-  if (input.isDown('RIGHT')) {
-    self.vx = SPEED;
-    self.flipX = false;
-  }
-
-  // Declenchement du saut
-  if (jumpBuffer > 0 && coyoteTimer > 0) {
-    self.jump(JUMP_FORCE);
-    jumpBuffer = 0;
-    coyoteTimer = 0;
-    game.playSound('jump', 0.8, 1.2);
-  }
-
-  // Saut a hauteur variable
-  if (input.justReleased('SPACE') && self.vy < -80) {
-    self.vy *= 0.5;
-  }
-
-  // Animations
-  if (!self.onGround) {
-    self.play('jump');
-  } else if (self.vx !== 0) {
-    self.play('run');
-  } else {
-    self.play('idle');
-  }
-
-  // Chute dans le vide hors de la carte
-  if (self.y > game.mapHeight + 48) {
-    game.restart();
-  }
-});
-`.trim();
+const SCRIPT_PLAYER_2D = STANDARD_PLAYER_2D_SCRIPT;
 
 const SCRIPT_COIN_2D = `
 // Collectible avec animation de flottement
@@ -344,34 +282,7 @@ on('overlap', 'Player', () => {
 `.trim();
 
 // Scripts 3D
-const SCRIPT_PLAYER_3D = `
-// Joueur plateforme 3D avec camera troisieme personne
-on('create', () => {
-  game.camera.setMode('third-person');
-  game.camera.follow(self, { distance: 6, height: 3 });
-  game.score = game.score || 0;
-  game.setText('hud', 'Score : ' + game.score, 8, 8);
-});
-
-on('update', () => {
-  let speed = 0;
-  if (input.isDown('UP') || input.isDown('W')) speed = 7;
-  if (input.isDown('DOWN') || input.isDown('S')) speed = -7;
-  if (input.isDown('LEFT') || input.isDown('A')) self.rotateY(-3);
-  if (input.isDown('RIGHT') || input.isDown('D')) self.rotateY(3);
-
-  self.moveForward(speed);
-
-  if ((input.justPressed('SPACE') || input.justPressed('UP')) && self.onGround) {
-    self.jump(12);
-    game.playSound('jump', 0.8, 1.2);
-  }
-
-  if (self.y < -12) {
-    game.restart();
-  }
-});
-`.trim();
+const SCRIPT_PLAYER_3D = STANDARD_PLAYER_3D_SCRIPT;
 
 const SCRIPT_COIN_3D = `
 on('update', () => {
