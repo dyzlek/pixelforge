@@ -12,6 +12,14 @@ import { CommandPalette } from './ui/command-palette.js';
 import { openPreferencesModal, getPreferences, applyPreferences } from './ui/preferences.js';
 import { getIconSvg } from './ui/icons.js';
 import * as ops from './core/ops/index.js';
+import {
+  executeTool,
+  generateAsset,
+  generateSpriteData,
+  generateSongData,
+  generateModelData,
+  generateSoundData,
+} from './ai/agent.js';
 
 // --- Gestion des thèmes (Design Tokens A0) ---
 const THEME_KEY = 'pixelforge-theme';
@@ -311,6 +319,14 @@ window.addEventListener('keydown', (e) => {
     window.__pfWorkspace = workspace;
     window.__pfDock = dock;
     window.__pfOps = ops;
+    window.__pfAi = {
+      executeTool,
+      generateAsset,
+      generateSpriteData,
+      generateSongData,
+      generateModelData,
+      generateSoundData,
+    };
     window.__pfCommandPalette = palette;
     window.__pfReady = true;
   }

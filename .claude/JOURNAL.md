@@ -1,5 +1,43 @@
 # Journal — PixelForge
 
+## 2026-10-27 (70) — [Phase H] H4 : l'IA genere sprites, musiques, sons et modeles 3D (Issue #92)
+- **Fait** :
+  - `src/ai/generators.js` :
+    - Module pur, zero dependance DOM ni Node.
+    - Generateur de sprites pixel art (`generateSpriteData`) :
+      - Conforme a la palette Sweetie 16 et aux dimensions de tuile (16x16 par defaut).
+      - Generation multi-frames de haute qualite avec animations nommees (`idle`, `walk`, `run`, `jump`).
+      - Archetypes geres : chevalier/aventurier, slime vert avec squash & stretch, chauve-souris volante avec battement d'ailes, squelette, piece d'or tournoyante en fausse 3D, gemme etincelante, cle, coeur pulsant, coffre, boule de feu, plateforme herbeuse, piques tranchantes.
+      - Generateur procedural symetrique de repli pour tout autre mot-cle ou description personnalisee.
+    - Generateur de musiques chiptune (`generateSongData`) :
+      - Deduction ou extraction de tempo en BPM (`90 BPM`, `145 bpm`, etc.) et analyse de style.
+      - Styles composes : donjon/sombre (90 BPM, gamme mineure/phrygienne, basse profonde et arpeges), combat/boss (145 BPM, mi mineur pentatonique, basse continue et batterie complete), aventure/joyeux (124 BPM, swing drums et walking bass), village/calme (100 BPM, pastorale), fanfare de victoire (130 BPM), defaite/game over (75 BPM).
+      - Production d'un format texte tracker ASCII 100% parseable par `parseSongText`.
+    - Generateur de modeles 3D (`generateModelData`) :
+      - Selection automatique des modeles low-poly animes de la bibliotheque CC0 (`cc0_adventurer`, `cc0_knight`, `cc0_crate`, `cc0_barrel`).
+      - Generation de modeles voxels par tranches Y-up stylisees en Sweetie 16 : coffre (6x5x5 voxels avec serrure), arbre (6x8x6 voxels avec tronc et cime), torche (2x6x2), totem de pierre (4x8x4), pilier (4x8x4), caisse et baril.
+    - Generateur d'effets sonores sfxr (`generateSoundData`) :
+      - Analyse semantique textuelle pour mapper la description vers les presets sfxr (`jump`, `coin`, `hit`, `powerup`, `explosion`, `laser`, `blip`, `portal`).
+      - Ajustement fin de la hauteur (`pitch` aigu pour sons legers/rapides > 1.0, grave pour sons lourds/puissants < 1.0) et du volume (`volume` modere pour sons doux/discrets, eleve pour explosions/impacts).
+      - Graine deterministe (`seed`) calculee d'apres la description.
+    - Point d'entree unifie `generateAsset(type, description, options)`.
+  - `src/ai/agent.js` :
+    - Ajout de l'outil `generate_asset` dans `AGENT_TOOLS`.
+    - Integration dans `executeTool` avec verification de confirmation d'ecrasement.
+    - Prise en charge automatique des descriptions dans `upsert_sprite`, `upsert_song`, `upsert_model` et `add_sound`.
+    - Mise a jour du system prompt (`buildAgentSystemPrompt`) pour documenter la generation en une seule requete.
+  - Interface Studio (`src/ui/panels/ai-assistant.js` & `src/main.js`) :
+    - Prise en charge de `generate_asset` dans `formatStepLabel` et `openResource` pour ouvrir directement la ressource generee.
+    - Exposition de `window.__pfAi` pour acces programmatique depuis le studio et les tests e2e.
+  - Documentation :
+    - Creation de `docs/AI_GENERATION.md` detaillant tous les generateurs, formats, archetypes et exemples.
+    - Mise a jour de `docs/ARCHITECTURE.md`.
+  - Tests :
+    - Section 10 ajoutee a `src/ai/test/ai.test.mjs` testant les 4 generateurs, les animations, le parsing des musiques, les presets CC0, les tranches voxels, les sfxr et l'absence totale d'emojis.
+    - Test Playwright 25 ajoute dans `e2e/studio.spec.js` testant la generation complete de sprite, musique, modele 3D et son directement dans le navigateur avec 0 erreur de validation.
+- **Verifie** : `npm test` (14 suites OK, 0 echec), `npm run check:doc`, `npm run build`, validation sans erreur des 6 jeux de demo (`npm run pf -- validate <game>`) et 25/25 tests Playwright e2e verts. Strictement zero emoji.
+- **Etat** : Branche `feat/ai-generate-assets`, Closes #92.
+
 ## 2026-10-27 (69) — [Phase G] G8 : musique adaptative dans le jeu, Blueprints et MCP (Issue #88)
 - **Fait** :
   - `src/audio/chip.js` :

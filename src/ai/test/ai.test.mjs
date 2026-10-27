@@ -6,7 +6,21 @@ import assert from 'node:assert';
 import { extractCodeBlocks } from '../client.js';
 import { buildSystemPrompt, PIXELFORGE_SCRIPT_API, BLUEPRINT_SCHEMA_GUIDE } from '../knowledge.js';
 import { GAMEDESIGN_PRINCIPLES, SCRIPT_TEMPLATES } from '../gamedesign.js';
-import { AGENT_TOOLS, parseJsonPlan, executeTool, executePlan, buildAgentSystemPrompt, runAgent } from '../agent.js';
+import {
+  AGENT_TOOLS,
+  parseJsonPlan,
+  executeTool,
+  executePlan,
+  buildAgentSystemPrompt,
+  runAgent,
+  generateAsset,
+  generateSpriteData,
+  generateSongData,
+  generateModelData,
+  generateSoundData,
+} from '../agent.js';
+import { parseSongText } from '../../core/ops/song-text.js';
+import { validateProject } from '../../core/ops/validate.js';
 import { createEmptyProject, createMap, normalizeProject } from '../../core/project.js';
 
 console.log('=== Tests Assistant IA & Game Design ===');
@@ -282,5 +296,184 @@ assert.strictEqual(storeAbort.undoStack.length, 0, 'Aucune modification ne doit 
 assert.strictEqual(storeAbort.project.sprites.length, 0, 'Aucun sprite ne doit persister en cas d\'arret');
 assert.strictEqual(storeAbort.project.objects.length, 0, 'Aucun objet ne doit persister en cas d\'arret');
 assert.strictEqual(storeAbort.project.maps[0].entities.length, 0, 'Aucune entite ne doit persister en cas d\'arret');
+
+// 10. Tests Phase H (H4 - Issue #92) : Generation de ressources par l'IA (sprites, musiques, modeles 3D, sons)
+
+// 10.1 Sprites en notation textuelle avec palette Sweetie 16 et animations
+const heroSprite = generateSpriteData('chevalier en armure avec epee', { name: 'Knight' });
+assert.strictEqual(heroSprite.name, 'Knight');
+assert.strictEqual(heroSprite.width, 16);
+assert.strictEqual(heroSprite.height, 16);
+assert.ok(Array.isArray(heroSprite.frames) && heroSprite.frames.length >= 4, 'Le sprite chevalier doit comporter au moins 4 frames');
+for (const frame of heroSprite.frames) {
+  assert.strictEqual(frame.length, 16, 'Chaque frame doit comporter exactement 16 lignes');
+  for (const row of frame) {
+    assert.strictEqual(row.length, 16, 'Chaque ligne doit comporter exactement 16 caracteres');
+    assert.ok(/^[0-9a-f.]+$/.test(row), 'Chaque caractere doit appartenir a la palette Sweetie 16 ou etre transparent (.)');
+  }
+}
+const idleAnim = heroSprite.animations.find((a) => a.name === 'idle');
+assert.ok(idleAnim, 'Le sprite chevalier doit posseder une animation idle');
+const walkAnim = heroSprite.animations.find((a) => a.name === 'walk' || a.name === 'run');
+assert.ok(walkAnim, 'Le sprite chevalier doit posseder une animation walk/run');
+const jumpAnim = heroSprite.animations.find((a) => a.name === 'jump');
+assert.ok(jumpAnim, 'Le sprite chevalier doit posseder une animation jump');
+
+// Autres archetypes de sprites
+const slimeSprite = generateSpriteData('slime vert rebondissant');
+assert.ok(slimeSprite.frames.length >= 4);
+const coinSprite = generateSpriteData('piece d or tournoyante');
+assert.ok(coinSprite.animations.some((a) => a.name === 'idle'));
+const batSprite = generateSpriteData('chauve-souris volante');
+assert.ok(batSprite.animations.some((a) => a.name === 'fly' || a.name === 'idle'));
+const chestSprite = generateSpriteData('coffre aux tresors');
+assert.ok(chestSprite.frames.length >= 2);
+
+// 10.2 Musiques au format tracker ASCII avec styles et BPM deduits
+const dungeonSong = generateSongData('theme de donjon inquietant, 90 BPM', { name: 'Dungeon' });
+assert.strictEqual(dungeonSong.name, 'Dungeon');
+assert.strictEqual(dungeonSong.bpm, 90);
+assert.strictEqual(dungeonSong.style, 'dungeon');
+assert.ok(dungeonSong.text.includes('BPM 90'));
+assert.ok(dungeonSong.text.includes('CHANNELS'));
+assert.ok(dungeonSong.text.includes('PATTERN'));
+assert.ok(dungeonSong.text.includes('PLAYLIST'));
+const parsedDungeon = parseSongText(dungeonSong.text, 'Dungeon');
+assert.strictEqual(parsedDungeon.bpm, 90);
+assert.ok(parsedDungeon.channels.length >= 3, 'Le theme de donjon doit comporter au moins 3 canaux');
+assert.ok(parsedDungeon.patterns.length >= 1, 'Le theme de donjon doit comporter des patterns');
+
+const battleSong = generateSongData('combat epique 145 BPM', { name: 'BossBattle' });
+assert.strictEqual(battleSong.bpm, 145);
+assert.strictEqual(battleSong.style, 'battle');
+const parsedBattle = parseSongText(battleSong.text, 'BossBattle');
+assert.strictEqual(parsedBattle.bpm, 145);
+
+const villageSong = generateSongData('ambiance de village calme et paisible', { name: 'Village' });
+assert.strictEqual(villageSong.bpm, 100);
+assert.strictEqual(villageSong.style, 'calm');
+
+const victorySong = generateSongData('fanfare de victoire', { name: 'Win' });
+assert.strictEqual(victorySong.style, 'victory');
+
+// 10.3 Modeles 3D : tranches voxels et selection de modeles CC0
+const adventurerModel = generateModelData('aventurier');
+assert.strictEqual(adventurerModel.preset, 'cc0_adventurer', 'Le modele aventurier doit utiliser le preset CC0 correspondant');
+
+const knightModel = generateModelData('chevalier');
+assert.strictEqual(knightModel.preset, 'cc0_knight', 'Le modele chevalier doit utiliser le preset CC0 correspondant');
+
+const chestModel = generateModelData('coffre en bois avec ferrures dorees', { name: 'Chest' });
+assert.strictEqual(chestModel.name, 'Chest');
+assert.strictEqual(chestModel.width, 6);
+assert.strictEqual(chestModel.height, 5);
+assert.strictEqual(chestModel.depth, 5);
+assert.ok(Array.isArray(chestModel.slices) && chestModel.slices.length === 5, 'Le coffre doit comporter 5 tranches Y');
+
+const treeModel = generateModelData('arbre de foret', { name: 'Tree' });
+assert.strictEqual(treeModel.height, 8);
+assert.strictEqual(treeModel.slices.length, 8);
+
+// 10.4 Sons sfxr a partir d'une description naturelle
+const lightJumpSound = generateSoundData('un saut leger', { name: 'JumpLight' });
+assert.strictEqual(lightJumpSound.name, 'JumpLight');
+assert.strictEqual(lightJumpSound.preset, 'jump');
+assert.ok(lightJumpSound.pitch > 1.0, 'Un saut leger doit avoir un pitch aigu (> 1.0)');
+
+const heavyExplosionSound = generateSoundData('une explosion lourde et assourdissante', { name: 'Boom' });
+assert.strictEqual(heavyExplosionSound.preset, 'explosion');
+assert.ok(heavyExplosionSound.pitch < 1.0, 'Une explosion lourde doit avoir un pitch grave (< 1.0)');
+assert.ok(heavyExplosionSound.volume >= 0.8, 'Une explosion assourdissante doit avoir un volume eleve (>= 0.8)');
+
+const softCoinSound = generateSoundData('un tintement de piece doux et discret', { name: 'CoinSoft' });
+assert.strictEqual(softCoinSound.preset, 'coin');
+assert.ok(softCoinSound.volume <= 0.5, 'Un son doux et discret doit avoir un volume modere (<= 0.5)');
+
+const fastLaserSound = generateSoundData('un tir laser rapide', { name: 'LaserFast' });
+assert.strictEqual(fastLaserSound.preset, 'laser');
+assert.ok(fastLaserSound.pitch > 1.0);
+
+// 10.5 Outil generate_asset execute directement sur un projet
+const genProject = createEmptyProject();
+genProject.maps = [createMap('Main', 20, 10, 16)];
+genProject.settings.startMapId = genProject.maps[0].id;
+
+// Creation d'un sprite en une seule demande
+const sprRes = await executeTool(genProject, 'generate_asset', {
+  type: 'sprite',
+  name: 'Slime',
+  description: 'slime vert rebondissant',
+});
+assert.ok(sprRes.includes('Slime'), 'L\'outil doit confirmer la creation du sprite');
+assert.strictEqual(genProject.sprites.length, 1);
+assert.strictEqual(genProject.sprites[0].name, 'Slime');
+
+// Creation d'une musique en une seule demande
+const sngRes = await executeTool(genProject, 'generate_asset', {
+  type: 'song',
+  name: 'DonjonTheme',
+  description: 'theme de donjon inquietant, 90 BPM',
+});
+assert.ok(sngRes.includes('DonjonTheme'), 'L\'outil doit confirmer la creation de la musique');
+assert.strictEqual(genProject.songs.length, 1);
+assert.strictEqual(genProject.songs[0].name, 'DonjonTheme');
+assert.strictEqual(genProject.songs[0].bpm, 90);
+
+// Creation d'un modele 3D en une seule demande
+const modRes = await executeTool(genProject, 'generate_asset', {
+  type: 'model',
+  name: 'Coffre3D',
+  description: 'coffre en bois avec serrure',
+});
+assert.ok(modRes.includes('Coffre3D'), 'L\'outil doit confirmer la creation du modele 3D');
+assert.strictEqual(genProject.models.length, 1);
+assert.strictEqual(genProject.models[0].name, 'Coffre3D');
+
+// Creation d'un son en une seule demande
+const sndRes = await executeTool(genProject, 'generate_asset', {
+  type: 'sound',
+  name: 'SautLeger',
+  description: 'un saut leger',
+});
+assert.ok(sndRes.includes('SautLeger'), 'L\'outil doit confirmer la creation de l\'effet sonore');
+assert.strictEqual(genProject.sounds.length, 1);
+assert.strictEqual(genProject.sounds[0].name, 'SautLeger');
+assert.strictEqual(genProject.sounds[0].sfx.preset, 'jump');
+assert.ok(genProject.sounds[0].sfx.pitch > 1.0);
+
+// 10.6 Repli transparent : creation d'une ressource via upsert_* avec simple description
+await executeTool(genProject, 'upsert_sprite', {
+  name: 'HeroAuto',
+  description: 'chevalier avec animations de marche et saut',
+});
+assert.strictEqual(genProject.sprites.length, 2);
+assert.strictEqual(genProject.sprites[1].name, 'HeroAuto');
+
+await executeTool(genProject, 'upsert_song', {
+  name: 'CombatAuto',
+  description: 'combat epique 145 BPM',
+});
+assert.strictEqual(genProject.songs.length, 2);
+assert.strictEqual(genProject.songs[1].name, 'CombatAuto');
+assert.strictEqual(genProject.songs[1].bpm, 145);
+
+await executeTool(genProject, 'add_sound', {
+  name: 'BoumAuto',
+  description: 'une explosion lourde et assourdissante',
+});
+assert.strictEqual(genProject.sounds.length, 2);
+assert.strictEqual(genProject.sounds[1].name, 'BoumAuto');
+assert.strictEqual(genProject.sounds[1].sfx.preset, 'explosion');
+
+// 10.7 Validation complete du projet genere (0 erreur)
+const issues = validateProject(genProject);
+const errors = issues.filter((i) => i.level === 'error');
+assert.strictEqual(errors.length, 0, 'Le projet comportant les ressources generees ne doit avoir aucune erreur de validation');
+
+// 10.8 Verification de l'absence totale d'emojis dans generators.js et le system prompt
+import { readFileSync } from 'node:fs';
+const genSource = readFileSync(new URL('../generators.js', import.meta.url), 'utf-8');
+const emojiGenRegex = /[\u{1F300}-\u{1F9FF}]|[\u{2600}-\u{26FF}]|[\u{2700}-\u{27BF}]/u;
+assert.ok(!emojiGenRegex.test(genSource), 'generators.js ne doit contenir aucun emoji');
 
 console.log('Tous les tests Assistant IA & Game Design sont valides !');

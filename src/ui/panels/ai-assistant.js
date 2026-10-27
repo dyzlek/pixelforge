@@ -35,6 +35,35 @@ export function openResource(store, workspace, toolName, args = {}) {
   if (!p) return;
 
   switch (toolName) {
+    case 'generate_asset': {
+      const type = String(args.type || '').toLowerCase();
+      if (type === 'sprite') {
+        const sp = (p.sprites || []).find((s) => s.name === args.name || s.id === args.name);
+        if (sp) {
+          workspace.open({ kind: 'pixel', refId: sp.id, title: sp.name });
+          store.setSelection?.({ type: 'sprite', id: sp.id });
+        }
+      } else if (type === 'song' || type === 'music') {
+        const sng = (p.songs || []).find((s) => s.name === args.name || s.id === args.name);
+        if (sng) {
+          workspace.open({ kind: 'song', refId: sng.id, title: sng.name });
+          store.setSelection?.({ type: 'song', id: sng.id });
+        }
+      } else if (type === 'model' || type === 'model3d' || type === 'voxel') {
+        const mod = (p.models || []).find((m) => m.name === args.name || m.id === args.name);
+        if (mod) {
+          workspace.open({ kind: 'voxel', refId: mod.id, title: mod.name });
+          store.setSelection?.({ type: 'voxel', id: mod.id });
+        }
+      } else if (type === 'sound' || type === 'sfx') {
+        const snd = (p.sounds || []).find((s) => s.name === args.name || s.id === args.name);
+        if (snd) {
+          workspace.open({ kind: 'sound', refId: snd.id, title: snd.name });
+          store.setSelection?.({ type: 'sound', id: snd.id });
+        }
+      }
+      break;
+    }
     case 'upsert_sprite':
     case 'get_sprite': {
       const sp = (p.sprites || []).find((s) => s.name === args.name || s.id === args.name);
@@ -180,6 +209,8 @@ function formatStepLabel(name, args = {}) {
       return `Visualisation de la scene 3D "${args.scene || ''}"`;
     case 'list_nodes':
       return `Consultation du catalogue de noeuds`;
+    case 'generate_asset':
+      return `Generation de ${args.type || 'ressource'} "${args.name || ''}" (${args.description || ''})`;
     default:
       return `${name}`;
   }

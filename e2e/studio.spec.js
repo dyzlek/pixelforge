@@ -1467,4 +1467,90 @@ test.describe('PixelForge Studio E2E Tests', () => {
     await page.keyboard.press('F8');
     await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
   });
+
+  test("generation de ressources IA (Phase H - H4) : sprites, musiques, modeles 3D et sons crees d'une seule demande", async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 2D plateforme
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('exemple-plateforme-qiqv');
+    });
+
+    // 2. Generation d'un sprite Slime anime, d'une musique de Donjon, d'un modele 3D Voxel et d'un son de saut
+    const results = await page.evaluate(async () => {
+      const p = window.__pfStore.project;
+      const { executeTool } = window.__pfAi;
+
+      // Generation sprite
+      const resSprite = await executeTool(p, 'generate_asset', {
+        type: 'sprite',
+        name: 'SlimeVert',
+        description: 'slime vert rebondissant',
+      });
+
+      // Generation musique
+      const resSong = await executeTool(p, 'generate_asset', {
+        type: 'song',
+        name: 'DonjonMystere',
+        description: 'theme de donjon inquietant, 90 BPM',
+      });
+
+      // Generation modele 3D
+      const resModel = await executeTool(p, 'generate_asset', {
+        type: 'model',
+        name: 'CoffreVoxel',
+        description: 'coffre aux tresors en bois avec serrure doree',
+      });
+
+      // Generation son
+      const resSound = await executeTool(p, 'generate_asset', {
+        type: 'sound',
+        name: 'SautDynamique',
+        description: 'un saut leger',
+      });
+
+      // Verification immediate dans le projet
+      const hasSprite = (p.sprites || []).some((s) => s.name === 'SlimeVert' && s.frames.length >= 4);
+      const hasSong = (p.songs || []).some((s) => s.name === 'DonjonMystere' && s.bpm === 90);
+      const hasModel = (p.models || []).some((m) => m.name === 'CoffreVoxel' && m.height === 5 && Object.keys(m.voxels || {}).length > 0);
+      const hasSound = (p.sounds || []).some((s) => s.name === 'SautDynamique' && s.sfx?.preset === 'jump');
+
+      // Validation 0 erreur
+      const issues = window.__pfOps.validateProject(p);
+      const errors = issues.filter((i) => i.level === 'error');
+
+      return {
+        resSprite,
+        resSong,
+        resModel,
+        resSound,
+        hasSprite,
+        hasSong,
+        hasModel,
+        hasSound,
+        errorCount: errors.length,
+      };
+    });
+
+    expect(results.hasSprite).toBe(true);
+    expect(results.hasSong).toBe(true);
+    expect(results.hasModel).toBe(true);
+    expect(results.hasSound).toBe(true);
+    expect(results.errorCount).toBe(0);
+
+    // 3. Ouvrir l'editeur de pixel sur le sprite SlimeVert genere
+    await page.evaluate(async () => {
+      const sp = window.__pfStore.project.sprites.find((s) => s.name === 'SlimeVert');
+      await window.__pfWorkspace.open({ kind: 'pixel', refId: sp.id, title: sp.name });
+    });
+    await expect(page.locator('#tabs')).toContainText(/SlimeVert/i);
+
+    // 4. Ouvrir l'editeur de son sur le son SautDynamique genere
+    await page.evaluate(async () => {
+      const snd = window.__pfStore.project.sounds.find((s) => s.name === 'SautDynamique');
+      await window.__pfWorkspace.open({ kind: 'sound', refId: snd.id, title: snd.name });
+    });
+    await expect(page.locator('#tabs')).toContainText(/SautDynamique/i);
+  });
 });

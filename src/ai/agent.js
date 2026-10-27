@@ -34,11 +34,27 @@ import {
   validateProject,
   formatIssues,
   listNodes,
+  SOUND_PRESETS,
 } from '../core/ops/index.js';
 
 import { sendAgentChatRequest, DEFAULT_AI_CONFIG } from './client.js';
 import { GAMEDESIGN_PRINCIPLES } from './gamedesign.js';
 import { PIXELFORGE_SCRIPT_API, BLUEPRINT_SCHEMA_GUIDE } from './knowledge.js';
+import {
+  generateAsset,
+  generateSpriteData,
+  generateSongData,
+  generateModelData,
+  generateSoundData,
+} from './generators.js';
+
+export {
+  generateAsset,
+  generateSpriteData,
+  generateSongData,
+  generateModelData,
+  generateSoundData,
+};
 
 /**
  * Definition des outils au format OpenAI Function Calling
@@ -586,6 +602,36 @@ export const AGENT_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'generate_asset',
+      description: 'Genere et cree instantanement une ressource complete pret a l\'emploi dans le projet depuis une simple description en langage naturel (sprite anime, musique chiptune, modele 3D voxel ou CC0, effet sonore sfxr).',
+      parameters: {
+        type: 'object',
+        properties: {
+          type: {
+            type: 'string',
+            enum: ['sprite', 'song', 'model', 'sound'],
+            description: 'Type de ressource a generer',
+          },
+          name: {
+            type: 'string',
+            description: 'Nom unique de la ressource a creer dans le projet',
+          },
+          description: {
+            type: 'string',
+            description: 'Description en langage naturel du style, de l\'apparence, du tempo ou du son recherche',
+          },
+          options: {
+            type: 'object',
+            description: 'Options optionnelles (dimensions, bpm, preset, animations)',
+          },
+        },
+        required: ['type', 'name', 'description'],
+      },
+    },
+  },
 ];
 
 /**
@@ -712,6 +758,24 @@ export async function executeTool(project, name, rawArgs = {}, options = {}) {
         resourceType = 'musique';
         resourceName = args.name;
       }
+    } else if (name === 'generate_asset' && args.name) {
+      if (args.type === 'sprite' && (project.sprites || []).some((s) => s.name === args.name)) {
+        overwrite = true;
+        resourceType = 'sprite';
+        resourceName = args.name;
+      } else if (args.type === 'song' && (project.songs || []).some((s) => s.name === args.name)) {
+        overwrite = true;
+        resourceType = 'musique';
+        resourceName = args.name;
+      } else if (args.type === 'model' && (project.models || []).some((m) => m.name === args.name)) {
+        overwrite = true;
+        resourceType = 'modele 3D';
+        resourceName = args.name;
+      } else if (args.type === 'sound' && (project.sounds || []).some((s) => s.name === args.name)) {
+        overwrite = true;
+        resourceType = 'effet sonore';
+        resourceName = args.name;
+      }
     } else if (name === 'set_script' && args.object) {
       const isGlobal = args.object === 'global';
       const existing = isGlobal ? project.globalScript : (project.objects || []).find((o) => o.name === args.object)?.script;
@@ -745,8 +809,31 @@ export async function executeTool(project, name, rawArgs = {}, options = {}) {
 
   // Execution de l'operation
   switch (name) {
-    case 'upsert_sprite':
+    case 'generate_asset': {
+      const { type, data } = generateAsset(args.type, args.description, {
+        name: args.name,
+        ...(args.options || {}),
+      });
+      switch (type) {
+        case 'sprite':
+          return upsertSprite(project, data);
+        case 'song':
+          return upsertSong(project, data);
+        case 'model':
+          return data.preset ? importModel(project, data) : upsertModel(project, data);
+        case 'sound':
+          return addSound(project, data);
+        default:
+          throw new Error(`Type de ressource inconnu : "${args.type}"`);
+      }
+    }
+    case 'upsert_sprite': {
+      if ((!args.frames || !args.frames.length) && args.description) {
+        const generated = generateSpriteData(args.description, args);
+        Object.assign(args, generated);
+      }
       return upsertSprite(project, args);
+    }
     case 'get_sprite':
       return getSprite(project, args.name).text;
     case 'upsert_object':
@@ -763,14 +850,32 @@ export async function executeTool(project, name, rawArgs = {}, options = {}) {
       return setLayer(project, args);
     case 'place_entities':
       return placeEntities(project, args);
-    case 'add_sound':
+    case 'add_sound': {
+      if ((!args.preset || !SOUND_PRESETS.includes(args.preset)) && (args.description || args.preset)) {
+        const generated = generateSoundData(args.description || args.preset, args);
+        Object.assign(args, generated);
+      }
       return addSound(project, args);
-    case 'upsert_song':
+    }
+    case 'upsert_song': {
+      if (!args.text && args.description) {
+        const generated = generateSongData(args.description, args);
+        Object.assign(args, generated);
+      }
       return upsertSong(project, args);
+    }
     case 'get_song':
       return getSongText(project, args.name);
-    case 'upsert_model':
+    case 'upsert_model': {
+      if ((!args.slices || !args.slices.length) && !args.gltf && !args.preset && args.description) {
+        const generated = generateModelData(args.description, args);
+        if (generated.preset) {
+          return importModel(project, generated);
+        }
+        Object.assign(args, generated);
+      }
       return upsertModel(project, args);
+    }
     case 'get_model':
       return getModel(project, args.name);
     case 'upsert_scene3d':
@@ -863,11 +968,13 @@ Outils disponibles :
 - render_map : afficher la vue ASCII d'une carte 2D
 - render_scene3d : afficher la vue ASCII d'une scene 3D
 - list_nodes : lister les noeuds Blueprint
+- generate_asset : generer une ressource complete pret a l'emploi depuis une simple description (sprite anime, musique tracker chiptune, modele 3D voxel ou CC0, son sfxr)
 
 Regles imperatrices :
 1. N'utilise JAMAIS aucun emoji dans tes reponses ou tes outils.
 2. Appelle les outils adaptes pour accomplir la requete de l'utilisateur. Tu peux enchainer plusieurs outils en une seule sequence (ex: creer un sprite, creer l'objet associe avec son script, puis placer plusieurs instances sur la carte).
-3. Si ton environnement ne prend pas en charge les appels d'outils natifs (function calling), reponds UNIQUEMENT avec un plan JSON valide au format :
+3. Tu peux generer n'importe quelle ressource complete en une seule demande avec "generate_asset" ou directement avec "upsert_sprite", "upsert_song", "upsert_model" ou "add_sound" en fournissant une description.
+4. Si ton environnement ne prend pas en charge les appels d'outils natifs (function calling), reponds UNIQUEMENT avec un plan JSON valide au format :
 \`\`\`json
 {
   "plan": [

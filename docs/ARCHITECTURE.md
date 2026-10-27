@@ -139,9 +139,9 @@ Un projet = un jeu. La bibliothèque contient plusieurs jeux, identifiés par `p
 - **Sans serveur (build statique)** : IndexedDB du navigateur, même interface.
 - Le serveur MCP (`mcp/`) et la CLI lisent / écrivent directement les fichiers de `games/`.
 
-## IA et Opérations Partagées
+## IA et Operations Partagees
 
-- `src/core/ops/` : opérations pures de manipulation de projet (`upsertSprite`, `upsertObject`, `setScript`, `upsertMap`, `paintMap`, `placeEntities`, `validateProject`, etc.) partagées à 100% entre le navigateur et Node.js sans dépendance DOM.
-- `src/ai/` : client d'IA local et distant (`client.js` : streaming SSE, OpenAI tool calling, Claude API), agent autonome avec catalogue d'outils et repli plan JSON (`agent.js`), bases de connaissances de script, de Blueprints et de Game Design (`knowledge.js`, `gamedesign.js`). Toute modification de projet est atomique via `store.update` (un seul Ctrl+Z annule tout).
-- `AGENTS.md` (racine) : guide pour toute IA qui veut créer un jeu. `llms.txt` : index court.
-- `mcp/` : serveur MCP (stdio) + bibliothèque Node pour manipuler les jeux de `games/`. Déclaré dans `.mcp.json`.
+- `src/core/ops/` : operations pures de manipulation de projet (`upsertSprite`, `upsertObject`, `setScript`, `upsertMap`, `paintMap`, `placeEntities`, `validateProject`, etc.) partagees a 100% entre le navigateur et Node.js sans dependance DOM.
+- `src/ai/` : client d'IA local et distant (`client.js` : streaming SSE, OpenAI tool calling, Claude API), agent autonome avec catalogue d'outils et repli plan JSON (`agent.js`), generateurs proceduraux de ressources (`generators.js` : sprites animes en Sweetie 16, musiques tracker/DAW selon style et tempo, modeles 3D voxels et presets CC0, effets sonores sfxr avec pitch/volume adaptes), bases de connaissances de script, de Blueprints et de Game Design (`knowledge.js`, `gamedesign.js`). Toute modification de projet est atomique via `store.update` (un seul Ctrl+Z annule tout).
+- `AGENTS.md` (racine) : guide pour toute IA qui veut creer un jeu. `llms.txt` : index court.
+- `mcp/` : serveur MCP (stdio) + bibliotheque Node pour manipuler les jeux de `games/`. Declare dans `.mcp.json`.
