@@ -557,85 +557,116 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     }
     solidBlocks.clear();
 
+    const renderGroups = new Map();
+    function addRenderBlock(x, y, z, colorHex) {
+      let list = renderGroups.get(colorHex);
+      if (!list) {
+        list = [];
+        renderGroups.set(colorHex, list);
+      }
+      list.push({ x, y, z });
+    }
+
     if (!gridmapData && (!currentScene3D.terrain || currentScene3D.terrain.enabled === false)) {
       // Si aucune grille specifiee ni terrain, generer un sol par defaut de 21x21 blocs a Y = -1
       for (let x = -10; x <= 10; x++) {
         for (let z = -10; z <= 10; z++) {
           const colorHex = (Math.abs(x) + Math.abs(z)) % 2 === 0 ? palette[8] : palette[14];
-          const mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(colorHex));
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.position.set(x, -1, z);
-          gridGroup.add(mesh);
+          addRenderBlock(x, -1, z, colorHex);
           solidBlocks.set(`${x},-1,${z}`, { x, y: -1, z });
         }
       }
-      initPhysicsWorld();
-      return;
-    }
-
-    if (gridmapData) {
-      Object.entries(gridmapData).forEach(([coordStr, blockInfo]) => {
-        const parts = coordStr.split(',').map((v) => Number(v));
-        if (parts.length !== 3 || !parts.every(Number.isInteger)) return;
-        if (blockInfo == null || blockInfo === '.') return;
-        const [bx, by, bz] = parts;
-        const mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(resolveColor(blockInfo)));
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        mesh.position.set(bx, by, bz);
-        gridGroup.add(mesh);
-        solidBlocks.set(`${bx},${by},${bz}`, { x: bx, y: by, z: bz });
-      });
-    }
-
-    // Blocs solides et relief du terrain sculpte
-    const ter = currentScene3D.terrain;
-    if (ter && ter.enabled !== false) {
-      const minX = typeof ter.originX === 'number' ? ter.originX : -16;
-      const maxX = minX + (ter.width || 32) - 1;
-      const minZ = typeof ter.originZ === 'number' ? ter.originZ : -16;
-      const maxZ = minZ + (ter.depth || 32) - 1;
-      const defaultH = typeof ter.defaultHeight === 'number' ? ter.defaultHeight : 0;
-      const defaultCol = ter.defaultColor != null ? ter.defaultColor : 6;
-      const heights = ter.heights || {};
-      const colors = ter.colors || {};
-
-      const cols = new Set();
-      for (let x = minX; x <= maxX; x++) {
-        for (let z = minZ; z <= maxZ; z++) {
-          cols.add(`${x},${z}`);
-        }
+    } else {
+      if (gridmapData) {
+        Object.entries(gridmapData).forEach(([coordStr, blockInfo]) => {
+          const parts = coordStr.split(',').map((v) => Number(v));
+          if (parts.length !== 3 || !parts.every(Number.isInteger)) return;
+          if (blockInfo == null || blockInfo === '.') return;
+          const [bx, by, bz] = parts;
+          const colHex = resolveColor(blockInfo);
+          addRenderBlock(bx, by, bz, colHex);
+          solidBlocks.set(`${bx},${by},${bz}`, { x: bx, y: by, z: bz });
+        });
       }
-      for (const k of Object.keys(heights)) cols.add(k);
-      for (const k of Object.keys(colors)) cols.add(k);
 
-      for (const k of cols) {
-        const parts = k.split(',').map((v) => parseInt(v, 10));
-        if (parts.length !== 2) continue;
-        const [tx, tz] = parts;
-        const h = heights[k] !== undefined ? heights[k] : defaultH;
-        const topY = Math.round(h);
-        const colVal = colors[k] !== undefined ? colors[k] : defaultCol;
-        const colHex = resolveColor(colVal);
+      // Blocs solides et relief du terrain sculpte
+      const ter = currentScene3D.terrain;
+      if (ter && ter.enabled !== false) {
+        const minX = typeof ter.originX === 'number' ? ter.originX : -16;
+        const maxX = minX + (ter.width || 32) - 1;
+        const minZ = typeof ter.originZ === 'number' ? ter.originZ : -16;
+        const maxZ = minZ + (ter.depth || 32) - 1;
+        const defaultH = typeof ter.defaultHeight === 'number' ? ter.defaultHeight : 0;
+        const defaultCol = ter.defaultColor != null ? ter.defaultColor : 6;
+        const heights = ter.heights || {};
+        const colors = ter.colors || {};
 
-        const minY = -2;
-        const base = Math.min(minY, topY);
-        for (let ty = base; ty <= topY; ty++) {
-          const key = `${tx},${ty},${tz}`;
-          if (!solidBlocks.has(key)) {
-            solidBlocks.set(key, { x: tx, y: ty, z: tz });
-            if (ty === topY) {
-              const mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(colHex));
-              mesh.castShadow = true;
-              mesh.receiveShadow = true;
-              mesh.position.set(tx, ty, tz);
-              gridGroup.add(mesh);
+        const cols = new Set();
+        for (let x = minX; x <= maxX; x++) {
+          for (let z = minZ; z <= maxZ; z++) {
+            cols.add(`${x},${z}`);
+          }
+        }
+        for (const k of Object.keys(heights)) cols.add(k);
+        for (const k of Object.keys(colors)) cols.add(k);
+
+        for (const k of cols) {
+          const parts = k.split(',').map((v) => parseInt(v, 10));
+          if (parts.length !== 2) continue;
+          const [tx, tz] = parts;
+          const h = heights[k] !== undefined ? heights[k] : defaultH;
+          const topY = Math.round(h);
+          const colVal = colors[k] !== undefined ? colors[k] : defaultCol;
+          const colHex = resolveColor(colVal);
+
+          const minY = -2;
+          const base = Math.min(minY, topY);
+          for (let ty = base; ty <= topY; ty++) {
+            const key = `${tx},${ty},${tz}`;
+            if (!solidBlocks.has(key)) {
+              solidBlocks.set(key, { x: tx, y: ty, z: tz });
+              if (ty === topY) {
+                addRenderBlock(tx, ty, tz, colHex);
+              }
             }
           }
         }
       }
     }
+
+    // Instanciation groupee (InstancedMesh ou repli Mesh)
+    if (typeof ThreeLib.InstancedMesh === 'function' && typeof ThreeLib.Matrix4 === 'function') {
+      const dummyMat = new ThreeLib.Matrix4();
+      const dummyPos = typeof ThreeLib.Vector3 === 'function' ? new ThreeLib.Vector3() : null;
+      for (const [colorHex, list] of renderGroups.entries()) {
+        const instMesh = new ThreeLib.InstancedMesh(cubeGeo, getMaterial(colorHex), list.length);
+        instMesh.castShadow = true;
+        instMesh.receiveShadow = true;
+        for (let i = 0; i < list.length; i++) {
+          if (dummyPos) {
+            dummyPos.set(list[i].x, list[i].y, list[i].z);
+            dummyMat.identity();
+            dummyMat.setPosition(dummyPos);
+          }
+          instMesh.setMatrixAt(i, dummyMat);
+        }
+        instMesh.count = list.length;
+        if (instMesh.instanceMatrix) instMesh.instanceMatrix.needsUpdate = true;
+        gridGroup.add(instMesh);
+      }
+    } else {
+      for (const [colorHex, list] of renderGroups.entries()) {
+        const mat = getMaterial(colorHex);
+        for (const item of list) {
+          const mesh = new ThreeLib.Mesh(cubeGeo, mat);
+          mesh.castShadow = true;
+          mesh.receiveShadow = true;
+          mesh.position.set(item.x, item.y, item.z);
+          gridGroup.add(mesh);
+        }
+      }
+    }
+
     initPhysicsWorld();
   }
 

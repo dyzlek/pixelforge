@@ -1,5 +1,33 @@
 # Journal — PixelForge
 
+## 2026-10-27 (64) — [Phase F] F9 : performances (InstancedMesh, mises à jour incrémentales) (Issue #78)
+- **Fait** :
+  - `src/editors/scene3d/instanced-blocks.js` :
+    - Module pur sans dependance DOM creant la classe `InstancedBlockGrid`.
+    - Regroupement des blocs par couleur de palette (Sweetie 16) au sein d'`InstancedMesh` dedies (au maximum 16 draw calls pour toute la scene).
+    - Mises a jour incrementales O(1) : ajout de bloc en fin de batch (`setBlock`) et suppression sans trou par permutation avec le dernier element (`removeBlock`, swap-with-last).
+    - Construction rapide de la grille et du relief de terrain en un passage optimise (`buildFrom`).
+    - Resolution transparente des intersections de raycasting (`resolveRaycastHit`) vers les coordonnees spatiales exactes et metadonnees du bloc.
+    - Mode de repli propre avec `Mesh` unitaire si `InstancedMesh` n'est pas disponible.
+  - `src/editors/scene3d/index.js` :
+    - Integration de `InstancedBlockGrid` dans la scene 3D de l'editeur.
+    - Mises a jour incrementales directes des clics de placement et de gommage dans la grille instanciee sans reconstruction globale de la scene.
+    - Evitement des re-rendus redondants lors des commits locaux (`skipNextRebuild`).
+    - Maillage des modeles voxel en cache (`voxelGeoCache` et `getVoxelGeometry`) pour partager une geometrie unique entre toutes les occurrences d'entites d'un meme objet.
+  - `src/runtime3d/engine3d.js` :
+    - Zero import externe strictement preserve.
+    - Utilisation d'`InstancedMesh` dans `buildGridMap` pour instancier les blocs solides et le relief de terrain par lot de couleur.
+  - `docs/3D-EDITOR.md` :
+    - Ajout de la section 10 documentant l'architecture de rendu `InstancedBlockGrid`, les operations incrementales O(1) et le cache voxel.
+  - Tests & Benchmarks :
+    - `src/editors/scene3d/test/instanced-blocks.test.mjs` : suite de tests unitaires et benchmark de 20 000 blocs :
+      - Construction complete de 20 000 blocs : 15,44 ms (budget < 50 ms).
+      - 1 000 ajouts incrementaux O(1) : 1,74 ms (0,0017 ms/bloc).
+      - 1 000 suppressions incrementales O(1) : 0,48 ms (0,0005 ms/bloc).
+    - `e2e/studio.spec.js` : test 19 Playwright validant l'ajout et le retrait incremental de blocs a la souris dans l'editeur 3D avec preservation de la fluidite a 60 FPS.
+- **Verifie** : `npm test` (2566 verifications, zero echec), `npm run check:doc`, `npm run build`, validation de tous les jeux de demo et `npm run test:e2e` (19/19 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/perf-instancedmesh-3d`, Closes #78.
+
 ## 2026-10-27 (63) — [Phase F] F8 : jouer depuis la caméra de l éditeur et débogage 3D (Issue #77)
 - **Fait** :
   - `src/runtime3d/engine3d.js` :

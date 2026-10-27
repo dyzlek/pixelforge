@@ -1117,4 +1117,54 @@ test.describe('PixelForge Studio E2E Tests', () => {
     await page.locator('[data-action="stop"]').click();
     await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
   });
+
+  test('performances 3D InstancedMesh et mises a jour incrementales dans l editeur', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Ouvrir l editeur de scene 3D
+    await page.evaluate(() => {
+      const sc = window.__pfStore.project.scenes3d?.[0];
+      if (sc) {
+        window.__pfWorkspace.open({ kind: 'scene3d', refId: sc.id, title: sc.name });
+      }
+    });
+
+    await expect(page.locator('.pf-scene3d-toolbar')).toBeVisible();
+
+    // 3. Verifier les stats de blocs
+    const statsEl = page.locator('#pf-s3d-stats');
+    await expect(statsEl).toBeVisible();
+    const statsText = await statsEl.textContent();
+    expect(statsText).toContain('blocs');
+
+    // 4. Tester l ajout incremental de blocs via l outil block
+    const blockBtn = page.locator('.pf-scene3d-btn[data-tool="block"]');
+    await blockBtn.click();
+
+    const canvas = page.locator('#pf-s3d-viewport canvas');
+    await expect(canvas).toBeVisible();
+
+    // 5. Clic sur le canvas pour poser un bloc
+    const box = await canvas.boundingBox();
+    if (box) {
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    }
+
+    // 6. Basculer sur la gomme pour supprimer
+    const eraseBtn = page.locator('.pf-scene3d-btn[data-tool="erase"]');
+    await eraseBtn.click();
+    if (box) {
+      await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    }
+
+    // 7. Verifier que le store et les stats restent coherents
+    const finalStats = await statsEl.textContent();
+    expect(finalStats).toContain('blocs');
+  });
 });

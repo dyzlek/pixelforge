@@ -9,6 +9,7 @@
 
 import { GridMap3D } from './gridmap.js';
 import { Terrain3D } from './terrain.js';
+import { InstancedBlockGrid } from './instanced-blocks.js';
 import { getIconSvg } from '../../ui/icons.js';
 import { uid } from '../../core/project.js';
 import './scene3d.css';
@@ -27,6 +28,8 @@ export function mount(container, store, { refId } = {}) {
   if (store.ui) store.ui.selectedScene3DId = refId;
 
   let grid = new GridMap3D(sceneData.gridmap);
+  let blockGrid = null;
+  let skipNextRebuild = false;
 
   let activeTool = 'block'; // 'block' | 'erase' | 'entity' | 'select'
   let activeLevel = 0; // Etage Y
@@ -257,6 +260,7 @@ export function mount(container, store, { refId } = {}) {
 
   // Toute modification passe par store.update (Ctrl+Z)
   function commit(mutate) {
+    skipNextRebuild = true;
     store.update((p) => {
       const sc = (p.scenes3d || []).find((s) => s.id === refId);
       if (!sc) return;
@@ -287,6 +291,10 @@ export function mount(container, store, { refId } = {}) {
   });
 
   const offChange = store.on('change', () => {
+    if (skipNextRebuild) {
+      skipNextRebuild = false;
+      return;
+    }
     const sc = findScene();
     if (!sc) return;
     sceneData = sc;
@@ -654,19 +662,25 @@ export function mount(container, store, { refId } = {}) {
     axesHelper.position.set(0, activeLevel + 0.01, 0);
     scene.add(axesHelper);
 
-    // Groupes pour les blocs et les entites
-    blockGroup = new ThreeLib.Group();
+    cubeGeo.geo = new ThreeLib.BoxGeometry(1, 1, 1);
+
+    // Grille de blocs optimisee avec InstancedMesh et mises a jour incrementales O(1)
+    blockGrid = new InstancedBlockGrid({
+      ThreeLib,
+      geometry: cubeGeo.geo,
+      getMaterial,
+      resolveColor: blockColor,
+    });
+    blockGroup = blockGrid.group;
     scene.add(blockGroup);
     entityGroup = new ThreeLib.Group();
     scene.add(entityGroup);
-
-    cubeGeo.geo = new ThreeLib.BoxGeometry(1, 1, 1);
 
     // Curseur de survol
     const cursorGeo = new ThreeLib.BoxGeometry(1.02, 1.02, 1.02);
     const cursorMat = new ThreeLib.MeshBasicMaterial({ color: 0xffffff, wireframe: true, transparent: true, opacity: 0.7 });
     selWireMat = new ThreeLib.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
-    disposables.push(cubeGeo.geo, cursorGeo, cursorMat, selWireMat, gridHelper.geometry, gridHelper.material, axesHelper.geometry, axesHelper.material);
+    disposables.push(cubeGeo.geo, cursorGeo, cursorMat, selWireMat, gridHelper.geometry, gridHelper.material, axesHelper.geometry, axesHelper.material, { dispose: () => blockGrid?.dispose() });
     const cursorBox = new ThreeLib.Mesh(cursorGeo, cursorMat);
     cursorBox.visible = false;
     scene.add(cursorBox);
@@ -1141,38 +1155,103 @@ export function mount(container, store, { refId } = {}) {
   }
 
   function rebuildBlocks() {
-    while (blockGroup.children.length > 0) {
-      blockGroup.remove(blockGroup.children[0]);
-    }
+    if (blockGrid) {
+      blockGrid.buildFrom(grid.blocks, sceneData.terrain);
+    } else if (blockGroup) {
+      while (blockGroup.children.length > 0) {
+        blockGroup.remove(blockGroup.children[0]);
+      }
 
-    for (const [key, value] of grid.blocks.entries()) {
-      const { x, y, z } = GridMap3D.parseKey(key);
-      const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(blockColor(value)));
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.position.set(x, y, z);
-      mesh.userData = { blockKey: key, x, y, z };
-      blockGroup.add(mesh);
-    }
-
-    if (sceneData.terrain && sceneData.terrain.enabled !== false) {
-      const ter = new Terrain3D(sceneData.terrain);
-      const tBlocks = ter.toSolidBlocks(-1);
-      for (const [key, value] of Object.entries(tBlocks)) {
-        if (grid.blocks.has(key)) continue;
+      for (const [key, value] of grid.blocks.entries()) {
         const { x, y, z } = GridMap3D.parseKey(key);
-        if (y === Math.round(ter.getHeight(x, z))) {
-          const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(blockColor(value)));
-          mesh.castShadow = true;
-          mesh.receiveShadow = true;
-          mesh.position.set(x, y, z);
-          mesh.userData = { isTerrain: true, x, y, z, blockKey: key };
-          blockGroup.add(mesh);
+        const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(blockColor(value)));
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.position.set(x, y, z);
+        mesh.userData = { blockKey: key, x, y, z };
+        blockGroup.add(mesh);
+      }
+
+      if (sceneData.terrain && sceneData.terrain.enabled !== false) {
+        const ter = new Terrain3D(sceneData.terrain);
+        const tBlocks = ter.toSolidBlocks(-1);
+        for (const [key, value] of Object.entries(tBlocks)) {
+          if (grid.blocks.has(key)) continue;
+          const { x, y, z } = GridMap3D.parseKey(key);
+          if (y === Math.round(ter.getHeight(x, z))) {
+            const mesh = new ThreeLib.Mesh(cubeGeo.geo, getMaterial(blockColor(value)));
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.position.set(x, y, z);
+            mesh.userData = { isTerrain: true, x, y, z, blockKey: key };
+            blockGroup.add(mesh);
+          }
         }
       }
     }
 
     container.querySelector('#pf-s3d-stats').textContent = `${grid.blocks.size} blocs`;
+  }
+
+  // Cache de maillages voxel pour les entites et modeles repetes
+  const voxelGeoCache = new Map();
+  function getVoxelGeometry(model) {
+    if (!model || !model.id) return null;
+    if (voxelGeoCache.has(model.id)) return voxelGeoCache.get(model.id);
+
+    const voxels = model.voxels || {};
+    const cells = [];
+    let maxX = 0, maxY = 0, maxZ = 0;
+    for (const [key, val] of Object.entries(voxels)) {
+      if (val == null) continue;
+      const p = key.split(',').map(Number);
+      if (p.length !== 3 || !p.every(Number.isInteger)) continue;
+      cells.push([p[0], p[1], p[2], val]);
+      maxX = Math.max(maxX, p[0] + 1); maxY = Math.max(maxY, p[1] + 1); maxZ = Math.max(maxZ, p[2] + 1);
+    }
+    if (!cells.length) {
+      voxelGeoCache.set(model.id, null);
+      return null;
+    }
+    const w = Math.max(model.width || 0, maxX);
+    const h = Math.max(model.height || 0, maxY);
+    const d = Math.max(model.depth || 0, maxZ);
+    const s = 0.9 / Math.max(w, h, d);
+    const filled = new Set(cells.map((c) => `${c[0]},${c[1]},${c[2]}`));
+    const positions = [];
+    const normals = [];
+    const colors = [];
+    const col = new ThreeLib.Color();
+    const FACES = [
+      { n: [1, 0, 0], c: [[1, 0, 0], [1, 1, 0], [1, 1, 1], [1, 0, 1]] },
+      { n: [-1, 0, 0], c: [[0, 0, 1], [0, 1, 1], [0, 1, 0], [0, 0, 0]] },
+      { n: [0, 1, 0], c: [[0, 1, 1], [1, 1, 1], [1, 1, 0], [0, 1, 0]] },
+      { n: [0, -1, 0], c: [[0, 0, 0], [1, 0, 0], [1, 0, 1], [0, 0, 1]] },
+      { n: [0, 0, 1], c: [[1, 0, 1], [1, 1, 1], [0, 1, 1], [0, 0, 1]] },
+      { n: [0, 0, -1], c: [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]] },
+    ];
+    for (const [x, y, z, val] of cells) {
+      col.set(blockColor(val));
+      for (const f of FACES) {
+        if (filled.has(`${x + f.n[0]},${y + f.n[1]},${z + f.n[2]}`)) continue;
+        const quad = f.c.map(([cx, cy, cz]) => [
+          (x + cx - w / 2) * s,
+          (y + cy) * s - 0.9 / 2,
+          (z + cz - d / 2) * s,
+        ]);
+        for (const i of [0, 1, 2, 0, 2, 3]) {
+          positions.push(quad[i][0], quad[i][1], quad[i][2]);
+          normals.push(f.n[0], f.n[1], f.n[2]);
+          colors.push(col.r, col.g, col.b);
+        }
+      }
+    }
+    const geo = new ThreeLib.BufferGeometry();
+    geo.setAttribute('position', new ThreeLib.Float32BufferAttribute(positions, 3));
+    geo.setAttribute('normal', new ThreeLib.Float32BufferAttribute(normals, 3));
+    geo.setAttribute('color', new ThreeLib.Float32BufferAttribute(colors, 3));
+    voxelGeoCache.set(model.id, geo);
+    return geo;
   }
 
   function rebuildEntities() {
@@ -1244,10 +1323,13 @@ export function mount(container, store, { refId } = {}) {
       }
 
       const objDef = (store.project?.objects || []).find((o) => o.id === node.objectId);
+      const modelDef = objDef?.modelId ? (store.project?.models || []).find((m) => m.id === objDef.modelId || m.name === objDef.modelId) : null;
+      const vGeo = modelDef ? getVoxelGeometry(modelDef) : null;
+
       const matDef = (store.project?.materials || []).find((m) => m.id === (node.materialId || objDef?.materialId));
       const color = matDef?.color || objDef?.color || '#ffcd75';
 
-      let mat = getMaterial(color);
+      let mat = vGeo ? new ThreeLib.MeshLambertMaterial({ vertexColors: true, flatShading: true }) : getMaterial(color);
       if (node.kind === 'light') {
         const lp = node.props || {};
         mat = getMaterial(lp.color || '#ffea75');
@@ -1257,7 +1339,7 @@ export function mount(container, store, { refId } = {}) {
         mat = getMaterial('#ef7d57');
       }
 
-      const mesh = new ThreeLib.Mesh(cubeGeo.geo, mat);
+      const mesh = new ThreeLib.Mesh(vGeo || cubeGeo.geo, mat);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       mesh.position.set(pos[0], pos[1], pos[2]);
@@ -1296,9 +1378,10 @@ export function mount(container, store, { refId } = {}) {
       if (cur?.userData?.entityId) hitEntity = { id: cur.userData.entityId, mesh: cur };
     }
 
-    // Blocs
-    const blockHits = raycaster.intersectObjects(blockGroup.children, false);
-    const hitBlock = blockHits.length > 0 ? blockHits[0] : null;
+    // Blocs (InstancedMesh ou repli Mesh)
+    const blockHits = blockGroup ? raycaster.intersectObjects(blockGroup.children, false) : [];
+    const rawHitBlock = blockHits.length > 0 ? blockHits[0] : null;
+    const hitBlock = blockGrid ? blockGrid.resolveRaycastHit(rawHitBlock) : rawHitBlock;
 
     // Plan horizontal a Y = activeLevel
     const plane = new ThreeLib.Plane(new ThreeLib.Vector3(0, 1, 0), -activeLevel);
@@ -1407,7 +1490,12 @@ export function mount(container, store, { refId } = {}) {
         bz = Math.round(hitGrid.z);
       }
       grid.setBlock(bx, by, bz, activeColor);
-      rebuildBlocks();
+      if (blockGrid) {
+        blockGrid.setBlock(bx, by, bz, activeColor);
+        container.querySelector('#pf-s3d-stats').textContent = `${grid.blocks.size} blocs`;
+      } else {
+        rebuildBlocks();
+      }
       commit();
     } else if (activeTool.startsWith('terrain-')) {
       let tx = 0, tz = 0;
@@ -1436,7 +1524,13 @@ export function mount(container, store, { refId } = {}) {
         const key = hitBlock.object.userData?.blockKey;
         if (key) {
           grid.blocks.delete(key);
-          rebuildBlocks();
+          const { x, y, z } = GridMap3D.parseKey(key);
+          if (blockGrid) {
+            blockGrid.removeBlock(x, y, z);
+            container.querySelector('#pf-s3d-stats').textContent = `${grid.blocks.size} blocs`;
+          } else {
+            rebuildBlocks();
+          }
           commit();
         }
       }
