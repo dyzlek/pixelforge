@@ -51,6 +51,11 @@ import {
   generateFullGame,
   generateGameDesignDocument,
 } from './game-generator.js';
+import {
+  playtestGame,
+  autoFixGame,
+  runPlaytestAndFix,
+} from './playtester.js';
 
 export {
   generateAsset,
@@ -60,6 +65,9 @@ export {
   generateSoundData,
   generateFullGame,
   generateGameDesignDocument,
+  playtestGame,
+  autoFixGame,
+  runPlaytestAndFix,
 };
 
 /**
@@ -664,6 +672,22 @@ export const AGENT_TOOLS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'playtest_game',
+      description: 'Teste la jouabilite complete du jeu sans ecran (validation, securite du spawn joueur, accessibilite physique de la sortie par recherche de chemin BFS, execution des scripts) et corrige automatiquement les niveaux impossibles ou erreurs de script jusqu\'a 3 tours.',
+      parameters: {
+        type: 'object',
+        properties: {
+          autoFix: {
+            type: 'boolean',
+            description: 'Active l\'autocorrection automatique si des problemes sont detectes (defaut: true)',
+          },
+        },
+      },
+    },
+  },
 ];
 
 /**
@@ -841,6 +865,33 @@ export async function executeTool(project, name, rawArgs = {}, options = {}) {
 
   // Execution de l'operation
   switch (name) {
+    case 'playtest_game': {
+      const autoFix = args?.autoFix !== false;
+      if (autoFix) {
+        const result = runPlaytestAndFix(project);
+        if (result.fixed) {
+          Object.assign(project, result.project);
+          const repairsMsg = result.history
+            .flatMap((h) => h.repairsApplied)
+            .map((r) => `- ${r.message || r.type}`)
+            .join('\n');
+          return `Partie simulee : des anomalies ont ete detectees et corrigees automatiquement avec succes en ${result.iterations} tour(s) :\n${repairsMsg}`;
+        } else if (result.ok) {
+          return 'Partie simulee : OK (0 erreur, joueur au sol, sorties atteignables, scripts sans erreur).';
+        } else {
+          const issuesMsg = result.remainingIssues.map((i) => `- [${i.type}] ${i.message}`).join('\n');
+          return `Partie simulee : anomalies persistantes apres ${result.iterations} tour(s) de correction :\n${issuesMsg}`;
+        }
+      } else {
+        const report = playtestGame(project);
+        if (report.ok) {
+          return 'Partie simulee : OK (0 erreur, joueur au sol, sorties atteignables, scripts sans erreur).';
+        } else {
+          const issuesMsg = report.issues.map((i) => `- [${i.type}] ${i.message}`).join('\n');
+          return `Partie simulee : ${report.issues.length} anomalie(s) detectee(s) :\n${issuesMsg}`;
+        }
+      }
+    }
     case 'generate_game': {
       const res = generateFullGame(args.description, {
         dimension: args.dimension,
@@ -1010,6 +1061,7 @@ Outils disponibles :
 - list_nodes : lister les noeuds Blueprint
 - generate_asset : generer une ressource complete pret a l'emploi depuis une simple description (sprite anime, musique tracker chiptune, modele 3D voxel ou CC0, son sfxr)
 - generate_game : generer un jeu complet jouable et terminable de 3 niveaux avec boss (en 2D ou 3D) depuis une simple description
+- playtest_game : tester la jouabilite complete sans ecran (joueur au sol, sortie atteignable, scripts sans erreur) et corriger automatiquement les anomalies
 
 Regles imperatrices :
 1. N'utilise JAMAIS aucun emoji dans tes reponses ou tes outils.

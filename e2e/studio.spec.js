@@ -1659,4 +1659,73 @@ test.describe('PixelForge Studio E2E Tests', () => {
     expect(res3D.hasBoss).toBe(true);
     expect(res3D.errorCount).toBe(0);
   });
+
+  test('test et correction autonome par l\'IA (Phase H - H6) : detection d\'un niveau impossible et reparation automatique', async ({ page }) => {
+    // 1. Chargement du studio
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true, { timeout: 15000 });
+
+    const result = await page.evaluate(async () => {
+      const p = window.__pfStore.project;
+      const { generateFullGame, playtestGame, autoFixGame, runPlaytestAndFix } = window.__pfAi;
+
+      // Generer un jeu de base
+      const generated = generateFullGame('jeu de plateforme test', { name: 'Jeu Test H6' });
+      const testProject = generated.project;
+
+      // 1. Verifier que le jeu de depart est valide
+      const initialReport = playtestGame(testProject);
+      const isInitialValid = initialReport.ok && initialReport.issues.length === 0;
+
+      // 2. Creer deliberement un niveau impossible : fosse infranchissable de 15 tuiles
+      const map0 = testProject.maps[0];
+      const layer0 = map0.layers.find((l) => l.collides);
+      for (let c = 5; c <= 18; c++) {
+        for (let r = 0; r < map0.height; r++) {
+          layer0.data[r * map0.width + c] = -1;
+        }
+      }
+      const portal = map0.entities.find((e) => {
+        const obj = testProject.objects.find((o) => o.id === e.objectId);
+        return obj && obj.name === 'Portal';
+      });
+      if (portal) {
+        portal.x = 20 * 16;
+        portal.y = 7 * 16;
+      }
+      layer0.data[8 * map0.width + 20] = 1;
+
+      // 3. Executer le playtest headless : doit detecter l'anomalie unreachable_exit
+      const brokenReport = playtestGame(testProject);
+      const detectedIssue = brokenReport.issues.find((i) => i.type === 'unreachable_exit');
+
+      // 4. Executer la boucle autonome de correction
+      const fixResult = runPlaytestAndFix(testProject);
+
+      // 5. Verification finale
+      const finalReport = playtestGame(fixResult.project);
+
+      return {
+        isInitialValid,
+        brokenOk: brokenReport.ok,
+        detectedIssueType: detectedIssue?.type,
+        fixOk: fixResult.ok,
+        fixed: fixResult.fixed,
+        iterations: fixResult.iterations,
+        repairsCount: fixResult.history.flatMap((h) => h.repairsApplied).length,
+        finalOk: finalReport.ok,
+        finalIssuesCount: finalReport.issues.length,
+      };
+    });
+
+    expect(result.isInitialValid).toBe(true);
+    expect(result.brokenOk).toBe(false);
+    expect(result.detectedIssueType).toBe('unreachable_exit');
+    expect(result.fixOk).toBe(true);
+    expect(result.fixed).toBe(true);
+    expect(result.iterations).toBeLessThanOrEqual(3);
+    expect(result.repairsCount).toBeGreaterThan(0);
+    expect(result.finalOk).toBe(true);
+    expect(result.finalIssuesCount).toBe(0);
+  });
 });
