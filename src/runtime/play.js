@@ -82,6 +82,16 @@ export function mount(container, store) {
         const gltfMod = await import('three/addons/loaders/GLTFLoader.js');
         GLTFLoader = gltfMod.GLTFLoader;
       } catch {}
+      let RAPIER = null;
+      if (store.project?.settings?.physics3d === 'rapier') {
+        try {
+          const rapierMod = await import('@dimforge/rapier3d-compat');
+          await rapierMod.init();
+          RAPIER = rapierMod;
+        } catch (e) {
+          addLog('Impossible de charger Rapier 3D : ' + e.message, 'warn');
+        }
+      }
       if (state.dead || token !== state.token) return;
       try {
         // Scene demandee par l'editeur de scene 3D (« Tester la scene »), une seule fois
@@ -92,6 +102,7 @@ export function mount(container, store) {
           createChipAudio,
           startScene3DId,
           GLTFLoader,
+          rapier: RAPIER,
         });
       } catch (e) {
         addLog('Impossible de lancer le jeu 3D : ' + e.message, 'error');

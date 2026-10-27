@@ -9,6 +9,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createGame3D } from '../engine3d.js';
 import { normalizeProject } from '../../core/project.js';
+import * as RAPIER from '@dimforge/rapier3d-compat';
+
+await RAPIER.init();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..', '..', '..');
@@ -36,6 +39,7 @@ function fakeElement(tag) {
   };
 }
 const win = fakeEventTarget();
+win.performance = globalThis.performance;
 globalThis.window = win;
 globalThis.document = { ...fakeEventTarget(), createElement: fakeElement, pointerLockElement: null, querySelector: () => null };
 let rafCb = null;
@@ -85,9 +89,9 @@ const THREE = {
 };
 
 const logs = [];
-function startGame(project) {
+function startGame(project, extraOpts = {}) {
   const parent = fakeElement('div');
-  const game = createGame3D(project, parent, THREE, { onLog: (m, l) => logs.push(`[${l}] ${m}`) });
+  const game = createGame3D(project, parent, THREE, { onLog: (m, l) => logs.push(`[${l}] ${m}`), ...extraOpts });
   let t = 0;
   const step = (frames = 1, dt = 16) => {
     for (let i = 0; i < frames; i++) { t += dt; rafCb(t); }
@@ -200,6 +204,131 @@ for (const file of ['cube-runner', 'donjon-3d']) {
   step(2);
   assert.ok(game.debugSnapshot().instances[0].x > x1, 'resume : le mouvement reprend');
   game.destroy();
+}
+
+// 6. Physique 3D Rapier : corps rigides, empilement et poussee de caisses, et jeux de demo en mode rapier
+{
+  // 6.1 Jeux de demo en mode Rapier
+  for (const file of ['cube-runner', 'donjon-3d']) {
+    const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'games', file + '.pixelforge.json'), 'utf8'));
+    raw.settings = { ...raw.settings, physics3d: 'rapier' };
+    const project = normalizeProject(raw);
+    const { game, step } = startGame(project, { rapier: RAPIER });
+    step(60);
+    const snap = game.debugSnapshot();
+    const player = snap.instances.find((i) => /^Player/.test(i.name));
+    assert.ok(player, `${file} (rapier) : le joueur existe`);
+    assert.ok(player.onGround, `${file} (rapier) : le joueur doit etre au sol (y = ${player.y})`);
+    game.destroy();
+  }
+
+  // 6.2 Des caisses tombent, s'empilent et se poussent
+  {
+    const project = normalizeProject({
+      name: 'CaissesRapier',
+      settings: { dimension: '3d', physics3d: 'rapier', gravity: 800 },
+      objects: [
+        {
+          id: 'o_crate',
+          name: 'Caisse',
+          physics: {
+            enabled: true,
+            gravity: true,
+            bodyType: 'dynamic',
+            colliderShape: 'box',
+            mass: 1,
+            friction: 0.5,
+            restitution: 0,
+          },
+        },
+        {
+          id: 'o_pusher',
+          name: 'Pousseur',
+          physics: {
+            enabled: true,
+            gravity: true,
+            bodyType: 'dynamic',
+            colliderShape: 'box',
+            mass: 10,
+            friction: 0.2,
+          },
+          script: {
+            mode: 'code',
+            code: "on('update', () => { self.vx = 4; });",
+          },
+        },
+      ],
+      scenes3d: [
+        {
+          id: 's1',
+          name: 'SceneCaisses',
+          gridmap: {
+            blockSize: 1,
+            blocks: {
+              '-2,0,0': 6, '-1,0,0': 6, '0,0,0': 6, '1,0,0': 6, '2,0,0': 6, '3,0,0': 6,
+            },
+          },
+          entities: [
+            // Caisse 1 posee au sol en X=0
+            { id: 'c1', objectId: 'o_crate', x: 0, y: 0.95, z: 0 },
+            // Caisse 2 en l'air au-dessus de la caisse 1
+            { id: 'c2', objectId: 'o_crate', x: 0, y: 2.5, z: 0 },
+            // Pousseur qui va arriver par la gauche
+            { id: 'p1', objectId: 'o_pusher', x: -1.5, y: 0.95, z: 0 },
+          ],
+        },
+      ],
+    });
+
+    const { game, step } = startGame(project, { rapier: RAPIER });
+
+    // La caisse 2 tombe et s'empile sur la caisse 1
+    step(30);
+    const snap1 = game.debugSnapshot();
+    const crates1 = snap1.instances.filter((i) => i.name === 'Caisse').sort((a, b) => a.y - b.y);
+    assert.strictEqual(crates1.length, 2, 'les deux caisses existent');
+    const [crate1, crate2] = crates1;
+    assert.ok(Math.abs(crate1.y - 0.95) < 0.1, `caisse 1 au sol (y = ${crate1.y})`);
+    assert.ok(crate2.y > crate1.y + 0.7, `caisse 2 empilee sur caisse 1 (y = ${crate2.y})`);
+
+    // Le pousseur avance et pousse les caisses
+    step(40);
+    const snap2 = game.debugSnapshot();
+    const crates2 = snap2.instances.filter((i) => i.name === 'Caisse');
+    assert.strictEqual(crates2.length, 2, 'les deux caisses sont toujours actives');
+    assert.ok(crates2.some((c) => c.x > 0.3), `au moins une caisse a ete poussee vers la droite`);
+    game.destroy();
+  }
+
+  // 6.3 Formes de colliders (sphere, capsule, trimesh)
+  {
+    const project = normalizeProject({
+      name: 'ShapesRapier',
+      settings: { dimension: '3d', physics3d: 'rapier' },
+      objects: [
+        { id: 'o_sph', name: 'Balle', physics: { colliderShape: 'sphere' } },
+        { id: 'o_cap', name: 'Gellule', physics: { colliderShape: 'capsule' } },
+        { id: 'o_tri', name: 'Maillage', physics: { colliderShape: 'trimesh' } },
+      ],
+      scenes3d: [
+        {
+          id: 's1',
+          name: 'SceneShapes',
+          gridmap: { blockSize: 1, blocks: { '0,0,0': 1, '1,0,0': 1, '2,0,0': 1 } },
+          entities: [
+            { id: 'e1', objectId: 'o_sph', x: 0, y: 1, z: 0 },
+            { id: 'e2', objectId: 'o_cap', x: 1, y: 1, z: 0 },
+            { id: 'e3', objectId: 'o_tri', x: 2, y: 1, z: 0 },
+          ],
+        },
+      ],
+    });
+    const { game, step } = startGame(project, { rapier: RAPIER });
+    step(10);
+    const snap = game.debugSnapshot();
+    assert.strictEqual(snap.instances.length, 3, 'les 3 formes de colliders sont instanciees');
+    game.destroy();
+  }
 }
 
 assert.deepStrictEqual(logs.filter((l) => l.startsWith('[error]')), [], 'aucune erreur de script');

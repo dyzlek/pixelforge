@@ -28,7 +28,8 @@ export function buildStandaloneHTML3D(project, engine3dSource, chipSource = '') 
 {
   "imports": {
     "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.min.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/",
+    "@dimforge/rapier3d-compat": "https://cdn.jsdelivr.net/npm/@dimforge/rapier3d-compat@0.21.0/rapier.es.min.js"
   }
 }
 <\/script>
@@ -47,24 +48,38 @@ const PROJECT = ${data};
 const errorsEl = document.getElementById('errors');
 const lines = [];
 
-try {
-  createGame3D(PROJECT, document.getElementById('game'), THREE, {
-    GLTFLoader,
-    createChipAudio: typeof createChipAudio !== 'undefined' ? createChipAudio : null,
-    onLog(msg, level) {
-      if (level !== 'error') { console.log(msg); return; }
-      console.error(msg);
-      lines.push(msg);
-      if (lines.length > 4) lines.shift();
-      errorsEl.textContent = lines.join('\\n');
-      errorsEl.style.display = 'block';
-      errorsEl.style.whiteSpace = 'pre-wrap';
-    },
-  });
-} catch (err) {
-  errorsEl.textContent = 'Erreur 3D : ' + err.message;
-  errorsEl.style.display = 'block';
-}
+(async () => {
+  let RAPIER = null;
+  if (PROJECT.settings?.physics3d === 'rapier') {
+    try {
+      const rapierMod = await import('@dimforge/rapier3d-compat');
+      await rapierMod.init();
+      RAPIER = rapierMod;
+    } catch (e) {
+      console.warn('Rapier 3D indisponible :', e);
+    }
+  }
+
+  try {
+    createGame3D(PROJECT, document.getElementById('game'), THREE, {
+      GLTFLoader,
+      rapier: RAPIER,
+      createChipAudio: typeof createChipAudio !== 'undefined' ? createChipAudio : null,
+      onLog(msg, level) {
+        if (level !== 'error') { console.log(msg); return; }
+        console.error(msg);
+        lines.push(msg);
+        if (lines.length > 4) lines.shift();
+        errorsEl.textContent = lines.join('\\n');
+        errorsEl.style.display = 'block';
+        errorsEl.style.whiteSpace = 'pre-wrap';
+      },
+    });
+  } catch (err) {
+    errorsEl.textContent = 'Erreur 3D : ' + err.message;
+    errorsEl.style.display = 'block';
+  }
+})();
 <\/script>
 </body>
 </html>`;

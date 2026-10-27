@@ -18,7 +18,7 @@ export const SCHEMAS = {
       },
       {
         id: 'physics',
-        label: 'Physique 2D',
+        label: 'Physique 2D & 3D',
         fields: [
           { key: 'physics.enabled', label: 'Activée', type: 'boolean', default: true },
           { key: 'physics.gravity', label: 'Gravité', type: 'boolean', default: true },
@@ -26,6 +26,32 @@ export const SCHEMAS = {
           { key: 'physics.bounce', label: 'Rebond (0 - 1)', type: 'number', min: 0, max: 1, step: 0.05, default: 0 },
           { key: 'physics.collideMap', label: 'Bloqué par le décor', type: 'boolean', default: true },
           { key: 'physics.collideWorld', label: 'Bloqué par les bords', type: 'boolean', default: true },
+          {
+            key: 'physics.bodyType',
+            label: 'Type de corps (3D Rapier)',
+            type: 'enum',
+            options: [
+              { label: 'Dynamique (subit forces & collisions)', value: 'dynamic' },
+              { label: 'Statique (décor fixe non poussable)', value: 'static' },
+              { label: 'Cinématique (déplacé par script)', value: 'kinematic' },
+            ],
+            default: 'dynamic',
+          },
+          {
+            key: 'physics.colliderShape',
+            label: 'Forme du collider (3D Rapier)',
+            type: 'enum',
+            options: [
+              { label: 'Boîte (Box)', value: 'box' },
+              { label: 'Sphère (Sphere)', value: 'sphere' },
+              { label: 'Capsule (Capsule)', value: 'capsule' },
+              { label: 'Maillage (Trimesh)', value: 'trimesh' },
+            ],
+            default: 'box',
+          },
+          { key: 'physics.mass', label: 'Masse 3D (kg)', type: 'number', min: 0.01, step: 0.5, default: 1 },
+          { key: 'physics.friction', label: 'Friction 3D', type: 'number', min: 0, max: 1, step: 0.05, default: 0.5 },
+          { key: 'physics.restitution', label: 'Restitution 3D', type: 'number', min: 0, max: 1, step: 0.05, default: 0 },
         ],
       },
       {
@@ -145,6 +171,16 @@ export const SCHEMAS = {
           { key: 'pixelZoom', label: 'Zoom pixel par défaut', type: 'number', min: 1, max: 8, step: 1 },
           { key: 'gravity', label: 'Gravité globale', type: 'number', min: 0, max: 5000, step: 50 },
           { key: 'touchControls', label: 'Contrôles tactiles', type: 'boolean', default: true },
+          {
+            key: 'physics3d',
+            label: 'Moteur physique 3D',
+            type: 'enum',
+            options: [
+              { label: 'Simple (AABB rétro rapide)', value: 'simple' },
+              { label: 'Rapier 3D (RigidBody complet)', value: 'rapier' },
+            ],
+            default: 'simple',
+          },
         ],
       },
     ],

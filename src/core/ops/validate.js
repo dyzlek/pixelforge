@@ -65,6 +65,10 @@ export function validateProject(p) {
   dup(p.sounds || [], 'sound'); dup(p.songs || [], 'song');
   dup(p.models || [], 'model'); dup(p.materials || [], 'material'); dup(p.scenes3d || [], 'scene3d');
 
+  if (p.settings?.physics3d && !['simple', 'rapier'].includes(p.settings.physics3d)) {
+    add('error', 'settings', `physics3d must be "simple" or "rapier" (got "${p.settings.physics3d}")`);
+  }
+
   if (p.settings?.dimension === '3d') {
     const startSceneId = p.settings.startScene3DId || p.settings.startMapId;
     if (!p.scenes3d?.length) {
@@ -123,6 +127,23 @@ export function validateProject(p) {
         add('error', w, 'hitbox must be {x, y, w, h} with w,h > 0');
       } else if (spr && (h.x < 0 || h.y < 0 || h.x + h.w > spr.width || h.y + h.h > spr.height)) {
         add('warning', w, `hitbox exceeds the ${spr.width}x${spr.height} frame`);
+      }
+    }
+    if (o.physics) {
+      if (o.physics.bodyType && !['dynamic', 'static', 'kinematic'].includes(o.physics.bodyType)) {
+        add('error', w, `physics.bodyType must be "dynamic", "static" or "kinematic" (got "${o.physics.bodyType}")`);
+      }
+      if (o.physics.colliderShape && !['box', 'sphere', 'capsule', 'trimesh'].includes(o.physics.colliderShape)) {
+        add('error', w, `physics.colliderShape must be "box", "sphere", "capsule" or "trimesh" (got "${o.physics.colliderShape}")`);
+      }
+      if (typeof o.physics.mass === 'number' && o.physics.mass < 0) {
+        add('error', w, 'physics.mass must be >= 0');
+      }
+      if (typeof o.physics.friction === 'number' && o.physics.friction < 0) {
+        add('error', w, 'physics.friction must be >= 0');
+      }
+      if (typeof o.physics.restitution === 'number' && (o.physics.restitution < 0 || o.physics.restitution > 1)) {
+        add('warning', w, 'physics.restitution should normally be between 0 and 1');
       }
     }
     checkScriptObject(o.script, `${w} script`, spr, false);

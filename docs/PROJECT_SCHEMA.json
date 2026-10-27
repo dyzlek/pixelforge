@@ -33,7 +33,8 @@
         "startMapId": { "type": "string", "description": "id of a map in maps[]." },
         "gravity": { "type": "number", "default": 800, "description": "px/s^2, applied to objects with physics.gravity." },
         "touchControls": { "type": "boolean", "default": true },
-        "dimension": { "enum": ["2d", "3d"], "default": "2d", "description": "Game dimension (2d Phaser or 3d Three.js runtime)." }
+        "dimension": { "enum": ["2d", "3d"], "default": "2d", "description": "Game dimension (2d Phaser or 3d Three.js runtime)." },
+        "physics3d": { "enum": ["simple", "rapier"], "default": "simple", "description": "3D physics engine: simple (fast retro AABB) or rapier (real rigid bodies with Rapier)." }
       }
     },
     "palette": {
@@ -173,7 +174,12 @@
             "immovable": { "type": "boolean", "default": false },
             "bounce": { "type": "number", "default": 0 },
             "collideMap": { "type": "boolean", "default": true, "description": "Blocked by layers with collides = true." },
-            "collideWorld": { "type": "boolean", "default": true, "description": "Blocked by the map borders." }
+            "collideWorld": { "type": "boolean", "default": true, "description": "Blocked by the map borders." },
+            "bodyType": { "enum": ["dynamic", "static", "kinematic"], "default": "dynamic", "description": "3D rigid body type." },
+            "colliderShape": { "enum": ["box", "sphere", "capsule", "trimesh"], "default": "box", "description": "3D collider shape." },
+            "mass": { "type": "number", "minimum": 0, "default": 1, "description": "Rigid body mass in kg." },
+            "friction": { "type": "number", "minimum": 0, "default": 0.5, "description": "Friction coefficient." },
+            "restitution": { "type": "number", "minimum": 0, "maximum": 1, "default": 0, "description": "Restitution / bounciness." }
           }
         },
         "exportedProps": {

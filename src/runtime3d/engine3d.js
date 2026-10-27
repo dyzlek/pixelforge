@@ -23,6 +23,15 @@ export function createGame3D(project, parent, THREE, opts = {}) {
   };
   const errMsg = (e) => (e && e.message) || String(e);
 
+  const useRapier = settings.physics3d === 'rapier';
+  const Rapier = opts.rapier || (typeof globalThis !== 'undefined' ? globalThis.RAPIER : null);
+  if (useRapier && !Rapier) {
+    log('Physique Rapier 3D demandee mais la bibliotheque Rapier n\'est pas disponible. Repli sur le moteur AABB simple.', 'warn');
+  }
+  if (typeof window !== 'undefined' && !window.performance && typeof performance !== 'undefined') {
+    try { window.performance = performance; } catch (e) { /* ignore */ }
+  }
+
   // Audio chiptune : contexte cree a la demande, debloque au premier geste (regle des navigateurs)
   const chipFactory = opts.createChipAudio
     || (typeof opts.chip === 'function' ? opts.chip : null)
@@ -431,10 +440,36 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     return gridmapData;
   }
 
-  // Stockage des blocs solides pour la physique AABB.
+  // Stockage des blocs solides pour la physique AABB et Rapier.
   // Un bloc de cle "x,y,z" est un cube centre sur (x, y, z) : il occupe [x-0.5, x+0.5] sur chaque axe.
   const solidBlocks = new Map(); // "x,y,z" => { x, y, z }
   const cellOf = (v) => Math.floor(v + 0.5);
+
+  let rapierWorld = null;
+  let rapierEventQueue = null;
+  let groundBody = null;
+  const colliderToInstance = new Map();
+
+  function initPhysicsWorld() {
+    if (rapierWorld) {
+      try { rapierWorld.free(); } catch (e) { /* ignore */ }
+      rapierWorld = null;
+    }
+    colliderToInstance.clear();
+
+    if (useRapier && Rapier) {
+      rapierWorld = new Rapier.World({ x: 0, y: -gravityAccel, z: 0 });
+      rapierEventQueue = new Rapier.EventQueue(true);
+      groundBody = rapierWorld.createRigidBody(Rapier.RigidBodyDesc.fixed());
+      for (const { x, y, z } of solidBlocks.values()) {
+        const colDesc = Rapier.ColliderDesc.cuboid(0.5, 0.5, 0.5)
+          .setTranslation(x, y, z)
+          .setFriction(0.6)
+          .setRestitution(0);
+        rapierWorld.createCollider(colDesc, groundBody);
+      }
+    }
+  }
 
   function buildGridMap(gridmapRaw) {
     const gridmapData = gridBlocks(gridmapRaw);
@@ -457,6 +492,7 @@ export function createGame3D(project, parent, THREE, opts = {}) {
           solidBlocks.set(`${x},-1,${z}`, { x, y: -1, z });
         }
       }
+      initPhysicsWorld();
       return;
     }
 
@@ -472,6 +508,7 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       gridGroup.add(mesh);
       solidBlocks.set(`${bx},${by},${bz}`, { x: bx, y: by, z: bz });
     });
+    initPhysicsWorld();
   }
 
   applyEnvironment(currentScene3D);
@@ -1014,7 +1051,7 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     mesh.position.set(x, y, z);
     scene.add(mesh);
 
-    // Proprietes physiques AABB
+    // Proprietes physiques
     const phys = objDef.physics || {};
     const instance = {
       id,
@@ -1027,11 +1064,17 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       x,
       y,
       z,
-      vx: 0,
-      vy: 0,
-      vz: 0,
+      _vx: 0,
+      _vy: 0,
+      _vz: 0,
+      get vx() { return this._vx; },
+      set vx(v) { this._vx = v; this._velOverridden = true; },
+      get vy() { return this._vy; },
+      set vy(v) { this._vy = v; },
+      get vz() { return this._vz; },
+      set vz(v) { this._vz = v; this._velOverridden = true; },
       rotationX: 0,
-      rotationY: 0,
+      rotationY: typeof extraOpts?.rotationY === 'number' ? extraOpts.rotationY : 0,
       rotationZ: 0,
       scaleX: 1,
       scaleY: 1,
@@ -1045,12 +1088,30 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       collideMap: phys.collideMap !== false,
       onGround: false,
 
+      rigidBody: null,
+      collider: null,
+      _velOverridden: false,
+
       overlapping: new Set(),
 
       jump(force = 10) {
         if (this.onGround) {
+          if (this.rigidBody) {
+            const lv = this.rigidBody.linvel();
+            this.rigidBody.setLinvel({ x: lv.x, y: force, z: lv.z }, true);
+          }
           this.vy = force;
           this.onGround = false;
+        }
+      },
+
+      applyImpulse(ix = 0, iy = 0, iz = 0) {
+        if (this.rigidBody) {
+          this.rigidBody.applyImpulse({ x: ix, y: iy, z: iz }, true);
+        } else {
+          this.vx += ix;
+          this.vy += iy;
+          this.vz += iz;
         }
       },
 
@@ -1058,38 +1119,65 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         const rad = (this.rotationY * Math.PI) / 180;
         this.vx = Math.sin(rad) * speed;
         this.vz = -Math.cos(rad) * speed;
+        this._velOverridden = true;
       },
 
       moveRight(speed) {
         const rad = (this.rotationY * Math.PI) / 180;
         this.vx = Math.cos(rad) * speed;
         this.vz = Math.sin(rad) * speed;
+        this._velOverridden = true;
       },
 
       lookAt(tx, ty, tz) {
         const dx = tx - this.x;
         const dz = tz - this.z;
         this.rotationY = (Math.atan2(dx, -dz) * 180) / Math.PI;
+        if (this.rigidBody) {
+          const rad = (-this.rotationY * Math.PI) / 180;
+          const half = rad / 2;
+          this.rigidBody.setRotation({ x: 0, y: Math.sin(half), z: 0, w: Math.cos(half) }, true);
+        }
       },
 
       rotateY(deg) {
         this.rotationY = (this.rotationY + deg) % 360;
+        if (this.rigidBody) {
+          const rad = (-this.rotationY * Math.PI) / 180;
+          const half = rad / 2;
+          this.rigidBody.setRotation({ x: 0, y: Math.sin(half), z: 0, w: Math.cos(half) }, true);
+        }
       },
 
       setPosition(px, py, pz) {
         if (Number.isFinite(px)) this.x = px;
         if (Number.isFinite(py)) this.y = py;
         if (Number.isFinite(pz)) this.z = pz;
+        if (this.rigidBody) {
+          this.rigidBody.setTranslation({ x: this.x, y: this.y, z: this.z }, true);
+        }
       },
 
       setVelocity(nvx, nvy, nvz) {
         if (Number.isFinite(nvx)) this.vx = nvx;
         if (Number.isFinite(nvy)) this.vy = nvy;
         if (Number.isFinite(nvz)) this.vz = nvz;
+        this._velOverridden = true;
+        if (this.rigidBody) {
+          const lv = this.rigidBody.linvel();
+          this.rigidBody.setLinvel({
+            x: Number.isFinite(nvx) ? nvx : lv.x,
+            y: Number.isFinite(nvy) ? nvy : lv.y,
+            z: Number.isFinite(nvz) ? nvz : lv.z,
+          }, true);
+        }
       },
 
       setGravity(on) {
         this.gravity = !!on;
+        if (this.rigidBody) {
+          this.rigidBody.setGravityScale(on ? 1 : 0, true);
+        }
       },
 
       distanceTo(other) {
@@ -1130,6 +1218,14 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       destroy() {
         if (this.destroyed) return;
         this.destroyed = true;
+        if (this.rigidBody && rapierWorld) {
+          if (this.collider) {
+            colliderToInstance.delete(this.collider.handle);
+          }
+          try { rapierWorld.removeRigidBody(this.rigidBody); } catch (e) { /* ignore */ }
+          this.rigidBody = null;
+          this.collider = null;
+        }
         if (mixer) {
           activeMixers.delete(mixer);
           mixer.stopAllAction();
@@ -1140,6 +1236,65 @@ export function createGame3D(project, parent, THREE, opts = {}) {
         scene.remove(mesh);
       },
     };
+
+    if (rapierWorld && phys.enabled !== false) {
+      const bodyType = phys.bodyType || (phys.immovable ? 'static' : 'dynamic');
+      let rbDesc;
+      if (bodyType === 'static' || phys.immovable) {
+        rbDesc = Rapier.RigidBodyDesc.fixed();
+      } else if (bodyType === 'kinematic') {
+        rbDesc = Rapier.RigidBodyDesc.kinematicPositionBased();
+      } else {
+        rbDesc = Rapier.RigidBodyDesc.dynamic();
+        if (phys.gravity === false) {
+          rbDesc.setGravityScale(0, true);
+        }
+        if (phys.lockRotations !== false) {
+          rbDesc.enabledRotations(false, true, false);
+        }
+      }
+      rbDesc.setTranslation(x, y, z);
+      const startRotY = instance.rotationY;
+      const rad = (-startRotY * Math.PI) / 180;
+      const half = rad / 2;
+      rbDesc.setRotation({ x: 0, y: Math.sin(half), z: 0, w: Math.cos(half) });
+      const rigidBody = rapierWorld.createRigidBody(rbDesc);
+
+      const hw = (instance.width || 0.9) / 2;
+      const hh = (instance.height || 0.9) / 2;
+      const hd = (instance.depth || 0.9) / 2;
+      let colDesc;
+      const shape = phys.colliderShape || 'box';
+      if (shape === 'sphere') {
+        colDesc = Rapier.ColliderDesc.ball(Math.max(hw, hh, hd));
+      } else if (shape === 'capsule') {
+        const radius = Math.max(hw, hd);
+        const halfHeight = Math.max(0.01, hh - radius);
+        colDesc = Rapier.ColliderDesc.capsule(halfHeight, radius);
+      } else if (shape === 'trimesh' && mesh?.geometry?.attributes?.position && mesh?.geometry?.index) {
+        const posAttr = mesh.geometry.attributes.position.array;
+        const idxAttr = mesh.geometry.index.array;
+        colDesc = Rapier.ColliderDesc.trimesh(new Float32Array(posAttr), new Uint32Array(idxAttr));
+      } else {
+        colDesc = Rapier.ColliderDesc.cuboid(hw, hh, hd);
+      }
+
+      const isSensor = phys.sensor === true || (phys.immovable && !phys.collideMap);
+      if (isSensor) {
+        colDesc.setSensor(true);
+      }
+      colDesc.setActiveEvents(Rapier.ActiveEvents.COLLISION_EVENTS);
+      colDesc.setFriction(typeof phys.friction === 'number' ? phys.friction : 0.5);
+      colDesc.setRestitution(typeof phys.restitution === 'number' ? phys.restitution : (phys.bounce || 0));
+      if (typeof phys.mass === 'number' && phys.mass > 0) {
+        colDesc.setMass(phys.mass);
+      }
+
+      const collider = rapierWorld.createCollider(colDesc, rigidBody);
+      colliderToInstance.set(collider.handle, instance);
+      instance.rigidBody = rigidBody;
+      instance.collider = collider;
+    }
 
     instances.push(instance);
 
@@ -1197,11 +1352,12 @@ export function createGame3D(project, parent, THREE, opts = {}) {
             const px = Array.isArray(node.position) ? node.position[0] : (node.position?.x || 0);
             const py = Array.isArray(node.position) ? node.position[1] : (node.position?.y || 0);
             const pz = Array.isArray(node.position) ? node.position[2] : (node.position?.z || 0);
+            const ry = Array.isArray(node.rotation) ? node.rotation[1] : (node.rotation?.y || 0);
             const inst = createInstance(objDef, px, py, pz, node.props || {}, {
               materialId: node.materialId,
               anim: node.props?.anim,
+              rotationY: typeof ry === 'number' ? ry : 0,
             });
-            const ry = Array.isArray(node.rotation) ? node.rotation[1] : (node.rotation?.y || 0);
             if (typeof ry === 'number') inst.rotationY = ry;
           }
         }
@@ -1210,9 +1366,11 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       (currentScene3D.entities || []).forEach((ent) => {
         const objDef = objectsById[ent.objectId] || objectsByName[ent.objectId];
         if (objDef) {
+          const ry = typeof ent.rotationY === 'number' ? ent.rotationY : 0;
           const inst = createInstance(objDef, ent.x || 0, ent.y || 0, ent.z || 0, ent.props || {}, {
             materialId: ent.materialId,
             anim: ent.props?.anim,
+            rotationY: ry,
           });
           if (typeof ent.rotationY === 'number') inst.rotationY = ent.rotationY;
         }
@@ -1288,19 +1446,115 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     updateCamera();
   }
 
-  function stepWorld(dt, dtSec) {
-    // Attentes game.wait
-    for (let k = 0; k < waits.length; k++) {
-      const w = waits[k];
-      if (w.done) continue;
-      w.remaining -= dt;
-      if (w.remaining <= 0) {
-        w.done = true;
-        try { w.fn(); } catch (e) { log('game.wait : ' + errMsg(e)); }
+  function stepWorldRapier(dt, dtSec) {
+    for (const inst of instances.slice()) {
+      if (inst.destroyed) continue;
+
+      // Minuteries
+      for (const t of inst._handlers.timer) {
+        t.elapsed += dt;
+        if (t.elapsed >= t.ms) {
+          t.elapsed = 0;
+          callHandlers(inst, [t.fn], [], 'timer');
+        }
+      }
+      if (inst.destroyed) continue;
+
+      // Synchronisation de la velocite utilisateur vers Rapier
+      if (inst.rigidBody && !inst.immovable) {
+        if (inst._velOverridden) {
+          const curLv = inst.rigidBody.linvel();
+          inst.rigidBody.setLinvel({ x: inst.vx, y: curLv.y, z: inst.vz }, true);
+          inst._velOverridden = false;
+        }
       }
     }
-    for (let k = waits.length - 1; k >= 0; k--) if (waits[k].done) waits.splice(k, 1);
 
+    // Pas de simulation Rapier
+    rapierWorld.step(rapierEventQueue);
+
+    // Traitement des collisions Rapier
+    rapierEventQueue.drainCollisionEvents((h1, h2, started) => {
+      const a = colliderToInstance.get(h1);
+      const b = colliderToInstance.get(h2);
+      if (!a || !b || a.destroyed || b.destroyed) return;
+      if (started) {
+        if (!a.overlapping.has(b.id)) {
+          a.overlapping.add(b.id);
+          callHandlers(a, a._handlers.overlapStart.get(b.objectName), [b], 'overlapStart');
+        }
+        if (!b.overlapping.has(a.id)) {
+          b.overlapping.add(a.id);
+          callHandlers(b, b._handlers.overlapStart.get(a.objectName), [a], 'overlapStart');
+        }
+        callHandlers(a, a._handlers.overlap.get(b.objectName), [b], 'overlap');
+        callHandlers(b, b._handlers.overlap.get(a.objectName), [a], 'overlap');
+        callHandlers(a, a._handlers.collide.get(b.objectName), [b], 'collide');
+        callHandlers(b, b._handlers.collide.get(a.objectName), [a], 'collide');
+      } else {
+        endOverlap(a, b);
+        endOverlap(b, a);
+      }
+    });
+
+    // Maintien des overlaps actifs
+    for (const inst of instances) {
+      if (inst.destroyed) continue;
+      for (const otherId of inst.overlapping) {
+        const other = instances.find((o) => o.id === otherId && !o.destroyed);
+        if (other) {
+          callHandlers(inst, inst._handlers.overlap.get(other.objectName), [other], 'overlap');
+        }
+      }
+    }
+
+    // Synchronisation de la position et de la vitesse depuis Rapier vers instance et Three.js
+    for (const inst of instances.slice()) {
+      if (inst.destroyed) continue;
+
+      if (inst.rigidBody) {
+        const t = inst.rigidBody.translation();
+        const lv = inst.rigidBody.linvel();
+        inst.x = t.x;
+        inst.y = t.y;
+        inst.z = t.z;
+        inst._vx = lv.x;
+        inst._vy = lv.y;
+        inst._vz = lv.z;
+        inst._velOverridden = false;
+
+        inst.mesh.position.set(t.x, t.y, t.z);
+        const objDef = objectsByName[inst.objectName];
+        const phys = objDef?.physics || {};
+        if (phys.lockRotations === false) {
+          const r = inst.rigidBody.rotation();
+          inst.mesh.quaternion.set(r.x, r.y, r.z, r.w);
+        } else {
+          inst.mesh.rotation.y = (-inst.rotationY * Math.PI) / 180;
+        }
+
+        // Detection du sol sous le corps
+        const ray = new Rapier.Ray({ x: t.x, y: t.y, z: t.z }, { x: 0, y: -1, z: 0 });
+        const maxDist = (inst.height / 2) + 0.15;
+        const hit = rapierWorld.castRay(ray, maxDist, true, undefined, undefined, inst.collider);
+        inst.onGround = hit != null && inst.vy <= 0.5;
+
+        // Limite de chute
+        if (inst.y < -30) {
+          game.restart();
+          continue;
+        }
+      } else {
+        inst.mesh.position.set(inst.x, inst.y, inst.z);
+        inst.mesh.rotation.y = (-inst.rotationY * Math.PI) / 180;
+      }
+
+      // Appel de on('update')
+      callHandlers(inst, inst._handlers.update, [dt], 'update');
+    }
+  }
+
+  function stepWorldAABB(dt, dtSec) {
     for (const inst of instances.slice()) {
       if (inst.destroyed) continue;
 
@@ -1395,6 +1649,26 @@ export function createGame3D(project, parent, THREE, opts = {}) {
           endOverlap(b, a);
         }
       }
+    }
+  }
+
+  function stepWorld(dt, dtSec) {
+    // Attentes game.wait
+    for (let k = 0; k < waits.length; k++) {
+      const w = waits[k];
+      if (w.done) continue;
+      w.remaining -= dt;
+      if (w.remaining <= 0) {
+        w.done = true;
+        try { w.fn(); } catch (e) { log('game.wait : ' + errMsg(e)); }
+      }
+    }
+    for (let k = waits.length - 1; k >= 0; k--) if (waits[k].done) waits.splice(k, 1);
+
+    if (rapierWorld) {
+      stepWorldRapier(dt, dtSec);
+    } else {
+      stepWorldAABB(dt, dtSec);
     }
 
     // Retire les instances detruites pendant l'image (et termine leurs chevauchements)
@@ -1529,6 +1803,11 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       canvas.removeEventListener('click', onCanvasClick);
       if (document.pointerLockElement === canvas) document.exitPointerLock?.();
       destroyAllInstances();
+      if (rapierWorld) {
+        try { rapierWorld.free(); } catch (e) { /* ignore */ }
+        rapierWorld = null;
+      }
+      colliderToInstance.clear();
       for (const m of activeMixers) {
         m.stopAllAction();
       }

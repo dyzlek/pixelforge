@@ -898,4 +898,56 @@ test.describe('PixelForge Studio E2E Tests', () => {
     expect(envData.fog.type).toBe('linear');
     expect(envData.directionalLight.castShadow).toBe(true);
   });
+
+  test('physique 3D reelle avec Rapier : bascule simple / rapier et verification du rigid body', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => window.__pfReady === true);
+
+    // 1. Ouvrir le jeu 3D Cube Runner
+    await page.evaluate(async () => {
+      await window.__pfStore.openGame('cube-runner');
+    });
+
+    // 2. Basculer les reglages de physique 3D sur 'rapier'
+    await page.evaluate(() => {
+      window.__pfStore.update((p) => {
+        p.settings.physics3d = 'rapier';
+      }, 'inspector');
+    });
+
+    const physics3d = await page.evaluate(() => window.__pfStore.project.settings.physics3d);
+    expect(physics3d).toBe('rapier');
+
+    // 3. Lancer le jeu avec F5 et verifier que le moteur Rapier 3D demarre
+    await page.keyboard.press('F5');
+    await expect(page.locator('#tabs')).toContainText(/Jouer/i);
+
+    const canvas = page.locator('.play-stage canvas, canvas:visible').first();
+    await expect(canvas).toBeVisible({ timeout: 15000 });
+
+    // 4. Verifier que le moteur 3D avec Rapier est initialise et que le joueur repose sur le sol
+    await page.waitForFunction(() => {
+      const snap = window.__pfDebugSnapshot?.();
+      const p = snap?.instances?.find((i) => i.name === 'Player');
+      return p && p.onGround === true;
+    }, { timeout: 15000 });
+
+    const snap = await page.evaluate(() => window.__pfDebugSnapshot());
+    const player = snap.instances.find((i) => i.name === 'Player');
+    expect(player).toBeDefined();
+    expect(player.onGround).toBe(true);
+
+    // 5. Arreter le jeu avec F8
+    await page.keyboard.press('F8');
+    await expect(page.locator('#tabs')).not.toContainText(/Jouer/i);
+
+    // 6. Basculer a nouveau sur 'simple' et verifier que les reglages sont persistes
+    await page.evaluate(() => {
+      window.__pfStore.update((p) => {
+        p.settings.physics3d = 'simple';
+      }, 'inspector');
+    });
+    const backToSimple = await page.evaluate(() => window.__pfStore.project.settings.physics3d);
+    expect(backToSimple).toBe('simple');
+  });
 });
