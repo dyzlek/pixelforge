@@ -123,6 +123,47 @@ export function createGame3D(project, parent, THREE, opts = {}) {
   scene.add(dynamicLightGroup);
 
   // Ambiance : celle de la scene 3D, sinon celle du projet (anciens fichiers)
+  // Developpement des prefabs (kind === 'prefab') sans import externe
+  function expandPrefabNodes(nodes, prefabs3d) {
+    const res = [];
+    const pfbMap = new Map();
+    for (const p of prefabs3d || []) {
+      if (p && p.id) pfbMap.set(p.id, p);
+      if (p && p.name) pfbMap.set(p.name, p);
+    }
+    for (const n of nodes || []) {
+      if (n.kind === 'prefab') {
+        const pfb = pfbMap.get(n.prefabId);
+        if (pfb && Array.isArray(pfb.nodes)) {
+          const rootPos = Array.isArray(n.position) ? n.position : [0, 0, 0];
+          const rootRot = Array.isArray(n.rotation) ? n.rotation : [0, 0, 0];
+          const rootScl = Array.isArray(n.scale) ? n.scale : [1, 1, 1];
+          for (const c of pfb.nodes) {
+            const cp = Array.isArray(c.position) ? c.position : [0, 0, 0];
+            const cr = Array.isArray(c.rotation) ? c.rotation : [0, 0, 0];
+            const cs = Array.isArray(c.scale) ? c.scale : [1, 1, 1];
+            res.push({
+              ...c,
+              id: `${n.id}_${c.id}`,
+              name: `${n.name}/${c.name}`,
+              position: [
+                rootPos[0] + cp[0] * rootScl[0],
+                rootPos[1] + cp[1] * rootScl[1],
+                rootPos[2] + cp[2] * rootScl[2],
+              ],
+              rotation: [rootRot[0] + cr[0], rootRot[1] + cr[1], rootRot[2] + cr[2]],
+              scale: [rootScl[0] * cs[0], rootScl[1] * cs[1], rootScl[2] * cs[2]],
+              visible: n.visible !== false && c.visible !== false,
+            });
+          }
+          continue;
+        }
+      }
+      res.push(n);
+    }
+    return res;
+  }
+
   function applyEnvironment(sc) {
     const env = (sc && sc.environment) || project.environment || {};
     const bgColor = env.skyColor || settings.background || '#1a1c2c';
@@ -200,7 +241,8 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       dynamicLightGroup.remove(dynamicLightGroup.children[0]);
     }
 
-    const lightNodes = (sc?.nodes || []).filter((n) => n.kind === 'light' && n.visible !== false).slice(0, 4);
+    const allNodes = expandPrefabNodes(sc?.nodes || [], project?.prefabs3d || []);
+    const lightNodes = allNodes.filter((n) => n.kind === 'light' && n.visible !== false).slice(0, 4);
     lightNodes.forEach((ln) => {
       const lp = ln.props || {};
       const pos = Array.isArray(ln.position) ? ln.position : [0, 2, 0];
@@ -479,8 +521,8 @@ export function createGame3D(project, parent, THREE, opts = {}) {
     }
     solidBlocks.clear();
 
-    if (!gridmapData) {
-      // Si aucune grille specifiee, generer un sol par defaut de 21x21 blocs a Y = -1
+    if (!gridmapData && (!currentScene3D.terrain || currentScene3D.terrain.enabled === false)) {
+      // Si aucune grille specifiee ni terrain, generer un sol par defaut de 21x21 blocs a Y = -1
       for (let x = -10; x <= 10; x++) {
         for (let z = -10; z <= 10; z++) {
           const colorHex = (Math.abs(x) + Math.abs(z)) % 2 === 0 ? palette[8] : palette[14];
@@ -496,18 +538,68 @@ export function createGame3D(project, parent, THREE, opts = {}) {
       return;
     }
 
-    Object.entries(gridmapData).forEach(([coordStr, blockInfo]) => {
-      const parts = coordStr.split(',').map((v) => Number(v));
-      if (parts.length !== 3 || !parts.every(Number.isInteger)) return;
-      if (blockInfo == null || blockInfo === '.') return;
-      const [bx, by, bz] = parts;
-      const mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(resolveColor(blockInfo)));
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.position.set(bx, by, bz);
-      gridGroup.add(mesh);
-      solidBlocks.set(`${bx},${by},${bz}`, { x: bx, y: by, z: bz });
-    });
+    if (gridmapData) {
+      Object.entries(gridmapData).forEach(([coordStr, blockInfo]) => {
+        const parts = coordStr.split(',').map((v) => Number(v));
+        if (parts.length !== 3 || !parts.every(Number.isInteger)) return;
+        if (blockInfo == null || blockInfo === '.') return;
+        const [bx, by, bz] = parts;
+        const mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(resolveColor(blockInfo)));
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        mesh.position.set(bx, by, bz);
+        gridGroup.add(mesh);
+        solidBlocks.set(`${bx},${by},${bz}`, { x: bx, y: by, z: bz });
+      });
+    }
+
+    // Blocs solides et relief du terrain sculpte
+    const ter = currentScene3D.terrain;
+    if (ter && ter.enabled !== false) {
+      const minX = typeof ter.originX === 'number' ? ter.originX : -16;
+      const maxX = minX + (ter.width || 32) - 1;
+      const minZ = typeof ter.originZ === 'number' ? ter.originZ : -16;
+      const maxZ = minZ + (ter.depth || 32) - 1;
+      const defaultH = typeof ter.defaultHeight === 'number' ? ter.defaultHeight : 0;
+      const defaultCol = ter.defaultColor != null ? ter.defaultColor : 6;
+      const heights = ter.heights || {};
+      const colors = ter.colors || {};
+
+      const cols = new Set();
+      for (let x = minX; x <= maxX; x++) {
+        for (let z = minZ; z <= maxZ; z++) {
+          cols.add(`${x},${z}`);
+        }
+      }
+      for (const k of Object.keys(heights)) cols.add(k);
+      for (const k of Object.keys(colors)) cols.add(k);
+
+      for (const k of cols) {
+        const parts = k.split(',').map((v) => parseInt(v, 10));
+        if (parts.length !== 2) continue;
+        const [tx, tz] = parts;
+        const h = heights[k] !== undefined ? heights[k] : defaultH;
+        const topY = Math.round(h);
+        const colVal = colors[k] !== undefined ? colors[k] : defaultCol;
+        const colHex = resolveColor(colVal);
+
+        const minY = -2;
+        const base = Math.min(minY, topY);
+        for (let ty = base; ty <= topY; ty++) {
+          const key = `${tx},${ty},${tz}`;
+          if (!solidBlocks.has(key)) {
+            solidBlocks.set(key, { x: tx, y: ty, z: tz });
+            if (ty === topY) {
+              const mesh = new ThreeLib.Mesh(cubeGeo, getMaterial(colHex));
+              mesh.castShadow = true;
+              mesh.receiveShadow = true;
+              mesh.position.set(tx, ty, tz);
+              gridGroup.add(mesh);
+            }
+          }
+        }
+      }
+    }
     initPhysicsWorld();
   }
 
@@ -1339,9 +1431,10 @@ export function createGame3D(project, parent, THREE, opts = {}) {
   }
 
   function spawnSceneEntities() {
-    const nodes = Array.isArray(currentScene3D.nodes) && currentScene3D.nodes.length > 0
+    const rawNodes = Array.isArray(currentScene3D.nodes) && currentScene3D.nodes.length > 0
       ? currentScene3D.nodes
       : null;
+    const nodes = rawNodes ? expandPrefabNodes(rawNodes, project.prefabs3d || []) : null;
 
     if (nodes) {
       nodes.forEach((node) => {

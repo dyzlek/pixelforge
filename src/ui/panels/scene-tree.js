@@ -504,6 +504,7 @@ export function createSceneTree(container, store) {
       camera: 'Camera',
       collision: 'Collider',
       audio: 'AudioSource',
+      prefab: 'Prefab',
       empty: 'Node',
     };
     const name = `${baseNames[kind] || 'Node'}_${(scene.nodes?.length || 0) + 1}`;
@@ -527,6 +528,8 @@ export function createSceneTree(container, store) {
         });
       } else if (kind === 'light') {
         node.position = [0, 3, 0];
+      } else if (kind === 'prefab') {
+        node.prefabId = proj.prefabs3d?.[0]?.id || null;
       }
       sc.nodes.push(node);
       selectedNodeId = node.id;

@@ -1,5 +1,44 @@
 # Journal — PixelForge
 
+## 2026-10-27 (62) — [Phase F] F7 : préfabriqués et terrain sculptable (Issue #76)
+- **Fait** :
+  - `docs/PROJECT_SCHEMA.json` & `src/core/project.js` :
+    - Definition et normalisation des prefabriques 3D (`prefabs3d: [...]`) comme ressources reusables contenant une arborescence de noeuds hierarchiques.
+    - Ajout du type de noeud `kind: 'prefab'` pointant vers `prefabId`.
+    - Fonction pure `expandSceneNodes(nodes, prefabs3d)` permettant de developper et resoudre les instances de prefabs avec propagation relative des positions, rotations et echelles.
+    - Ajout et normalisation du terrain sculptable par heightmap (`scene3d.terrain`) avec dimensions, decalage d'origine, hauteurs et couleurs.
+  - `src/core/ops/validate.js` :
+    - Validation des prefabriques : unicite des noms/identifiants, existence des parents, prevention des boucles cycliques, validation des objets et materiaux lies.
+    - Validation des noeuds d'instances de prefab (`prefabId` valide dans `prefabs3d`).
+    - Validation du terrain de scene : dimensions entieres positives, clefs de coordonnees "x,z" et hauteurs finies.
+  - `src/editors/scene3d/terrain.js` :
+    - Module pur sans dependance DOM `Terrain3D` gerant la heightmap et les 4 outils de sculpture :
+      - `raise` (monter le terrain avec attenuation cosinusoidale).
+      - `lower` (creuser des tranchees et depressions).
+      - `smooth` (lissage par convergence vers la moyenne locale).
+      - `paint` (peinture de palette sur la surface).
+      - `toSolidBlocks(minY)` (generation des colonnes solides du terrain pour la physique).
+  - `src/editors/scene3d/index.js` :
+    - Ajout des 4 boutons d'outils de sculpture de terrain dans la barre d'outils de l'editeur 3D (monter, creuser, lisser, peindre).
+    - Rendu visuel en temps reel du terrain sculpte et affichage des instances de prefabriques (`node.kind === 'prefab'`).
+    - Prise en charge des clics de pinceau de terrain sur le sol et mise a jour reactive du store.
+  - `src/ui/panels/resources.js` & `src/ui/panels/scene-tree.js` & `src/ui/inspector-schemas.js` :
+    - Affichage de la categorie Préfabriqués 3D dans le panneau de ressources avec creation, duplication et suppression.
+    - Prise en charge des noeuds Prefab dans l'arbre de scene et selecteur de prefab source dans l'inspecteur.
+    - Groupe d'inspection dedie au terrain sculptable dans l'inspecteur de scene 3D.
+  - `src/runtime3d/engine3d.js` :
+    - Zero import externe strictement preserve :
+      - Implementation inlinable `expandPrefabNodes` developpant les instances de prefabs au chargement de la scene pour instancier les entites et lumieres associees.
+      - Integration du terrain sculpte dans `buildGridMap` : population de `solidBlocks` avec les colonnes etanches du terrain pour les moteurs Simple AABB et Rapier 3D.
+      - Rendu visuel Three.js des blocs de surface du terrain avec ombres portees.
+  - Tests :
+    - `src/editors/scene3d/test/terrain.test.mjs` : 7 tests unitaires de `Terrain3D` (raise, lower, smooth, paint, colonnes solides, persistence JSON).
+    - `src/core/test/prefabs.test.mjs` : 5 tests unitaires validant l'expansion hierarchique et le critere d'acceptation "modifier un prefabrique utilise dans 2 scenes met a jour les 2".
+    - `src/runtime3d/test/sim3d.test.mjs` : tests en jeu d'instanciation de prefab et de solidite du terrain sculpte en mode Simple AABB et Rapier 3D.
+    - `e2e/studio.spec.js` : test 17 Playwright validant la definition d'un prefabrique, la sculpture du terrain et l'execution stable avec le joueur pose au sol en jeu.
+- **Verifie** : `npm test` (2566 verifications, zero echec), `npm run check:doc`, `npm run build`, validation de tous les jeux demo et `npm run test:e2e` (17/17 tests Playwright verts). Strictement zero emoji.
+- **Etat** : Branche `feat/prefabs-terrain-3d`, Closes #76.
+
 ## 2026-10-27 (61) — [Phase F] F6 : physique 3D réelle avec Rapier (Issue #75)
 - **Fait** :
   - `package.json` & `package-lock.json` :

@@ -331,5 +331,156 @@ for (const file of ['cube-runner', 'donjon-3d']) {
   }
 }
 
+// =========================================================================
+// 7. Prefabs et Terrain sculpte en jeu (Issue #76)
+// =========================================================================
+
+// 7.1 Expansion et instanciation de prefabs dans le runtime 3D
+{
+  const project = normalizeProject({
+    name: 'PrefabRuntime',
+    settings: { dimension: '3d' },
+    objects: [
+      { id: 'o_tree_trunk', name: 'Trunk', physics: { gravity: false } },
+      { id: 'o_tree_top', name: 'TreeTop', physics: { gravity: false } },
+    ],
+    prefabs3d: [
+      {
+        id: 'pfb_pine',
+        name: 'PineTree',
+        nodes: [
+          { id: 'n_trunk', name: 'Tronc', kind: 'mesh', objectId: 'o_tree_trunk', position: [0, 0, 0] },
+          { id: 'n_top', name: 'Feuillage', kind: 'mesh', objectId: 'o_tree_top', position: [0, 2, 0] },
+        ],
+      },
+    ],
+    scenes3d: [
+      {
+        id: 's_prefabs',
+        name: 'Foret',
+        gridmap: { blockSize: 1, blocks: { '0,0,0': 1, '5,0,5': 1 } },
+        nodes: [
+          { id: 'p_inst_1', name: 'Sapin1', kind: 'prefab', prefabId: 'pfb_pine', position: [5, 0, 5] },
+        ],
+      },
+    ],
+  });
+
+  const { game, step } = startGame(project);
+  step(5);
+  const snap = game.debugSnapshot();
+  const trunk = snap.instances.find((i) => i.name === 'Trunk');
+  const top = snap.instances.find((i) => i.name === 'TreeTop');
+  assert.ok(trunk, 'le tronc du prefab doit etre instancie');
+  assert.ok(top, 'le feuillage du prefab doit etre instancie');
+  assert.strictEqual(trunk.x, 5);
+  assert.strictEqual(trunk.z, 5);
+  assert.strictEqual(top.y, 2);
+  game.destroy();
+}
+
+// 7.2 Terrain sculpte solide en mode Simple (AABB)
+{
+  const project = normalizeProject({
+    name: 'TerrainAABB',
+    settings: { dimension: '3d', physics3d: 'simple' },
+    objects: [
+      {
+        id: 'o_hero',
+        name: 'Player',
+        physics: { enabled: true, gravity: true, collideMap: true },
+        script: {
+          mode: 'code',
+          code: "on('update', () => { self.vx = 2; });",
+        },
+      },
+    ],
+    scenes3d: [
+      {
+        id: 's_terrain_aabb',
+        name: 'Colline',
+        terrain: {
+          enabled: true,
+          width: 10,
+          depth: 10,
+          originX: -5,
+          originZ: -5,
+          defaultHeight: 0,
+          defaultColor: 6,
+          heights: {
+            '0,0': 1,
+            '1,0': 1,
+            '2,0': 1,
+            '3,0': 1,
+          },
+        },
+        nodes: [
+          { id: 'n_player', name: 'Hero', kind: 'mesh', objectId: 'o_hero', position: [0, 2, 0] },
+        ],
+      },
+    ],
+  });
+
+  const { game, step } = startGame(project);
+  step(5);
+  const snap1 = game.debugSnapshot();
+  const player1 = snap1.instances.find((i) => i.name === 'Player');
+  assert.ok(player1, 'le joueur existe');
+  assert.strictEqual(player1.onGround, true, 'le joueur commence au sol sur le terrain');
+
+  // Le joueur avance sur le plateau sculpte
+  step(35);
+  const snap2 = game.debugSnapshot();
+  const player2 = snap2.instances.find((i) => i.name === 'Player');
+  assert.ok(player2.x > 1.0, `le joueur a avance sur le terrain (x = ${player2.x})`);
+  assert.ok(Math.abs(player2.y - 1.95) < 0.1, `le joueur repose a la hauteur sculptee (y = ${player2.y})`);
+  assert.strictEqual(player2.onGround, true, 'le joueur reste solidement pose sur le terrain sculpte');
+  game.destroy();
+}
+
+// 7.3 Terrain sculpte solide en mode Rapier 3D
+if (RAPIER) {
+  const project = normalizeProject({
+    name: 'TerrainRapier',
+    settings: { dimension: '3d', physics3d: 'rapier' },
+    objects: [
+      {
+        id: 'o_box',
+        name: 'Player',
+        physics: { enabled: true, gravity: true, bodyType: 'dynamic', colliderShape: 'box' },
+      },
+    ],
+    scenes3d: [
+      {
+        id: 's_terrain_rapier',
+        name: 'Montagne',
+        terrain: {
+          enabled: true,
+          width: 8,
+          depth: 8,
+          originX: -4,
+          originZ: -4,
+          defaultHeight: 0,
+          heights: {
+            '0,0': 3,
+          },
+        },
+        nodes: [
+          { id: 'n_p', name: 'Hero', kind: 'mesh', objectId: 'o_box', position: [0, 5, 0] },
+        ],
+      },
+    ],
+  });
+
+  const { game, step } = startGame(project, { rapier: RAPIER });
+  step(25);
+  const snap = game.debugSnapshot();
+  const player = snap.instances.find((i) => i.name === 'Player');
+  assert.ok(player, 'le joueur existe');
+  assert.ok(Math.abs(player.y - 3.95) < 0.2, `le joueur est atterri et repose sur le pic a Y=3 (y = ${player.y})`);
+  assert.strictEqual(player.onGround, true, 'le joueur est detecte au sol sur le pic sculpte par Rapier');
+  game.destroy();
+}
+
 assert.deepStrictEqual(logs.filter((l) => l.startsWith('[error]')), [], 'aucune erreur de script');
 console.log('Simulation Runtime 3D : OK');

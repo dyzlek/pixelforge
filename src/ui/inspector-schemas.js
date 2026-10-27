@@ -236,6 +236,7 @@ export const SCHEMAS = {
           },
           { key: 'objectId', label: 'Modele / Objet lie', type: 'object-ref' },
           { key: 'materialId', label: 'Materiau', type: 'material-ref' },
+          { key: 'prefabId', label: 'Prefab source', type: 'string' },
           { key: 'visible', label: 'Visible', type: 'boolean', default: true },
           { key: 'locked', label: 'Verrouille', type: 'boolean', default: false },
         ],
@@ -350,6 +351,16 @@ export const SCHEMAS = {
           { key: 'environment.fog.density', label: 'Densite (Exp2)', type: 'number', min: 0.001, max: 0.2, step: 0.005, default: 0.04 },
           { key: 'environment.fog.near', label: 'Debut (Lineaire)', type: 'number', min: 0, max: 100, step: 2, default: 10 },
           { key: 'environment.fog.far', label: 'Fin (Lineaire)', type: 'number', min: 5, max: 200, step: 5, default: 50 }
+        ],
+      },
+      {
+        id: 'terrain',
+        label: 'Terrain sculptable',
+        fields: [
+          { key: 'terrain.enabled', label: 'Terrain active', type: 'boolean', default: false },
+          { key: 'terrain.width', label: 'Largeur (X)', type: 'number', min: 4, max: 128, default: 32 },
+          { key: 'terrain.depth', label: 'Profondeur (Z)', type: 'number', min: 4, max: 128, default: 32 },
+          { key: 'terrain.defaultHeight', label: 'Hauteur initiale', type: 'number', default: 0 },
         ],
       },
     ],
