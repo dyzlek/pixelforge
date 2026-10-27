@@ -286,7 +286,7 @@ export async function sendAgentChatRequest({
                 accToolCalls[idx] = {
                   id: tc.id || `call_${idx}`,
                   type: 'function',
-                  function: { name: tc.function?.name || '', arguments: '' },
+                  function: { name: '', arguments: '' },
                 };
               }
               if (tc.id) accToolCalls[idx].id = tc.id;

@@ -39,6 +39,7 @@ import {
 
 import { sendAgentChatRequest, DEFAULT_AI_CONFIG } from './client.js';
 import { GAMEDESIGN_PRINCIPLES } from './gamedesign.js';
+import { GAMEPLAY_STANDARDS_DOC } from './gameplay-standards.js';
 import { PIXELFORGE_SCRIPT_API, BLUEPRINT_SCHEMA_GUIDE } from './knowledge.js';
 import {
   generateAsset,
@@ -1161,6 +1162,7 @@ Regles imperatrices :
   prompt += '\n' + PIXELFORGE_SCRIPT_API;
   prompt += '\n' + BLUEPRINT_SCHEMA_GUIDE;
   prompt += '\n' + GAMEDESIGN_PRINCIPLES;
+  prompt += '\n' + GAMEPLAY_STANDARDS_DOC;
 
   return prompt;
 }

@@ -7,6 +7,11 @@
  */
 
 import { validateProject } from '../core/ops/validate.js';
+import {
+  auditPlayerScript,
+  STANDARD_PLAYER_2D_SCRIPT,
+  STANDARD_PLAYER_3D_SCRIPT,
+} from './gameplay-standards.js';
 
 /**
  * Verifie la validite et la jouabilite complete d'un projet PixelForge (2D ou 3D).
@@ -62,7 +67,25 @@ export function playtestGame(project, options = {}) {
     }
   }
 
-  const dimension = project.settings?.dimension || '2d';
+  const dimension = project.settings?.dimension || project.dimension || '2d';
+
+  // 2b. Audit des scripts du joueur (controles essentiels, suivi camera, securite)
+  for (const obj of objects) {
+    if (/player|joueur|hero|adventurer/i.test(obj.name)) {
+      const code = obj.script?.code || '';
+      const audit = auditPlayerScript(code, dimension);
+      if (!audit.valid) {
+        issues.push({
+          type: 'missing_player_controls',
+          objectName: obj.name,
+          dimension,
+          missing: audit.missing,
+          details: audit.details,
+          message: `L'objet joueur "${obj.name}" a des controles ou reglages essentiels manquants : ${audit.missing.join(', ')}.`,
+        });
+      }
+    }
+  }
 
   if (dimension === '3d') {
     // 3. Simulation 3D
@@ -651,7 +674,7 @@ export function autoFixGame(project, issues, options = {}) {
           if (scene) {
             let playerObj = (p.objects || []).find((o) => /player|joueur|hero/i.test(o.name));
             if (!playerObj) {
-              playerObj = { id: 'obj_player', name: 'Player', script: { code: '' } };
+              playerObj = { id: 'obj_player', name: 'Player', script: { mode: 'code', code: STANDARD_PLAYER_3D_SCRIPT } };
               p.objects.push(playerObj);
             }
             scene.entities = scene.entities || [];
@@ -673,7 +696,7 @@ export function autoFixGame(project, issues, options = {}) {
           if (map) {
             let playerObj = (p.objects || []).find((o) => /player|joueur|hero/i.test(o.name));
             if (!playerObj) {
-              playerObj = { id: 'obj_player', name: 'Player', script: { code: '' } };
+              playerObj = { id: 'obj_player', name: 'Player', script: { mode: 'code', code: STANDARD_PLAYER_2D_SCRIPT } };
               p.objects.push(playerObj);
             }
             map.entities = map.entities || [];
@@ -729,6 +752,23 @@ export function autoFixGame(project, issues, options = {}) {
             type: 'repaired_script',
             object: obj.name,
             message: `Script de l'objet "${obj.name}" reinitialise avec un modele securise.`,
+          });
+        }
+        break;
+      }
+
+      case 'missing_player_controls': {
+        const obj = (p.objects || []).find((o) => o.name === issue.objectName);
+        if (obj) {
+          if (!obj.script) obj.script = {};
+          const is3D = issue.dimension === '3d' || p.dimension === '3d' || p.settings?.dimension === '3d';
+          obj.script.mode = 'code';
+          obj.script.code = is3D ? STANDARD_PLAYER_3D_SCRIPT : STANDARD_PLAYER_2D_SCRIPT;
+          repairsApplied.push({
+            type: 'repaired_player_controls',
+            object: obj.name,
+            repairs: issue.missing,
+            message: `Controles et reglages essentiels du joueur "${obj.name}" restaures avec le standard complet (deplacement universel, saut, camera, vide).`,
           });
         }
         break;
